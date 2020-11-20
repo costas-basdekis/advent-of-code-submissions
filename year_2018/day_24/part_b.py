@@ -21,49 +21,24 @@ class Challenge(utils.BaseChallenge):
 
 class BoostSolver:
     def find_smallest_required_boost(self, group_set, benefactor, debug=False):
+        is_boost_enough = self.get_is_boost_enough(group_set, benefactor)
+
         min_boost = 0
-        if self.is_boost_enough(group_set, benefactor, min_boost, debug=debug):
+        if is_boost_enough(min_boost, debug=debug):
             return min_boost
-        max_boost = self.get_big_enough_boost(
-            group_set, benefactor, debug=debug)
-        if debug:
-            print(f"Boost must be between {min_boost} and {max_boost}")
 
-        while max_boost > min_boost + 1:
-            mid_boost = (max_boost + min_boost) // 2
-            if self.is_boost_enough(
-                    group_set, benefactor, mid_boost, debug=debug):
-                max_boost = mid_boost
-                if debug:
-                    print(
-                    f"Boost {mid_boost} is too much: checking between "
-                    f"{min_boost} and {max_boost}")
-            else:
-                min_boost = mid_boost
-                if debug:
-                    print(
-                    f"Boost {mid_boost} is not enough: checking between "
-                    f"{min_boost} and {max_boost}")
+        return utils.helper.find_smallest_required_value(
+            min_boost, is_boost_enough,
+            debug=debug)
 
-        return max_boost
+    def get_is_boost_enough(self, group_set, benefactor):
+        def is_boost_enough(boost, debug=False):
+            boosted = group_set.boost(boost, benefactor)
+            boosted.step_many(debug=debug)
+            winning_side = boosted.get_winning_side()
+            return winning_side == benefactor
 
-    def get_big_enough_boost(self, group_set, benefactor, start=1, debug=False):
-        boost = start
-        while not self.is_boost_enough(
-                group_set, benefactor, boost, debug=debug):
-            if debug:
-                print(f"Boost {boost} was not enough")
-            boost *= 2
-        if debug:
-            print(f"Boost {boost} was enough")
-
-        return boost
-
-    def is_boost_enough(self, group_set, benefactor, boost, debug=False):
-        boosted = group_set.boost(boost, benefactor)
-        boosted.step_many(debug=debug)
-        winning_side = boosted.get_winning_side()
-        return winning_side == benefactor
+        return is_boost_enough
 
 
 class GroupSetExtended(part_a.GroupSet):

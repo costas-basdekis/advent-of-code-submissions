@@ -750,6 +750,88 @@ class Helper:
         end = timeit.default_timer()
         stats.update({'end': end, 'duration': end - start})
 
+    def find_smallest_required_value(self, min_value, is_value_enough,
+                                     debug=False):
+        """
+        >>> is_more_than_10 = lambda _value, **_: _value > 10
+        >>> Helper().find_smallest_required_value(1, is_more_than_10)
+        11
+        >>> Helper().find_smallest_required_value(0, is_more_than_10)
+        11
+        >>> Helper().find_smallest_required_value(-2, is_more_than_10)
+        11
+        >>> Helper().find_smallest_required_value(-3, is_more_than_10)
+        11
+        >>> Helper().find_smallest_required_value(3, is_more_than_10)
+        11
+        >>> Helper().find_smallest_required_value(9, is_more_than_10)
+        11
+        >>> Helper().find_smallest_required_value(10, is_more_than_10)
+        11
+        >>> Helper().find_smallest_required_value(11, is_more_than_10)
+        Traceback (most recent call last):
+        ...
+        Exception: Tried ... already enough
+        >>> Helper().find_smallest_required_value(12, is_more_than_10)
+        Traceback (most recent call last):
+        ...
+        Exception: Tried ... already enough
+        """
+        if is_value_enough(min_value):
+            raise Exception(
+                f"Tried to bisect value, but provided min_value {min_value} "
+                f"was already enough")
+        max_value = self.get_big_enough_value(
+            start=min_value + 1, is_value_enough=is_value_enough, debug=debug)
+        if debug:
+            print(f"Value must be between {min_value} and {max_value}")
+
+        while max_value > min_value + 1:
+            mid_value = (max_value + min_value) // 2
+            if is_value_enough(mid_value, debug=debug):
+                max_value = mid_value
+                if debug:
+                    print(
+                        f"Value {mid_value} is too much: checking between "
+                        f"{min_value} and {max_value}")
+            else:
+                min_value = mid_value
+                if debug:
+                    print(
+                        f"Value {mid_value} is not enough: checking between "
+                        f"{min_value} and {max_value}")
+
+        return max_value
+
+    def get_big_enough_value(self, start, is_value_enough, debug=False):
+        """
+        >>> is_more_than_10 = lambda _value, **_: _value > 10
+        >>> Helper().get_big_enough_value(1, is_more_than_10)
+        16
+        >>> Helper().get_big_enough_value(0, is_more_than_10)
+        16
+        >>> Helper().get_big_enough_value(-2, is_more_than_10)
+        16
+        >>> Helper().get_big_enough_value(-3, is_more_than_10)
+        12
+        >>> Helper().get_big_enough_value(3, is_more_than_10)
+        12
+        """
+        value = start
+        while not is_value_enough(value, debug=debug):
+            if debug:
+                print(f"Value {value} was not enough")
+            if value > 0:
+                value *= 2
+            elif value == 0:
+                value = 1
+            else:
+                value = -value
+        if debug:
+            print(f"Value {value} was enough")
+
+        return value
+
 
 class BasePointMeta(type):
     @classmethod

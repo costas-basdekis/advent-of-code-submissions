@@ -46,7 +46,7 @@ class Challenge(utils.BaseChallenge):
 
 class Cave:
     @classmethod
-    def from_cave_text(cls, cave_text):
+    def from_cave_text(cls, cave_text, elf_attack=3):
         """
         >>> Cave.from_cave_text(
         ...     "#####\\n"
@@ -70,7 +70,7 @@ class Cave:
         units = tuple(sorted(
             Goblin((x, y))
             if spot == 'G' else
-            Elf((x, y))
+            Elf((x, y), attack=elf_attack)
             for y, line in enumerate(lines)
             for x, spot in enumerate(line)
             if spot in ('G', 'E')
@@ -106,6 +106,7 @@ class Cave:
 
     def __init__(self, spaces, units, step_count=0):
         self.spaces = spaces
+        self.units_at_start = set(units)
         self.units = units
         self.step_count = step_count
 

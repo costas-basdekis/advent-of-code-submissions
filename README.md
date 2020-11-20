@@ -9,7 +9,7 @@ leaderboards have submitted the challenges
 
 | Total | 2020 | 2019 | 2018 |
 | --- | --- | --- | --- |
-| 142 :star: | 50 :star: :star: | 46 :star: | 46 :star: |
+| 143 :star: | 50 :star: :star: | 46 :star: | 47 :star: |
 
 [//]: # (summary-end)
 
@@ -24,7 +24,7 @@ leaderboards have submitted the challenges
 |       | 2020                                     | 2019                                                             | 2018                                                             |
 |  ---: | :---:                                    | :---:                                                            | :---:                                                            |
 |       | Code &             [Challenges][ch-20]   | [Code][co-19]    &                         [Challenges][ch-19]   | [Code][co-18]    &                         [Challenges][ch-18]   |
-|       | 50 :star: :star:                         | 46 :star: / 3 :x: / 1 :grey_exclamation:                         | 46 :star: / 2 :x: / 1 :grey_exclamation:                         |
+|       | 50 :star: :star:                         | 46 :star: / 3 :x: / 1 :grey_exclamation:                         | 47 :star: / 2 :x: / 1 :grey_exclamation:                         |
 |  1    | Code :star: :star: [Challenge][ch-20-01] | [Code][co-19-01] :star: :star:             [Challenge][ch-19-01] | [Code][co-18-01] :star: :star:             [Challenge][ch-18-01] |
 |  2    | Code :star: :star: [Challenge][ch-20-02] | [Code][co-19-02] :star: :star:             [Challenge][ch-19-02] | [Code][co-18-02] :star: :star:             [Challenge][ch-18-02] |
 |  3    | Code :star: :star: [Challenge][ch-20-03] | [Code][co-19-03] :star: :star:             [Challenge][ch-19-03] | [Code][co-18-03] :star: :star:             [Challenge][ch-18-03] |
@@ -39,7 +39,7 @@ leaderboards have submitted the challenges
 | 12    | Code :star: :star: [Challenge][ch-20-12] | [Code][co-19-12] :star: :star:             [Challenge][ch-19-12] | [Code][co-18-12] :star: :star:             [Challenge][ch-18-12] |
 | 13    | Code :star: :star: [Challenge][ch-20-13] | [Code][co-19-13] :star: :star:             [Challenge][ch-19-13] | [Code][co-18-13] :star: :star:             [Challenge][ch-18-13] |
 | 14    | Code :star: :star: [Challenge][ch-20-14] | [Code][co-19-14] :star: :star:             [Challenge][ch-19-14] | [Code][co-18-14] :star: :x:                [Challenge][ch-18-14] |
-| 15    | Code :star: :star: [Challenge][ch-20-15] | [Code][co-19-15] :star: :star:             [Challenge][ch-19-15] | [Code][co-18-15] :star:                    [Challenge][ch-18-15] |
+| 15    | Code :star: :star: [Challenge][ch-20-15] | [Code][co-19-15] :star: :star:             [Challenge][ch-19-15] | [Code][co-18-15] :star: :star:             [Challenge][ch-18-15] |
 | 16    | Code :star: :star: [Challenge][ch-20-16] | [Code][co-19-16] :star: :x:                [Challenge][ch-19-16] | [Code][co-18-16] :star: :star:             [Challenge][ch-18-16] |
 | 17    | Code :star: :star: [Challenge][ch-20-17] | [Code][co-19-17] :star: :x:                [Challenge][ch-19-17] | [Code][co-18-17] :star: :star:             [Challenge][ch-18-17] |
 | 18    | Code :star: :star: [Challenge][ch-20-18] | [Code][co-19-18] :star: :star:             [Challenge][ch-19-18] | [Code][co-18-18] :star: :star:             [Challenge][ch-18-18] |
