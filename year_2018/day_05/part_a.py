@@ -18,6 +18,55 @@ def solve(_input=None):
 
 
 class Polymer(str):
+    def find_worst_blockage(self):
+        """
+        >>> Polymer('dabAcCaCBAcCcaDA').find_worst_blockage()
+        ('c', 4)
+        """
+        letters = {letter.lower() for letter in set(self)}
+        if not letters:
+            raise Exception("Empty string")
+        length_by_letter = {
+            letter: len(self.remove(letter).simplify())
+            for letter in letters
+        }
+        smallest_length = min(length_by_letter.values())
+        letters_with_smallest_length = [
+            letter
+            for letter, length in length_by_letter.items()
+            if length == smallest_length
+        ]
+        if len(letters_with_smallest_length) > 1:
+            raise Exception(
+                f"Multiple letters ({len(letters_with_smallest_length)}) have "
+                f"smallest length {smallest_length}")
+        letter_with_smallest_length, = letters_with_smallest_length
+
+        return letter_with_smallest_length, smallest_length
+
+    def remove(self, letter):
+        """
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('a')
+        'dbcCCBcCcD'
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('A')
+        'dbcCCBcCcD'
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('b')
+        'daAcCaCAcCcaDA'
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('B')
+        'daAcCaCAcCcaDA'
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('c')
+        'dabAaBAaDA'
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('C')
+        'dabAaBAaDA'
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('d')
+        'abAcCaCBAcCcaA'
+        >>> Polymer('dabAcCaCBAcCcaDA').remove('D')
+        'abAcCaCBAcCcaA'
+        """
+        return type(self)(
+            self.replace(letter.lower(), '')
+                .replace(letter.upper(), ''))
+
     def simplify(self):
         return self.simplify_intelligent()
 
