@@ -119,7 +119,7 @@ def get_moon_kinetic_energy(moon):
     return sum(map(abs, moon["velocity"].values()))
 
 
-def repeat(func, count, argument):
+def repeat(func, count, argument, kwargs=None):
     """
     >>> repeat(lambda x: x + 2, 0, 1)
     1
@@ -128,9 +128,11 @@ def repeat(func, count, argument):
     >>> repeat(lambda x: x + 2, 5, 1)
     11
     """
+    if kwargs is None:
+        kwargs = {}
     result = argument
     for _ in range(count):
-        result = func(result)
+        result = func(result, **kwargs)
     return result
 
 
