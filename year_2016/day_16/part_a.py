@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from aox.utils import Timer
+
 from utils import BaseChallenge, in_groups
 
 
@@ -12,25 +14,38 @@ class Challenge(BaseChallenge):
 
 
 class DataGenerator:
-    def get_disk_checksum(self, size: int, initial: str) -> str:
+    def get_disk_checksum(self, size: int, initial: str, debug: bool = False,
+                          ) -> str:
         """
         >>> DataGenerator().get_disk_checksum(20, "10000")
         '01100'
         """
-        return self.get_checksum(self.fill_disk(size, initial))
+        disk = self.fill_disk(size, initial, debug=debug)
+        return self.get_checksum(disk, debug=debug)
 
-    def fill_disk(self, size: int, initial: str) -> str:
+    def fill_disk(self, size: int, initial: str, debug: bool = False) -> str:
         """
         >>> DataGenerator().fill_disk(20, "10000")
         '10000011110010000111'
         """
         disk = initial
+        if debug:
+            step = 0
+            timer = Timer()
         while len(disk) < size:
             disk = self.increase_data(disk)
+            if debug:
+                if step % 10 == 0:
+                    print(
+                        f"Filling, step: {step}, time: "
+                        f"{timer.get_pretty_current_duration()}, size: "
+                        f"{len(disk)}/{size}")
+                step += 1
+
         disk = disk[:size]
         return disk
 
-    def get_checksum(self, data: str) -> str:
+    def get_checksum(self, data: str, debug: bool = False) -> str:
         """
         >>> DataGenerator().get_checksum("110010110100")
         '100'
@@ -42,11 +57,21 @@ class DataGenerator:
         '01100'
         """
         reduced = data
+        if debug:
+            step = 0
+            timer = Timer()
         while True:
             new_reduced = self.reduce_data(reduced)
             if new_reduced == reduced:
                 break
             reduced = new_reduced
+
+            if debug:
+                if step % 10 == 0:
+                    print(
+                        f"Check summing, step: {step}, time: "
+                        f"{timer.get_pretty_current_duration()}, size: "
+                        f"{len(reduced)}/{len(data)}")
 
         return reduced
 
