@@ -36,23 +36,23 @@ class GuardSleepProfiles:
         ...     SleepDuration(start_date='1518-11-01', start_hour=0, start_minute=5, guard_id='10', duration_minutes=20),
         ...     SleepDuration(start_date='1518-11-01', start_hour=1, start_minute=5, guard_id='11', duration_minutes=20),
         ... ]).get_guards_sleep_profiles().sleep_profiles
-        [GuardSleepProfile(guard_id='10', sleep_minute_count=20, most_common_minute=None), \
-GuardSleepProfile(guard_id='11', sleep_minute_count=20, most_common_minute=None)]
+        [GuardSleepProfile(guard_id='10', sleep_minute_count=20, most_common_minute=None, most_common_minute_count=None), \
+GuardSleepProfile(guard_id='11', sleep_minute_count=20, most_common_minute=None, most_common_minute_count=None)]
         >>> SleepSchedule([
         ...     SleepDuration(start_date='1518-11-01', start_hour=0, start_minute=5, guard_id='10', duration_minutes=20),
         ...     SleepDuration(start_date='1518-11-01', start_hour=2, start_minute=5, guard_id='10', duration_minutes=1),
         ...     SleepDuration(start_date='1518-11-01', start_hour=1, start_minute=5, guard_id='11', duration_minutes=20),
         ... ]).get_guards_sleep_profiles().sleep_profiles
-        [GuardSleepProfile(guard_id='10', sleep_minute_count=21, most_common_minute=5), \
-GuardSleepProfile(guard_id='11', sleep_minute_count=20, most_common_minute=None)]
+        [GuardSleepProfile(guard_id='10', sleep_minute_count=21, most_common_minute=5, most_common_minute_count=2), \
+GuardSleepProfile(guard_id='11', sleep_minute_count=20, most_common_minute=None, most_common_minute_count=None)]
         >>> SleepSchedule([
         ...     SleepDuration(start_date='1518-11-01', start_hour=0, start_minute=5, guard_id='10', duration_minutes=20),
         ...     SleepDuration(start_date='1518-11-01', start_hour=2, start_minute=5, guard_id='10', duration_minutes=1),
         ...     SleepDuration(start_date='1518-11-01', start_hour=1, start_minute=5, guard_id='11', duration_minutes=20),
         ...     SleepDuration(start_date='1518-11-01', start_hour=1, start_minute=35, guard_id='11', duration_minutes=20),
         ... ]).get_guards_sleep_profiles().sleep_profiles
-        [GuardSleepProfile(guard_id='10', sleep_minute_count=21, most_common_minute=5), \
-GuardSleepProfile(guard_id='11', sleep_minute_count=40, most_common_minute=None)]
+        [GuardSleepProfile(guard_id='10', sleep_minute_count=21, most_common_minute=5, most_common_minute_count=2), \
+GuardSleepProfile(guard_id='11', sleep_minute_count=40, most_common_minute=None, most_common_minute_count=None)]
         >>> Observations.from_lines(
         ...     "[1518-11-01 00:00] Guard #10 begins shift\\n"
         ...     "[1518-11-01 00:05] falls asleep\\n"
@@ -75,8 +75,8 @@ GuardSleepProfile(guard_id='11', sleep_minute_count=40, most_common_minute=None)
         ...     .get_sleep_schedule()\\
         ...     .get_guards_sleep_profiles()\\
         ...     .sleep_profiles
-        [GuardSleepProfile(guard_id='10', sleep_minute_count=50, most_common_minute=24), \
-GuardSleepProfile(guard_id='99', sleep_minute_count=30, most_common_minute=45)]
+        [GuardSleepProfile(guard_id='10', sleep_minute_count=50, most_common_minute=24, most_common_minute_count=2), \
+GuardSleepProfile(guard_id='99', sleep_minute_count=30, most_common_minute=45, most_common_minute_count=3)]
         """
         sleep_count_by_guard_and_minute = {}
         for sleep_duration in sleep_durations:
@@ -89,28 +89,31 @@ GuardSleepProfile(guard_id='99', sleep_minute_count=30, most_common_minute=45)]
         return cls([
             GuardSleepProfile(
                 guard_id, sum(by_minute.values()),
-                cls.get_max_minute(by_minute))
+                *cls.get_max_minute_and_count(by_minute))
             for guard_id, by_minute
             in sorted(sleep_count_by_guard_and_minute.items())
         ])
 
     @classmethod
-    def get_max_minute(cls, by_minute):
+    def get_max_minute_and_count(cls, by_minute):
         """
-        >>> GuardSleepProfiles.get_max_minute({})
-        >>> GuardSleepProfiles.get_max_minute({1: 1})
-        1
-        >>> GuardSleepProfiles.get_max_minute({1: 1, 2: 1})
-        >>> GuardSleepProfiles.get_max_minute({1: 1, 2: 3})
-        2
-        >>> GuardSleepProfiles.get_max_minute({1: 1, 2: 3, 3: 1})
-        2
-        >>> GuardSleepProfiles.get_max_minute({1: 1, 2: 3, 3: 1, 4: 2})
-        2
-        >>> GuardSleepProfiles.get_max_minute({1: 1, 2: 3, 3: 1, 4: 3})
+        >>> GuardSleepProfiles.get_max_minute_and_count({})
+        (None, None)
+        >>> GuardSleepProfiles.get_max_minute_and_count({1: 1})
+        (1, 1)
+        >>> GuardSleepProfiles.get_max_minute_and_count({1: 1, 2: 1})
+        (None, None)
+        >>> GuardSleepProfiles.get_max_minute_and_count({1: 1, 2: 3})
+        (2, 3)
+        >>> GuardSleepProfiles.get_max_minute_and_count({1: 1, 2: 3, 3: 1})
+        (2, 3)
+        >>> GuardSleepProfiles.get_max_minute_and_count({1: 1, 2: 3, 3: 1, 4: 2})
+        (2, 3)
+        >>> GuardSleepProfiles.get_max_minute_and_count({1: 1, 2: 3, 3: 1, 4: 3})
+        (None, None)
         """
         if not by_minute:
-            return None
+            return None, None
         max_count = max(by_minute.values())
         minutes_with_max_count = [
             minute
@@ -119,11 +122,11 @@ GuardSleepProfile(guard_id='99', sleep_minute_count=30, most_common_minute=45)]
             if count == max_count
         ]
         if len(minutes_with_max_count) > 1:
-            return None
+            return None, None
 
         minute_with_max_count, = minutes_with_max_count
 
-        return minute_with_max_count
+        return minute_with_max_count, max_count
 
     def __init__(self, sleep_profiles):
         self.sleep_profiles = sleep_profiles
@@ -152,7 +155,7 @@ GuardSleepProfile(guard_id='99', sleep_minute_count=30, most_common_minute=45)]
         ...     .get_sleep_schedule()\\
         ...     .get_guards_sleep_profiles()\\
         ...     .get_sleepiest_profile_by_strategy_1()
-        GuardSleepProfile(guard_id='10', sleep_minute_count=50, most_common_minute=24)
+        GuardSleepProfile(guard_id='10', sleep_minute_count=50, most_common_minute=24, most_common_minute_count=2)
         """
         if not self.sleep_profiles:
             return None
@@ -173,13 +176,61 @@ GuardSleepProfile(guard_id='99', sleep_minute_count=30, most_common_minute=45)]
 
         return sleep_profile_with_max_sleep_minute_count
 
+    def get_sleepiest_profile_by_strategy_2(self):
+        """
+        >>> Observations.from_lines(
+        ...     "[1518-11-01 00:00] Guard #10 begins shift\\n"
+        ...     "[1518-11-01 00:05] falls asleep\\n"
+        ...     "[1518-11-01 00:25] wakes up\\n"
+        ...     "[1518-11-01 00:30] falls asleep\\n"
+        ...     "[1518-11-01 00:55] wakes up\\n"
+        ...     "[1518-11-01 23:58] Guard #99 begins shift\\n"
+        ...     "[1518-11-02 00:40] falls asleep\\n"
+        ...     "[1518-11-02 00:50] wakes up\\n"
+        ...     "[1518-11-03 00:05] Guard #10 begins shift\\n"
+        ...     "[1518-11-03 00:24] falls asleep\\n"
+        ...     "[1518-11-03 00:29] wakes up\\n"
+        ...     "[1518-11-04 00:02] Guard #99 begins shift\\n"
+        ...     "[1518-11-04 00:36] falls asleep\\n"
+        ...     "[1518-11-04 00:46] wakes up\\n"
+        ...     "[1518-11-05 00:03] Guard #99 begins shift\\n"
+        ...     "[1518-11-05 00:45] falls asleep\\n"
+        ...     "[1518-11-05 00:55] wakes up\\n"
+        ... ).attach_guard_ids()\\
+        ...     .get_sleep_schedule()\\
+        ...     .get_guards_sleep_profiles()\\
+        ...     .get_sleepiest_profile_by_strategy_2()
+        GuardSleepProfile(guard_id='99', sleep_minute_count=30, most_common_minute=45, most_common_minute_count=3)
+        """
+        if not self.sleep_profiles:
+            return None
+        max_most_common_minute_count = max(
+            sleep_profile.most_common_minute_count
+            for sleep_profile in self.sleep_profiles
+            if sleep_profile.most_common_minute is not None
+        )
+        sleep_profiles_with_max_most_common_minute_count = [
+            sleep_profile
+            for sleep_profile in self.sleep_profiles
+            if sleep_profile.most_common_minute_count
+            == max_most_common_minute_count
+        ]
+        if len(sleep_profiles_with_max_most_common_minute_count) > 1:
+            return None
+
+        sleep_profile_with_max_most_common_minute_count, = \
+            sleep_profiles_with_max_most_common_minute_count
+
+        return sleep_profile_with_max_most_common_minute_count
+
 
 class GuardSleepProfile(namedtuple(
         "GuardSleepProfile", (
-            "guard_id", "sleep_minute_count", "most_common_minute"))):
+            "guard_id", "sleep_minute_count", "most_common_minute",
+            "most_common_minute_count"))):
     def get_signature(self):
         """
-        >>> GuardSleepProfile('10', 55, 24).get_signature()
+        >>> GuardSleepProfile('10', 55, 24, 3).get_signature()
         240
         """
         return int(self.guard_id) * self.most_common_minute
