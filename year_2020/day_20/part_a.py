@@ -27,7 +27,7 @@ class TileArrangement:
     @classmethod
     def of_size(cls, size):
         """
-        >>> TileArrangement.of_size(20)([])
+        >>> TileArrangement.of_size(20)([], {})
         TileArrangementOfSize20
         >>> TileArrangement.of_size(20).size
         20
@@ -80,10 +80,11 @@ class TileArrangement:
                 for tile in tiles[start:start + cls.size]
             ]
             for start in range(0, len(tiles), cls.size)
-        ])
+        ], tile_set.tiles_by_id)
 
-    def __init__(self, matrix):
+    def __init__(self, matrix, tiles_by_id):
         self.matrix = matrix
+        self.tiles_by_id = tiles_by_id
 
     def __repr__(self):
         return f"{type(self).__name__}"
@@ -206,7 +207,8 @@ class TileArrangement:
         corner_candidates = self.get_corner_candidates(borders_by_side_by_id)
         if len(corner_candidates) != 4:
             raise Exception(
-                f"Can only solve if there are exactly 4 corner candidates")
+                f"Can only solve if there are exactly 4 corner candidates, "
+                f"not {len(corner_candidates)}")
 
         return functools.reduce(int.__mul__, corner_candidates)
 
@@ -227,7 +229,7 @@ class TileArrangement:
                 side: neighbours
                 for side, neighbours in (
                     (side, {
-                        neighbour
+                        neighbour.id
                         for _, _, neighbours in sub_items
                         for neighbour in neighbours
                         if neighbour.id != _id
@@ -332,9 +334,9 @@ class TileArrangement:
 
     def show_row(self, tile_show_row):
         """
-        >>> print(TileArrangement([]).show_row([]))
+        >>> print(TileArrangement([], {}).show_row([]))
         <BLANKLINE>
-        >>> print(TileArrangement([]).show_row([Tile.from_tile_text(
+        >>> print(TileArrangement([], {}).show_row([Tile.from_tile_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
@@ -343,7 +345,7 @@ class TileArrangement:
         .##
         #..
         #.#
-        >>> print(TileArrangement([]).show_row([Tile.from_tile_text(
+        >>> print(TileArrangement([], {}).show_row([Tile.from_tile_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
@@ -647,6 +649,22 @@ class TileBorder(namedtuple(
     def sides(self):
         return {self.top, self.right, self.bottom, self.left}
 
+    @property
+    def named_sides(self):
+        return (
+            ("top", self.top),
+            ("right", self.right),
+            ("bottom", self.bottom),
+            ("left", self.left),
+        )
+
+    OPPOSITE_SIDE_MAP = {
+        'left': 'right',
+        'right': 'left',
+        'top': 'bottom',
+        'bottom': 'left',
+    }
+
     def get_all_permutations(self):
         """
         >>> TileBorder.of_size(10)(1, (), (), (), ()).get_all_permutations()
@@ -662,10 +680,10 @@ class TileBorder(namedtuple(
         ...     TileBorder(1, (3, 4), (3, 4), (7, 8), (7, 8)),
         ...     TileBorder(1, (3, 4), (1, 2), (7, 8), (5, 6)),
         ...     TileBorder(1, (1, 2), (1, 2), (5, 6), (5, 6)),
-        ...     TileBorder(1, (1, 2), (7, 8), (5, 6), (3, 4)),
-        ...     TileBorder(1, (7, 8), (3, 4), (3, 4), (7, 8)),
-        ...     TileBorder(1, (3, 4), (5, 6), (7, 8), (1, 2)),
-        ...     TileBorder(1, (5, 6), (1, 2), (1, 2), (5, 6)),
+        ...     TileBorder(1, (7, 8), (7, 8), (3, 4), (3, 4)),
+        ...     TileBorder(1, (7, 8), (5, 6), (3, 4), (1, 2)),
+        ...     TileBorder(1, (5, 6), (5, 6), (1, 2), (1, 2)),
+        ...     TileBorder(1, (5, 6), (7, 8), (1, 2), (3, 4)),
         ... }
         >>> actual_b - expected_b, expected_b - actual_b
         (set(), set())
@@ -692,10 +710,10 @@ class TileBorder(namedtuple(
         cls = type(self)
         return cls(
             self.id,
-            self.right,
-            self.inverse_side(self.bottom),
-            self.left,
-            self.inverse_side(self.top),
+            top=self.right,
+            right=self.inverse_side(self.bottom),
+            bottom=self.left,
+            left=self.inverse_side(self.top),
         )
 
     def inverse_side(self, side):
@@ -717,11 +735,18 @@ class TileBorder(namedtuple(
 
     def flip(self):
         """
-        >>> TileBorder(1, (1, 2), (3, 4), (5, 6), (7, 8)).flip()
-        TileBorder(id=1, top=(1, 2), right=(7, 8), bottom=(5, 6), left=(3, 4))
+        >>> TileBorder.of_size(10)(1, (1, 2), (3, 4), (5, 6), (7, 8)).flip()
+        TileBorderOfSize10(id=1,
+            top=(7, 8), right=(7, 8), bottom=(3, 4), left=(3, 4))
         """
         cls = type(self)
-        return cls(self.id, self.top, self.left, self.bottom, self.right)
+        return cls(
+            self.id,
+            top=self.inverse_side(self.top),
+            right=self.left,
+            bottom=self.inverse_side(self.bottom),
+            left=self.right,
+        )
 
 
 Tile.border_class = TileBorder
