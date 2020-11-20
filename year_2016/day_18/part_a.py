@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
+from aox.challenge import Debugger
+
 from utils import BaseChallenge, helper
 
 
@@ -9,10 +11,10 @@ class Challenge(BaseChallenge):
     def solve(self, _input, debugger):
         """
         >>> Challenge().default_solve()
-        1963
+        20009568
         """
         return Minefield.from_rows_text(_input)\
-            .add_rows(39)\
+            .add_rows(39, debugger=debugger)\
             .get_safe_tile_count()
 
 
@@ -54,7 +56,8 @@ class Minefield:
             if not trap
         )
 
-    def add_rows(self, count: int):
+    def add_rows(self, count: int,
+                 debugger: Debugger = Debugger(enabled=False)):
         """
         >>> print("!" + Minefield.from_rows_text('..^^.').add_rows(2).show())
         !..^^.
@@ -73,8 +76,14 @@ class Minefield:
         .^^^..^.^^
         ^^.^^^..^^
         """
+        debugger.reset()
+        total_target = len(self.rows) + count
         for _ in range(count):
             self.add_row()
+            debugger.step()
+            if debugger.should_report():
+                debugger.default_report(
+                    f"rows: {len(self.rows)}/{total_target}")
 
         return self
 
