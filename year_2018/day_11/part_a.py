@@ -55,8 +55,12 @@ class FuelGrid(namedtuple("FuelGrid", ("serial_number", "width", "height"))):
         """
         >>> FuelGrid(18).get_square_power_level(33, 45)
         29
+        >>> FuelGrid(18).get_square_power_level(90, 269, 16, 16)
+        113
         >>> FuelGrid(42).get_square_power_level(21, 61)
         30
+        >>> FuelGrid(42).get_square_power_level(232, 251, 12, 12)
+        119
         """
         return sum(
             self.get_power_level(x, y)
