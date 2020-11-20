@@ -700,7 +700,42 @@ class BaseChallenge:
         if "That's the right answer" in message:
             click.echo(
                 f"Congratulations! That was "
-                f"{click.style('the right answer', fg='green')}!")
+                f"{click.style('the right answer', fg='green')}!\n"
+                f"{message}")
+            success = True
+        elif "Did you already complete it" in message:
+            click.echo(
+                f"It looks like you have "
+                f"{click.style('already completed it', fg='yellow')}:\n"
+                f"{message}")
+            success = False
+        elif "That's not the right answer" in message:
+            click.echo(
+                f"It looks like {click.style(solution, fg='red')} was the "
+                f"{click.style('wrong answer', fg='yellow')}:\n"
+                f"{message}")
+            success = False
+        elif "You gave an answer too recently" in message:
+            click.echo(
+                f"It looks like you need "
+                f"{click.style('to wait a bit', fg='yellow')}:\n"
+                f"{message}")
+            success = False
+        elif self.is_final_part \
+                and 'congratulations' in message.lower():
+            click.echo(
+                f"Congratulations! "
+                f"{click.style('You completed the whole year!', fg='green')}!\n"
+                f"{message}")
+            success = True
+        else:
+            click.echo(
+                f"It's not clear "
+                f"{click.style('what was the response', fg='yellow')}:\n"
+                f"{message}")
+            success = False
+
+        if success:
             if no_prompt:
                 fetch_and_update_readme = True
             else:
@@ -719,33 +754,6 @@ class BaseChallenge:
                 click.echo(
                     f"Make sure to do {click.style('aoc fetch', fg='green')} "
                     f"and {click.style('aoc update-readme', fg='green')}")
-        elif "Did you already complete it" in message:
-            click.echo(
-                f"It looks like you have "
-                f"{click.style('already completed it', fg='yellow')}: "
-                f"{message}")
-        elif "That's not the right answer" in message:
-            click.echo(
-                f"It looks like {click.style(solution, fg='red')} was the "
-                f"{click.style('wrong answer', fg='yellow')}: "
-                f"{message}")
-        elif "You gave an answer too recently" in message:
-            click.echo(
-                f"It looks like you need "
-                f"{click.style('to wait a bit', fg='yellow')}: "
-                f"{message}")
-        elif self.is_final_part \
-                and 'congratulations' in message.lower():
-            click.echo(
-                f"Congratulations! "
-                f"{click.style('You completed the whole year!', fg='green')}! "
-                f"Make sure to do `aoc fetch` and `aoc update-readme`:\n"
-                f"{message}")
-        else:
-            click.echo(
-                f"It's not clear "
-                f"{click.style('what was the response', fg='yellow')}:\n"
-                f"{message}")
 
 
 class Helper:
