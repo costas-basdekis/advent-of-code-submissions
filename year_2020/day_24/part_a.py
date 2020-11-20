@@ -60,19 +60,20 @@ class PathSet:
         ... ).get_black_count()
         10
         """
+        flipped_destinations = self.get_flipped_destinations(start)
+        return len(flipped_destinations)
+
+    def get_flipped_destinations(self, start=(0, 0)):
         destinations = self.get_destinations(start)
-        flip_counts = [
-            len(list(items))
-            for position, items in itertools.groupby(sorted(destinations))
-        ]
-        modulo_counts = {
-            modulo: len(list(items))
-            for modulo, items in itertools.groupby((sorted(
-                flip_count % 2
-                for flip_count in flip_counts
-            )))
+        flip_counts = {
+            destination: len(list(items))
+            for destination, items in itertools.groupby(sorted(destinations))
         }
-        return modulo_counts.get(1, 0)
+        return [
+            destination
+            for destination in destinations
+            if flip_counts[destination] % 2 == 1
+        ]
 
     def get_destinations(self, start=(0, 0)):
         """
@@ -125,7 +126,7 @@ class Path:
             'sw': (0, 1),
         },
     }
-    INSTRUCTIONS = sorted(DIRECTION_OFFSETS[0].values())
+    INSTRUCTIONS = sorted(DIRECTION_OFFSETS[0])
 
     @classmethod
     def from_path_text(cls, path_text):
@@ -179,9 +180,22 @@ class Path:
         """
         position = start
         for instruction in self.direction_path:
-            _, y = position
-            offset = self.DIRECTION_OFFSETS[y % 2][instruction]
-            position = self.add(position, offset)
+            position = self.get_neighbour(position, instruction)
+
+        return position
+
+    @classmethod
+    def get_neighbours(cls, position):
+        return [
+            cls.get_neighbour(position, instruction)
+            for instruction in cls.INSTRUCTIONS
+        ]
+
+    @classmethod
+    def get_neighbour(cls, position, instruction):
+        _, y = position
+        offset = cls.DIRECTION_OFFSETS[y % 2][instruction]
+        position = cls.add(position, offset)
 
         return position
 
