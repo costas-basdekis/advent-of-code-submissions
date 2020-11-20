@@ -23,16 +23,25 @@ def solve(_input=None):
 
 
 class Shuffles:
+    shuffle_class = NotImplemented
+
     @classmethod
     def parse(cls, text):
         lines = text.splitlines()
         non_empty_lines = filter(None, lines)
-        shuffles = list(map(Shuffle.parse, non_empty_lines))
+        shuffles = list(map(cls.shuffle_class.parse, non_empty_lines))
 
         return cls(shuffles)
 
     def __init__(self, shuffles):
         self.shuffles = shuffles
+
+    def shuffle_deck_many(self, deck, count):
+        shuffled = deck
+        for _ in range(count):
+            shuffled = self.shuffle_deck(shuffled)
+
+        return shuffled
 
     def shuffle_deck(self, deck):
         """
@@ -99,17 +108,28 @@ class Shuffles:
 
 
 class Shuffle:
-    shuffle_classes = []
+    name = NotImplemented
+    shuffle_classes = {}
 
     @classmethod
-    def register(cls, shuffle_class):
-        cls.shuffle_classes.append(shuffle_class)
+    def register(cls, shuffle_class, override=False):
+        name = shuffle_class.name
+        class_name = shuffle_class.__name__
+        if name is NotImplemented:
+            raise Exception(
+                f"Class {class_name} did not specify a name")
+        existing_shuffle_class = cls.shuffle_classes.get(name)
+        if existing_shuffle_class and not override:
+            raise Exception(
+                f"Class {existing_shuffle_class.__name__} has already defined "
+                f"name '{name}': {class_name}")
+        cls.shuffle_classes[name] = shuffle_class
 
         return shuffle_class
 
     @classmethod
     def parse(cls, text):
-        for shuffle_class in cls.shuffle_classes:
+        for shuffle_class in cls.shuffle_classes.values():
             success, result = shuffle_class.try_parse(text)
             if success:
                 return result
@@ -125,6 +145,9 @@ class Shuffle:
 
     def serialise(self):
         raise NotImplementedError()
+
+
+Shuffles.shuffle_class = Shuffle
 
 
 class RegexParsingShuffle(Shuffle, ABC):
@@ -143,6 +166,7 @@ class RegexParsingShuffle(Shuffle, ABC):
 
 @Shuffle.register
 class DealWithIncrementShuffle(RegexParsingShuffle):
+    name = 'deal-with-increment'
     re_parse = re.compile(r"^deal with increment (\d+)$")
 
     def __init__(self, increment_str):
@@ -183,6 +207,7 @@ class DealWithIncrementShuffle(RegexParsingShuffle):
 
 @Shuffle.register
 class CutShuffle(RegexParsingShuffle):
+    name = 'cut'
     re_parse = re.compile(r"^cut (-?\d+)$")
 
     def __init__(self, count_str):
@@ -210,6 +235,7 @@ class CutShuffle(RegexParsingShuffle):
 
 @Shuffle.register
 class DealIntoNewStackShuffle(RegexParsingShuffle):
+    name = 'deal-into-new-stack'
     re_parse = re.compile(r"^deal into new stack$")
 
     def __init__(self):
