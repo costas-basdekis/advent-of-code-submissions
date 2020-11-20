@@ -20,14 +20,31 @@ def solve(_input=None):
     return sum(point for line in scan for point in line)
 
 
-def scan_area(program_text, width, height):
+def scan_area(program_text, width_or_xs, height_or_ys):
+    if isinstance(width_or_xs, int):
+        width = width_or_xs
+        xs = range(width)
+    else:
+        xs = width_or_xs
+    if isinstance(height_or_ys, int):
+        height = height_or_ys
+        ys = range(height)
+    else:
+        ys = height_or_ys
     return [
         [
-            get_program_result_and_output_extended(program_text, [x, y])[1][0]
-            for x in range(width)
+            get_scan_point(program_text, x, y)
+            for x in xs
         ]
-        for y in range(height)
+        for y in ys
     ]
+
+
+def get_scan_point(program_text, x, y):
+    _, output = get_program_result_and_output_extended(program_text, [x, y])
+    point, = output
+
+    return point
 
 
 def show_scan(scan):
