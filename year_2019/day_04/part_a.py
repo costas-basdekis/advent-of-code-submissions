@@ -17,22 +17,6 @@ def solve(_input=None):
     return count_valid_passwords(_range)
 
 
-def count_valid_passwords(_range):
-    """
-    >>> count_valid_passwords(map(password_from_number, (100000, 50000)))
-    0
-    >>> count_valid_passwords(map(password_from_number, (111111, 111111)))
-    1
-    >>> count_valid_passwords(map(password_from_number, (123455, 123456)))
-    1
-    """
-    return sum(
-        1
-        for number in passwords_in_range(_range)
-        if is_password_valid(password_from_number(number))
-    )
-
-
 def passwords_in_range(_range):
     """
     >>> list(passwords_in_range(("0", "5")))
@@ -83,6 +67,16 @@ def is_password_valid(password, _range=None):
     False
     >>> is_password_valid('123789')
     False
+    >>> is_password_valid('112233')
+    True
+    >>> is_password_valid('123444')
+    True
+    >>> is_password_valid('111122')
+    True
+    >>> is_password_valid('555558')
+    True
+    >>> is_password_valid('555588')
+    True
     >>> is_password_valid('111111', ('128392', '643281'))
     False
     >>> is_password_valid('111111', ('000000', '643281'))
@@ -107,6 +101,22 @@ def is_password_valid(password, _range=None):
             return False
 
     return True
+
+
+def count_valid_passwords(_range, is_password_valid_func=is_password_valid):
+    """
+    >>> count_valid_passwords(map(password_from_number, (100000, 50000)))
+    0
+    >>> count_valid_passwords(map(password_from_number, (111111, 111111)))
+    1
+    >>> count_valid_passwords(map(password_from_number, (123455, 123456)))
+    1
+    """
+    return sum(
+        1
+        for number in passwords_in_range(_range)
+        if is_password_valid_func(password_from_number(number))
+    )
 
 
 if __name__ == '__main__':
