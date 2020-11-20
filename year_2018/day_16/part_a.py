@@ -9,8 +9,8 @@ from utils import get_current_directory
 
 def solve(_input=None):
     """
-    >>> solve() > 497
-    True
+    >>> solve()
+    636
     """
     if _input is None:
         _input = get_current_directory(__file__)\
@@ -89,6 +89,16 @@ Sample(before=(2, 0, 3, 0), instruction=(13, 0, 3, 1), after=(2, 1, 3, 0))]
             if len(sample.get_instruction_candidates()) >= 3
         )
 
+    def get_sample_candidates_counts(self):
+        import itertools
+        return {
+            candidates_counts: len(list(values))
+            for candidates_counts, values in itertools.groupby(sorted(
+                len(sample.get_instruction_candidates())
+                for sample in self.samples
+            ))
+        }
+
 
 class Sample(namedtuple("Sample", ("before", "instruction", "after"))):
     re_sample = re.compile((
@@ -147,11 +157,16 @@ class Instruction:
     instruction_classes = {}
 
     @classmethod
-    def register(cls, instruction_class):
+    def register(cls, instruction_class, override=False):
         if instruction_class.name is NotImplemented:
             raise Exception(
                 f"Instruction class {instruction_class.__name__} did not set "
                 f"name")
+        if instruction_class.name in cls.instruction_classes and not override:
+            raise Exception(
+                f"Tried to implicitly override '{instruction_class.name}' "
+                f"with {instruction_class.__name__} - previous was "
+                f"{cls.instruction_classes[instruction_class.name].__name__}")
         cls.instruction_classes[instruction_class.name] = instruction_class
         return instruction_class
 
@@ -170,13 +185,19 @@ class Instruction:
 
     def get_value(self, op, op_type, registers):
         if op_type == self.OP_TYPE_IMMEDIATE:
-            return op
+            value = op
+            if not isinstance(value, int):
+                raise Exception(f"Only integers are allowed, not '{value}'")
+            return value
         elif op_type == self.OP_TYPE_REGISTER:
             if not (0 <= op < len(registers)):
                 raise InstructionException(
                     f"Requested non existing register {op}: only "
                     f"{len(registers)} exist")
-            return registers[op]
+            value = registers[op]
+            if not isinstance(value, int):
+                raise Exception(f"Only integers are allowed, not '{value}'")
+            return value
         elif op_type == self.OP_TYPE_NONE:
             return None
         else:
@@ -187,6 +208,8 @@ class Instruction:
             raise InstructionException(
                 f"Requested non existing register {target}: only "
                 f"{len(registers)} exist")
+        if not isinstance(value, int):
+            raise Exception(f"Only integers are allowed, not '{value}'")
         new_registers = list(registers)
         new_registers[target] = value
         return tuple(new_registers)
@@ -310,8 +333,14 @@ class BitwiseOrInstruction(ThreeOperandsInstruction):
 @Instruction.register
 class BOrI(BitwiseOrInstruction):
     """
-    >>> BOrI(0, 5, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 15)
+    >>> BOrI(0, 5, 3).step((10, None, None, None))
+    (10, None, None, 15)
+    >>> BOrI(0, 10, 3).step((10, None, None, None))
+    (10, None, None, 10)
+    >>> BOrI(0, 0, 3).step((10, None, None, None))
+    (10, None, None, 10)
+    >>> BOrI(0, 9, 3).step((10, None, None, None))
+    (10, None, None, 11)
     """
     name = 'bori'
     op_type_b = Instruction.OP_TYPE_IMMEDIATE
@@ -320,8 +349,14 @@ class BOrI(BitwiseOrInstruction):
 @Instruction.register
 class BOrR(BitwiseOrInstruction):
     """
-    >>> BOrR(0, 2, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 14)
+    >>> BOrR(0, 2, 3).step((10, None, 5, None))
+    (10, None, 5, 15)
+    >>> BOrR(0, 2, 3).step((10, None, 10, None))
+    (10, None, 10, 10)
+    >>> BOrR(0, 2, 3).step((10, None, 0, None))
+    (10, None, 0, 10)
+    >>> BOrR(0, 2, 3).step((10, None, 9, None))
+    (10, None, 9, 11)
     """
     name = 'borr'
     op_type_b = Instruction.OP_TYPE_REGISTER
@@ -337,8 +372,12 @@ class AssignmentInstruction(ThreeOperandsInstruction):
 @Instruction.register
 class SetI(AssignmentInstruction):
     """
-    >>> SetI(0, 5, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 0)
+    >>> SetI(0, None, 3).step((None, None, None, None))
+    (None, None, None, 0)
+    >>> SetI(10, None, 3).step((None, None, None, None))
+    (None, None, None, 10)
+    >>> SetI(33, None, 3).step((None, None, None, None))
+    (None, None, None, 33)
     """
     name = 'seti'
     op_type_a = Instruction.OP_TYPE_IMMEDIATE
@@ -347,8 +386,12 @@ class SetI(AssignmentInstruction):
 @Instruction.register
 class SetR(AssignmentInstruction):
     """
-    >>> SetR(0, 2, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 10)
+    >>> SetR(0, None, 3).step((0, None, None, None))
+    (0, None, None, 0)
+    >>> SetR(0, None, 3).step((10, None, None, None))
+    (10, None, None, 10)
+    >>> SetR(0, None, 3).step((33, None, None, None))
+    (33, None, None, 33)
     """
     name = 'setr'
     op_type_a = Instruction.OP_TYPE_REGISTER
@@ -365,8 +408,12 @@ class GreaterThanInstruction(ThreeOperandsInstruction):
 @Instruction.register
 class GTIR(GreaterThanInstruction):
     """
-    >>> GTIR(0, 2, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 0)
+    >>> GTIR(0, 0, 3).step((10, None, None, None))
+    (10, None, None, 0)
+    >>> GTIR(10, 0, 3).step((10, None, None, None))
+    (10, None, None, 0)
+    >>> GTIR(20, 0, 3).step((10, None, None, None))
+    (10, None, None, 1)
     """
     name = 'gtir'
     op_type_a = Instruction.OP_TYPE_IMMEDIATE
@@ -376,10 +423,14 @@ class GTIR(GreaterThanInstruction):
 @Instruction.register
 class GTRI(GreaterThanInstruction):
     """
-    >>> GTRI(0, 5, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 1)
+    >>> GTRI(0, 0, 3).step((10, None, None, None))
+    (10, None, None, 1)
+    >>> GTRI(0, 10, 3).step((10, None, None, None))
+    (10, None, None, 0)
+    >>> GTRI(0, 20, 3).step((10, None, None, None))
+    (10, None, None, 0)
     """
-    name = 'gtrr'
+    name = 'gtri'
     op_type_a = Instruction.OP_TYPE_REGISTER
     op_type_b = Instruction.OP_TYPE_IMMEDIATE
 
@@ -387,8 +438,12 @@ class GTRI(GreaterThanInstruction):
 @Instruction.register
 class GTRR(GreaterThanInstruction):
     """
-    >>> GTRR(0, 2, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 0)
+    >>> GTRR(0, 1, 3).step((10, 0, None, None))
+    (10, 0, None, 1)
+    >>> GTRR(0, 1, 3).step((10, 10, None, None))
+    (10, 10, None, 0)
+    >>> GTRR(0, 1, 3).step((10, 20, None, None))
+    (10, 20, None, 0)
     """
     name = 'gtrr'
     op_type_a = Instruction.OP_TYPE_REGISTER
@@ -406,8 +461,12 @@ class EqualToInstruction(ThreeOperandsInstruction):
 @Instruction.register
 class EqIR(EqualToInstruction):
     """
-    >>> EqIR(0, 2, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 0)
+    >>> EqIR(0, 0, 3).step((10, None, None, None))
+    (10, None, None, 0)
+    >>> EqIR(10, 0, 3).step((10, None, None, None))
+    (10, None, None, 1)
+    >>> EqIR(20, 0, 3).step((10, None, None, None))
+    (10, None, None, 0)
     """
     name = 'eqir'
     op_type_a = Instruction.OP_TYPE_IMMEDIATE
@@ -417,8 +476,12 @@ class EqIR(EqualToInstruction):
 @Instruction.register
 class EqRI(EqualToInstruction):
     """
-    >>> EqRI(0, 5, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 0)
+    >>> EqRI(0, 0, 3).step((10, None, None, None))
+    (10, None, None, 0)
+    >>> EqRI(0, 10, 3).step((10, None, None, None))
+    (10, None, None, 1)
+    >>> EqRI(0, 20, 3).step((10, None, None, None))
+    (10, None, None, 0)
     """
     name = 'eqri'
     op_type_a = Instruction.OP_TYPE_REGISTER
@@ -428,10 +491,14 @@ class EqRI(EqualToInstruction):
 @Instruction.register
 class EqRR(EqualToInstruction):
     """
-    >>> EqRR(0, 2, 3).step((10, 11, 12, 13))
-    (10, 11, 12, 0)
+    >>> EqRR(0, 1, 3).step((10, 0, None, None))
+    (10, 0, None, 0)
+    >>> EqRR(0, 1, 3).step((10, 10, None, None))
+    (10, 10, None, 1)
+    >>> EqRR(0, 1, 3).step((10, 20, None, None))
+    (10, 20, None, 0)
     """
-    name = 'gtrr'
+    name = 'eqrr'
     op_type_a = Instruction.OP_TYPE_REGISTER
     op_type_b = Instruction.OP_TYPE_REGISTER
 
