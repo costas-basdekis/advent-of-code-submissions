@@ -16,6 +16,10 @@ def solve(_input=None):
         _input = get_current_directory(__file__)\
             .joinpath("part_a_input.txt")\
             .read_text()
+    return run_network(_input, manage_output_first_to_255)
+
+
+def run_network(_input, manage_output_func):
     computers = [
         run_interactive_program(_input, endless=True)
         for _ in range(50)
@@ -25,9 +29,9 @@ def solve(_input=None):
 
     for address, computer in enumerate(computers):
         _, first_output = computer.send(None)
-        manage_output(address, first_output, queues)
+        manage_output_func(address, first_output, queues)
         _, second_output = computer.send(address)
-        manage_output(address, second_output, queues)
+        manage_output_func(address, second_output, queues)
 
     finished, result = False, None
     while not finished:
@@ -38,7 +42,8 @@ def solve(_input=None):
             else:
                 next_input = -1
             _, computer_output = computer.send(next_input)
-            finished, result = manage_output(address, computer_output, queues)
+            finished, result = manage_output_func(
+                address, computer_output, queues)
             if finished:
                 break
 
@@ -48,7 +53,7 @@ def solve(_input=None):
     return result
 
 
-def manage_output(from_address, output, queues):
+def manage_output_first_to_255(from_address, output, queues):
     if not output:
         return False, None
     # print(from_address, output)
