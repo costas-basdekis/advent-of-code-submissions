@@ -14,7 +14,7 @@ summaries below.
 
 | Total | 2020 | 2019 | 2018 | 2017 | 2016 |
 | --- | --- | --- | --- | --- | --- |
-| 246 :star: | 50 :star: :star: | 47 :star: | 50 :star: :star: | 50 :star: :star: | 49 :star: |
+| 247 :star: | 50 :star: :star: | 47 :star: | 50 :star: :star: | 50 :star: :star: | 50 :star: :star: |
 
 [//]: # (event-summary-end)
 
@@ -29,7 +29,7 @@ summaries below.
 |       | 2020                                                 | 2019                                                             | 2018                                                 | 2017                                                 | 2016                                                 |
 |  ---: | :---:                                                | :---:                                                            | :---:                                                | :---:                                                | :---:                                                |
 |       | [Code][co-20]    &             [Challenges][ch-20]   | [Code][co-19]    &                         [Challenges][ch-19]   | [Code][co-18]    &             [Challenges][ch-18]   | [Code][co-17]    &             [Challenges][ch-17]   | [Code][co-16]    &             [Challenges][ch-16]   |
-|       | 50 :star: :star:                                     | 47 :star: / 2 :x: / 1 :grey_exclamation:                         | 50 :star: :star:                                     | 50 :star: :star:                                     | 49 :star: / 0 :x: / 0 :grey_exclamation:             |
+|       | 50 :star: :star:                                     | 47 :star: / 2 :x: / 1 :grey_exclamation:                         | 50 :star: :star:                                     | 50 :star: :star:                                     | 50 :star: :star:                                     |
 |  1    | [Code][co-20-01] :star: :star: [Challenge][ch-20-01] | [Code][co-19-01] :star: :star:             [Challenge][ch-19-01] | [Code][co-18-01] :star: :star: [Challenge][ch-18-01] | [Code][co-17-01] :star: :star: [Challenge][ch-17-01] | [Code][co-16-01] :star: :star: [Challenge][ch-16-01] |
 |  2    | [Code][co-20-02] :star: :star: [Challenge][ch-20-02] | [Code][co-19-02] :star: :star:             [Challenge][ch-19-02] | [Code][co-18-02] :star: :star: [Challenge][ch-18-02] | [Code][co-17-02] :star: :star: [Challenge][ch-17-02] | [Code][co-16-02] :star: :star: [Challenge][ch-16-02] |
 |  3    | [Code][co-20-03] :star: :star: [Challenge][ch-20-03] | [Code][co-19-03] :star: :star:             [Challenge][ch-19-03] | [Code][co-18-03] :star: :star: [Challenge][ch-18-03] | [Code][co-17-03] :star: :star: [Challenge][ch-17-03] | [Code][co-16-03] :star: :star: [Challenge][ch-16-03] |
@@ -54,7 +54,7 @@ summaries below.
 | 22    | [Code][co-20-22] :star: :star: [Challenge][ch-20-22] | [Code][co-19-22] :star: :x:                [Challenge][ch-19-22] | [Code][co-18-22] :star: :star: [Challenge][ch-18-22] | [Code][co-17-22] :star: :star: [Challenge][ch-17-22] | [Code][co-16-22] :star: :star: [Challenge][ch-16-22] |
 | 23    | [Code][co-20-23] :star: :star: [Challenge][ch-20-23] | [Code][co-19-23] :star: :star:             [Challenge][ch-19-23] | [Code][co-18-23] :star: :star: [Challenge][ch-18-23] | [Code][co-17-23] :star: :star: [Challenge][ch-17-23] | [Code][co-16-23] :star: :star: [Challenge][ch-16-23] |
 | 24    | [Code][co-20-24] :star: :star: [Challenge][ch-20-24] | [Code][co-19-24] :star: :star:             [Challenge][ch-19-24] | [Code][co-18-24] :star: :star: [Challenge][ch-18-24] | [Code][co-17-24] :star: :star: [Challenge][ch-17-24] | [Code][co-16-24] :star: :star: [Challenge][ch-16-24] |
-| 25    | [Code][co-20-25] :star: :star: [Challenge][ch-20-25] | [Code][co-19-25] :star: :grey_exclamation: [Challenge][ch-19-25] | [Code][co-18-25] :star: :star: [Challenge][ch-18-25] | [Code][co-17-25] :star: :star: [Challenge][ch-17-25] | [Code][co-16-25] :star:        [Challenge][ch-16-25] |
+| 25    | [Code][co-20-25] :star: :star: [Challenge][ch-20-25] | [Code][co-19-25] :star: :grey_exclamation: [Challenge][ch-19-25] | [Code][co-18-25] :star: :star: [Challenge][ch-18-25] | [Code][co-17-25] :star: :star: [Challenge][ch-17-25] | [Code][co-16-25] :star: :star: [Challenge][ch-16-25] |
 
 [ch-20]: https://adventofcode.com/2020
 [co-20]: year_2020
