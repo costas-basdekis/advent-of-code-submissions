@@ -6,6 +6,7 @@ __all__ = [
     'in_groups',
     'get_fixed_length_substrings',
     'all_possible_combinations',
+    'all_possible_permutations',
     'get_windows',
 ]
 
@@ -105,6 +106,23 @@ def all_possible_combinations(items: List[T]) -> Iterable[Tuple[T, ...]]:
         combination
         for length in range(len(items) + 1)
         for combination in itertools.combinations(items, length)
+    )
+
+
+def all_possible_permutations(items: List[T]) -> Iterable[Tuple[T, ...]]:
+    """
+    >>> sorted(all_possible_permutations([]))
+    [()]
+    >>> sorted(all_possible_permutations([1]))
+    [(), (1,)]
+    >>> sorted(all_possible_permutations([1, 2, 3]))
+    [(), (1,), (1, 2), (1, 2, 3), (1, 3), (1, 3, 2), (2,), (2, 1), (2, 1, 3),
+        (2, 3), (2, 3, 1), (3,), (3, 1), (3, 1, 2), (3, 2), (3, 2, 1)]
+    """
+    return (
+        permutation
+        for combination in all_possible_combinations(items)
+        for permutation in itertools.permutations(combination)
     )
 
 

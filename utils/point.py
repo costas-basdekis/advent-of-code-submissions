@@ -358,13 +358,25 @@ class BasePoint(metaclass=BasePointMeta):
 class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
     coordinates_names = ("x", "y")
 
+    def __new__(cls, *args, **kwargs):
+        # noinspection PyTypeChecker
+        return super().__new__(cls, *args, **kwargs)
+
 
 class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
     coordinates_names = ("x", "y", "z")
 
+    def __new__(cls, *args, **kwargs):
+        # noinspection PyTypeChecker
+        return super().__new__(cls, *args, **kwargs)
+
 
 class Point4D(namedtuple("Point4D", ("x", "y", "z", "t")), BasePoint):
     coordinates_names = ("x", "y", "z", "t")
+
+    def __new__(cls, *args, **kwargs):
+        # noinspection PyTypeChecker
+        return super().__new__(cls, *args, **kwargs)
 
 
 @dataclass(order=True, frozen=True)
