@@ -62,11 +62,14 @@ class Message:
             return self
 
         next_position = self.position + self.instructions[self.position]
-        self.instructions[self.position] += 1
+        self.update_instruction()
         self.position = next_position
         self.steps += 1
 
         return self
+
+    def update_instruction(self):
+        self.instructions[self.position] += 1
 
     def has_finished(self):
         """
