@@ -5,6 +5,7 @@ __all__ = [
     'get_non_co_primes',
     'solve_linear_congruence_system',
     'get_bezout_coefficients',
+    'factorise',
 ]
 
 import utils
@@ -80,3 +81,30 @@ def get_bezout_coefficients(a: int, b: int) -> Tuple[int, int]:
         old_t, t = t, old_t - quotient * t
 
     return old_s, old_t
+
+
+def factorise(number: int) -> Iterable[int]:
+    """
+    >>> sorted(factorise(1))
+    [1]
+    >>> sorted(factorise(2))
+    [1, 2]
+    >>> sorted(factorise(5))
+    [1, 5]
+    >>> sorted(factorise(9))
+    [1, 3, 9]
+    >>> sorted(factorise(10))
+    [1, 2, 5, 10]
+    >>> sorted(factorise(100))
+    [1, 2, 4, 5, 10, 20, 25, 50, 100]
+    """
+    root_or_less = int(math.sqrt(number))
+    for divisor in range(1, root_or_less):
+        if number % divisor == 0:
+            yield divisor
+            yield number // divisor
+
+    if number % root_or_less == 0:
+        yield root_or_less
+        if root_or_less * root_or_less != number:
+            yield number // root_or_less
