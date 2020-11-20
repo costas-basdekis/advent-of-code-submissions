@@ -41,7 +41,8 @@ def register_op_handler(op_code, override=False):
 
 # noinspection PyDefaultArgument
 def get_program_result_and_output(program_text, input_stream,
-                                  substitutions=None, op_handlers=OP_HANDLERS):
+                                  substitutions=None, op_handlers=OP_HANDLERS,
+                                  error=None):
     if substitutions:
         program = parse_program(program_text)
         for position, substitution in substitutions.items():
@@ -49,13 +50,14 @@ def get_program_result_and_output(program_text, input_stream,
         program_text = serialise_program(program)
     result_text, output_stream = \
         run_program_extended(
-            program_text, input_stream, op_handlers=op_handlers)
+            program_text, input_stream, op_handlers=op_handlers, error=error)
     result = parse_program(result_text)
     return result[0], output_stream
 
 
 # noinspection PyDefaultArgument
-def run_program_extended(program_text, input_stream, op_handlers=OP_HANDLERS):
+def run_program_extended(program_text, input_stream, op_handlers=OP_HANDLERS,
+                         error=None):
     """
     >>> run_program_extended("1,9,10,3,2,3,11,0,99,30,40,50", [])
     ('3500,9,10,70,2,3,11,0,99,30,40,50', [])
@@ -82,9 +84,14 @@ def run_program_extended(program_text, input_stream, op_handlers=OP_HANDLERS):
     >>> run_program_extended("3,2,255,7,8,9,99,4,5,255", [2])
     ('3,2,2,7,8,9,99,4,5,20', [])
     """
-    program = parse_program(program_text)
-    program_counter = 0
-    input_stream_counter = 0
+    if error:
+        program = error.program
+        program_counter = error.program_counter
+        input_stream_counter = error.input_stream_counter
+    else:
+        program = parse_program(program_text)
+        program_counter = 0
+        input_stream_counter = 0
     output_stream = []
     while True:
         parameter_modes, op_code = break_down_op_code(program[program_counter])
@@ -179,6 +186,17 @@ def handle_multiplication(parameter_modes, program, program_counter,
     return program_counter, input_stream_counter
 
 
+class InsufficientInputError(Exception):
+    def __init__(self, program, program_counter, input_stream,
+                 input_stream_counter, output_stream):
+        super().__init__("Insufficient input")
+        self.program = program
+        self.program_counter = program_counter
+        self.input_stream = input_stream
+        self.input_stream_counter = input_stream_counter
+        self.output_stream = output_stream
+
+
 @register_op_handler(3)
 def handle_input(parameter_modes, program, program_counter, input_stream,
                  input_stream_counter, output_stream):
@@ -186,10 +204,16 @@ def handle_input(parameter_modes, program, program_counter, input_stream,
     >>> _program = [3, 0]; _program, handle_input("", _program, 0, [1], 0, [])
     ([1, 0], (2, 1))
     """
+    error = InsufficientInputError(
+        program, program_counter, input_stream, input_stream_counter,
+        output_stream)
     program_counter += 1
     (pointer_1, ), _, program_counter = get_values(
         1, parameter_modes, program, program_counter,
         force_parameter_modes={0: MODE_POSITION})
+
+    if input_stream_counter >= len(input_stream):
+        raise error
 
     program[pointer_1] = input_stream[input_stream_counter]
     input_stream_counter += 1

@@ -42,7 +42,7 @@ def register_op_handler_extended(op_code, override=False):
 
 # noinspection PyDefaultArgument
 def get_program_result_and_output_extended(
-        program_text, input_stream, substitutions=None):
+        program_text, input_stream, substitutions=None, error=None):
     """
     >>> def run_program_extended_doubly(*args, **kwargs):
     ...     return run_program_extended(
@@ -145,7 +145,7 @@ def get_program_result_and_output_extended(
     """
     return get_program_result_and_output(
         program_text, input_stream, substitutions=substitutions,
-        op_handlers=OP_HANDLERS_EXTENDED)
+        op_handlers=OP_HANDLERS_EXTENDED, error=error)
 
 
 @register_op_handler_extended(5)
