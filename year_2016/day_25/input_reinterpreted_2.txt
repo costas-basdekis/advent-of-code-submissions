@@ -1,0 +1,26 @@
+a, b, c, d = x, 0, 4, x
+
+ 02 while c != 0:
+        b = 643  # cpy 643 b
+ 03     while b != 0:
+            d += 1  # inc d
+ 04         b -= 1 # dec b
+ 06     c -= 1  # dec c
+    while True:
+        a = d  # cpy d a
+ 09     while a != 0:
+            pass  # jnz 0 0
+ 10         b = a  # cpy a b
+ 11         a = 0  # cpy 0 a
+ 12         while b != 0:
+                c = 2  # cpy 2 c
+                while b != 0 and c != 0:
+ 15                 b -= 1  # dec b
+ 16                 c -= 1  # dec c
+ 18             a += 1  # inc a
+ 20         b = 2  # cpy 2 b
+ 21         while c != 0:
+ 23             b -= 1  # dec b
+ 24             c -= 1  # dec c
+ 26         pass  # jnz 0 0
+ 27         print(b)  # out b

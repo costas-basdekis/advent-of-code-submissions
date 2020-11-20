@@ -1,0 +1,21 @@
+a, b, c, d = x, 0, 4, x
+
+ 02 while c != 0:
+        b = 643  # cpy 643 b
+        d += b
+        b = 0
+ 06     c -= 1  # dec c
+    while True:
+        a = d  # cpy d a
+ 09     while a != 0:
+ 10         b = a  # cpy a b
+ 11         a = 0  # cpy 0 a
+ 12         while b != 0:
+                c = 2  # cpy 2 c
+                b -= min(b, c)
+                c -= min(b, c)
+ 18             a += 1  # inc a
+ 20         b = 2  # cpy 2 b
+            b -= c
+            c = 0
+ 27         print(b)  # out b

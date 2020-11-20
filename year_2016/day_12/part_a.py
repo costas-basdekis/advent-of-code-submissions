@@ -2,7 +2,7 @@
 import re
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Generic, Type
+from typing import List, Optional, Dict, Generic, Type, Iterable
 
 from aox.utils import Timer
 
@@ -185,7 +185,8 @@ class InstructionSet(Generic[InstructionT]):
         return cls(list(map(
             instruction_class.parse, instructions_text.splitlines())))
 
-    def apply(self, state: Optional[State] = None, debug: bool = False) -> State:
+    def apply(self, state: Optional[State] = None, debug: bool = False,
+              ) -> State:
         """
         >>> def check(instructions_text, state_values=None, program_counter=0):
         ...     _state = InstructionSet\\
@@ -208,6 +209,13 @@ class InstructionSet(Generic[InstructionT]):
         ... )
         ({'a': 42}, 6)
         """
+        for state in self.apply_stream(state, debug=debug):
+            pass
+
+        return state
+
+    def apply_stream(self, state: Optional[State] = None, debug: bool = False,
+                     ) -> Iterable[State]:
         if state is None:
             state = State()
         if debug:
@@ -224,6 +232,7 @@ class InstructionSet(Generic[InstructionT]):
                         f"{timer.get_pretty_current_duration(0)}, "
                         f"values: {state.values}, pc: {state.program_counter}")
             step += 1
+            yield state
 
         return state
 

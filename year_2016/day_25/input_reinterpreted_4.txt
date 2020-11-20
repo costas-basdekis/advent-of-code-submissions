@@ -1,0 +1,13 @@
+a, b, c, d = x, 0, 4, x
+
+    d = x + 2572
+    while True:
+        a = d
+ 09     while a != 0:
+ 10         b = a  # cpy a b
+ 11         a = 0  # cpy 0 a
+ 12         while b != 0:
+                b -= min(b, 2)
+                c = 2 - min(b, 2)
+ 18             a += 1  # inc a
+ 27         print(2 - c)  # out b

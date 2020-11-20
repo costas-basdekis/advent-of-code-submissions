@@ -13,6 +13,8 @@ class PolymorphicParser:
     name: str = NotImplemented
 
     sub_classes: Dict[str, Type['PolymorphicParser']]
+    is_root: bool
+    parse_root: Type['PolymorphicParser']
 
     def __init_subclass__(cls, **kwargs):
         """
@@ -37,7 +39,9 @@ class PolymorphicParser:
         >>> C1.sub_classes is A2.sub_classes
         True
         """
-        if kwargs.get('root', False):
+        cls.is_root = kwargs.get('root', False)
+        cls.parse_root = kwargs.get('parse_root', cls)
+        if cls.is_root:
             if not hasattr(cls, 'sub_classes'):
                 cls.sub_classes = {}
             else:
@@ -123,9 +127,21 @@ class PolymorphicParser:
         ...         return cls()
         >>> A.parse('b1')
         <B1>
+        >>> B2.parse('b1')
+        Traceback (most recent call last):
+        ...
+        utils...CouldNotParseException: Could not parse ...
+        >>> class A2(A, ABC, root=True): pass
+        >>> A2.parse('b1')
+        Traceback (most recent call last):
+        ...
+        utils...CouldNotParseException: Could not parse ...
+        >>> class A3(A, ABC, root=True, parse_root=A): pass
+        >>> A3.parse('b1')
+        <B1>
         """
         for instruction_class in cls.sub_classes.values():
-            if not issubclass(instruction_class, cls):
+            if not issubclass(instruction_class, cls.parse_root):
                 continue
             instruction = instruction_class.try_parse(text)
             if instruction:
