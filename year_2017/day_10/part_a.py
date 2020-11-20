@@ -68,8 +68,10 @@ class Knot:
         else:
             elements = self.elements[start:] + self.elements[:end]
             reversed_elements = list(reversed(elements))
-            self.elements[start:] = reversed_elements[:-end]
-            self.elements[:end] = reversed_elements[-end:]
+            self.elements[start:] = \
+                reversed_elements[:len(self.elements[start:])]
+            self.elements[:end] = \
+                reversed_elements[len(self.elements[start:]):]
 
         self.position = (end + self.skip_size) % len(self.elements)
         self.skip_size += 1
