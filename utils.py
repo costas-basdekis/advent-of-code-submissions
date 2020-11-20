@@ -9,6 +9,7 @@ import sys
 import timeit
 from collections import namedtuple
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple, List
 
@@ -1222,6 +1223,107 @@ class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
 
 class Point4D(namedtuple("Point4D", ("x", "y", "z", "t")), BasePoint):
     coordinates_names = ("x", "y", "z", "t")
+
+
+@dataclass(order=True, frozen=True)
+class PointHex:
+    x: int
+    y: int
+
+    E = 'e'
+    NE = 'ne'
+    SE = 'se'
+    W = 'w'
+    NW = 'nw'
+    SW = 'sw'
+
+    DIRECTIONS = [E, NE, SE, W, NW, SW]
+
+    DIRECTION_OFFSETS = {
+        0: {
+            E: (1, 0),
+            SE: (0, 1),
+            NE: (0, -1),
+            W: (-1, 0),
+            NW: (-1, -1),
+            SW: (-1, 1),
+        },
+        1: {
+            E: (1, 0),
+            SE: (1, 1),
+            NE: (1, -1),
+            W: (-1, 0),
+            NW: (0, -1),
+            SW: (0, 1),
+        },
+    }
+
+    def __iter__(self):
+        """
+        >>> tuple(PointHex(2, 5))
+        (2, 5)
+        """
+        return iter((self.x, self.y))
+
+    def move_many(self, directions):
+        """
+        >>> PointHex(0, 0).move_many([PointHex.NE, PointHex.NE, PointHex.NE])
+        PointHex(x=1, y=-3)
+        >>> PointHex(0, 0).move_many([PointHex.NE] * 10)
+        PointHex(x=5, y=-10)
+        >>> PointHex(0, 0).move_many([PointHex.NW, PointHex.NW, PointHex.NW])
+        PointHex(x=-2, y=-3)
+        >>> PointHex(0, 0).move_many([PointHex.NW] * 10)
+        PointHex(x=-5, y=-10)
+        >>> PointHex(0, 0).move_many([PointHex.NE, PointHex.W, PointHex.SE])
+        PointHex(x=0, y=0)
+        """
+        x, y = self
+        for direction in directions:
+            d_x, d_y = self.DIRECTION_OFFSETS[y % 2][direction]
+            x += d_x
+            y += d_y
+
+        cls = type(self)
+        return cls(x, y)
+
+    def move(self, direction):
+        """
+        >>> PointHex(0, 0).move(PointHex.E)
+        PointHex(x=1, y=0)
+        >>> PointHex(0, 0).move(PointHex.W)
+        PointHex(x=-1, y=0)
+        >>> PointHex(0, 0).move(PointHex.NE)
+        PointHex(x=0, y=-1)
+        >>> PointHex(0, -1).move(PointHex.NE)
+        PointHex(x=1, y=-2)
+        >>> PointHex(1, -2).move(PointHex.NE)
+        PointHex(x=1, y=-3)
+        """
+        return self.move_many((direction,))
+
+    def step_distance(self, other):
+        """
+        >>> PointHex(0, 0).step_distance(PointHex(0, 0).move_many(
+        ...     [PointHex.NE] * 10))
+        10
+        >>> PointHex(0, 0).step_distance(PointHex(0, 0).move_many(
+        ...     [PointHex.NW] * 10))
+        10
+        >>> PointHex(0, 0).step_distance(PointHex(0, 0).move_many(
+        ...     [PointHex.NW, PointHex.NE] * 5))
+        10
+        >>> PointHex(0, 0).step_distance(PointHex(0, 0).move_many(
+        ...     [PointHex.W] * 10))
+        10
+        >>> PointHex(0, 0).step_distance(PointHex(0, 0).move_many(
+        ...     [PointHex.W] * 5 + [PointHex.NW] * 5))
+        10
+        """
+        d_x = other.x - self.x
+        d_y = other.y - self.y
+
+        return abs(abs(d_x) - min(abs(d_x), abs(d_y // 2))) + abs(d_y)
 
 
 helper = Helper()
