@@ -34,6 +34,8 @@ def get_fuel_recursive(weight):
 
 
 if __name__ == '__main__':
-    doctest.testmod()
-    print("Tests passed")
+    if doctest.testmod().failed:
+        print("Tests failed")
+    else:
+        print("Tests passed")
     print("Solution:", solve())

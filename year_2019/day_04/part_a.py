@@ -120,6 +120,8 @@ def count_valid_passwords(_range, is_password_valid_func=is_password_valid):
 
 
 if __name__ == '__main__':
-    doctest.testmod()
-    print("Tests passed")
+    if doctest.testmod().failed:
+        print("Tests failed")
+    else:
+        print("Tests passed")
     print("Solution:", solve())
