@@ -23,7 +23,7 @@ def solve(_input=None):
         walkways_neighbours, free_portals['AA'], free_portals['ZZ'])
 
 
-def find_path_length(walkways_neighbours, start, end):
+def find_path_length(walkways_neighbours, start, end, include_visits=False):
     """
     >>> map_text_a = (
     ...     "         A           \\n"
@@ -101,17 +101,25 @@ def find_path_length(walkways_neighbours, start, end):
     58
     """
     visited = {start}
+    if include_visits:
+        visits = []
     stack = [(start, 0)]
     while stack:
         position, distance = stack.pop(0)
+        if include_visits:
+            visits.append((position, distance))
         next_distance = distance + 1
         next_positions = set(walkways_neighbours[position]) - visited
         if end in next_positions:
+            if include_visits:
+                return next_distance, visits
             return next_distance
         visited |= next_positions
         for next_position in next_positions:
             stack.append((next_position, next_distance))
 
+    if include_visits:
+        return visits
     raise Exception("Could not find end")
 
 
