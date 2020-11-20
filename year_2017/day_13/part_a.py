@@ -108,13 +108,28 @@ class Firewall:
             severity = 0
 
         for layer, _range in self.layers.items():
-            if _range <= 2:
-                layer_length = _range
-            else:
-                layer_length = _range * 2 - 2
+            layer_length = self.get_scanner_length(_range)
             self.scanners[layer] = (self.scanners[layer] + 1) % layer_length
 
         return self.has_finished(), severity
+
+    def get_scanner_length(self, _range):
+        """
+        >>> Firewall.from_firewall_text('').get_scanner_length(1)
+        1
+        >>> Firewall.from_firewall_text('').get_scanner_length(2)
+        2
+        >>> Firewall.from_firewall_text('').get_scanner_length(3)
+        4
+        >>> Firewall.from_firewall_text('').get_scanner_length(4)
+        6
+        >>> Firewall.from_firewall_text('').get_scanner_length(5)
+        8
+        """
+        if _range <= 2:
+            return _range
+        else:
+            return _range * 2 - 2
 
     def has_finished(self):
         return self.packet >= max(self.layers)
@@ -124,13 +139,36 @@ class Firewall:
             return None
 
         scanner = self.scanners[layer]
-        depth = self.layers[layer]
+        _range = self.layers[layer]
 
-        return self.get_scanner_position_for_scanner(scanner, depth)
+        return self.get_scanner_position_for_scanner(scanner, _range)
 
-    def get_scanner_position_for_scanner(self, scanner, depth):
-        if scanner >= depth:
-            scanner = scanner - depth + 1
+    def get_scanner_position_for_scanner(self, scanner, _range):
+        """
+        >>> Firewall.from_firewall_text('')\\
+        ...     .get_scanner_position_for_scanner(0, 4)
+        0
+        >>> Firewall.from_firewall_text('')\\
+        ...     .get_scanner_position_for_scanner(1, 4)
+        1
+        >>> Firewall.from_firewall_text('')\\
+        ...     .get_scanner_position_for_scanner(2, 4)
+        2
+        >>> Firewall.from_firewall_text('')\\
+        ...     .get_scanner_position_for_scanner(3, 4)
+        3
+        >>> Firewall.from_firewall_text('')\\
+        ...     .get_scanner_position_for_scanner(4, 4)
+        2
+        >>> Firewall.from_firewall_text('')\\
+        ...     .get_scanner_position_for_scanner(5, 4)
+        1
+        >>> Firewall.from_firewall_text('')\\
+        ...     .get_scanner_position_for_scanner(6, 4)
+        0
+        """
+        if scanner >= _range:
+            scanner = _range - 1 - (scanner - _range + 1)
 
         return scanner
 
