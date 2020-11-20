@@ -16,6 +16,8 @@ class Challenge(utils.BaseChallenge):
 
 
 class Game:
+    player_class = NotImplemented
+
     @classmethod
     def from_game_text(cls, game_text):
         """
@@ -26,7 +28,7 @@ class Game:
             Player(id=2, cards=(5, 8, 4, 7, 10))))
         """
         players_texts = game_text.split("\n\n")
-        players = tuple(map(Player.from_player_text, players_texts))
+        players = tuple(map(cls.player_class.from_player_text, players_texts))
         if len(players) != 2:
             raise Exception(
                 f"Exactly 2 players were expected, not {len(players)}")
@@ -67,11 +69,14 @@ class Game:
             player.draw_card()
             for player in self.players
         ]
-        winner_index = next_cards.index(max(next_cards))
+        winner_index = self.determine_step_winner_index(next_cards)
         winner = self.players[winner_index]
         winner.collect_cards(next_cards, winner_index)
 
         return self
+
+    def determine_step_winner_index(self, next_cards):
+        return next_cards.index(max(next_cards))
 
     def has_finished(self):
         """
@@ -181,6 +186,9 @@ class Player:
             index * card
             for index, card in enumerate(reversed(self.cards), 1)
         )
+
+
+Game.player_class = Player
 
 
 challenge = Challenge()
