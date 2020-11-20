@@ -7,7 +7,7 @@ leaderboards have submitted the challenges
 
 * 2020 4/4 :star: - [See Challenges](https://adventofcode.com/2020)
 * [2019](year_2019) 45/50 :star: - [See Challenges](https://adventofcode.com/2019)
-* [2018](year_2018) 1/1 :star: - [See Challenges](https://adventofcode.com/2018)
+* [2018](year_2018) 2/2 :star: - [See Challenges](https://adventofcode.com/2018)
 
 ## The submissions
 
@@ -94,5 +94,6 @@ leaderboards have submitted the challenges
     * [Part A](year_2019/day_25/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_25/part_b.py) :grey_exclamation:
 * [2018](year_2018) 1 :white_check_mark:  / 0 :x: /  0 :grey_exclamation: - [See Challenges](https://adventofcode.com/2018)
-  * [1](year_2018/day_01)  - [See Challenge](https://adventofcode.com/2018/day/1)
+  * [1](year_2018/day_01)  - [See Challenge](https://adventofcode.com/2018/day/1) :white_check_mark:
     * [Part A](year_2018/day_01/part_a.py) :white_check_mark:
+    * [Part B](year_2018/day_01/part_b.py) :white_check_mark:
