@@ -31,7 +31,7 @@ leaderboards have submitted the challenges
 | 16 | [Code](year_2020/day_16) :star: :star: [Challenge](https://adventofcode.com/2020/day/16) | [Code](year_2019/day_16) :star: :x: [Challenge](https://adventofcode.com/2019/day/16) |
 | 17 | [Code](year_2020/day_17) :star: :star: [Challenge](https://adventofcode.com/2020/day/17) | [Code](year_2019/day_17) :star: :star: [Challenge](https://adventofcode.com/2019/day/17) |
 | 18 | [Code](year_2020/day_18) :star: :star: [Challenge](https://adventofcode.com/2020/day/18) | [Code](year_2019/day_18) :star: :x: [Challenge](https://adventofcode.com/2019/day/18) |
-| 19 | | [Code](year_2019/day_19) :star: :star: [Challenge](https://adventofcode.com/2019/day/19) |
+| 19 | [Code](year_2020/day_19) :star: [Challenge](https://adventofcode.com/2020/day/19) | [Code](year_2019/day_19) :star: :star: [Challenge](https://adventofcode.com/2019/day/19) |
 | 20 | | [Code](year_2019/day_20) :star: :star: [Challenge](https://adventofcode.com/2019/day/20) |
 | 21 | | [Code](year_2019/day_21) :star: :star: [Challenge](https://adventofcode.com/2019/day/21) |
 | 22 | | [Code](year_2019/day_22) :x: :grey_exclamation: [Challenge](https://adventofcode.com/2019/day/22) |
