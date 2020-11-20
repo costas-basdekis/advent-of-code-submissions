@@ -70,14 +70,59 @@ class BaseChallenge:
         raise Exception(f"Challenge has not implemented play")
 
     def test(self):
-        failed = doctest.testmod(optionflags=self.optionflags).failed
-        if self.part_a_for_testing:
-            failed |= doctest.testmod(
-                self.part_a_for_testing, optionflags=self.optionflags).failed
+        failed = sum(
+            doctest.testmod(module, optionflags=self.optionflags).failed
+            for module in self.get_test_modules()
+        )
         if failed:
             print("Tests failed")
         else:
             print("Tests passed")
 
+    def get_test_modules(self):
+        modules = [
+            __import__(__name__),
+            None,
+        ]
+        if self.part_a_for_testing:
+            modules.append(self.part_a_for_testing)
+        return modules
+
     def run(self):
         print("Solution:", self.default_solve())
+
+
+class Helper:
+    MANHATTAN_OFFSETS = [
+        (-1, 0),
+        (1, 0),
+        (0, -1),
+        (0, 1),
+    ]
+
+    def get_manhattan_neighbours(self, position):
+        """
+        >>> sorted(Helper().get_manhattan_neighbours((0, 0)))
+        [(-1, 0), (0, -1), (0, 1), (1, 0)]
+        >>> sorted(Helper().get_manhattan_neighbours((-3, 5)))
+        [(-4, 5), (-3, 4), (-3, 6), (-2, 5)]
+        """
+        return [
+            self.add_points(position, offset)
+            for offset in self.MANHATTAN_OFFSETS
+        ]
+
+    def add_points(self, lhs, rhs):
+        """
+        >>> Helper().add_points((0, 0), (0, 0))
+        (0, 0)
+        >>> Helper().add_points((1, -4), (-2, 5))
+        (-1, 1)
+        """
+        l_x, l_y = lhs
+        r_x, r_y = rhs
+
+        return l_x + r_x, l_y + r_y
+
+
+helper = Helper()
