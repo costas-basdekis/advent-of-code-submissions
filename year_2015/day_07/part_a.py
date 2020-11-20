@@ -74,7 +74,7 @@ class RValue(Value, ABC):
 
 
 @Value.register
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class Wire(LValue, RValue):
     name = 'wire'
 
@@ -107,7 +107,7 @@ class Wire(LValue, RValue):
 
 
 @Value.register
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class Constant(LValue):
     name = 'constant'
 
@@ -232,7 +232,7 @@ class Connection(PolymorphicParser, ABC, root=True):
         raise NotImplementedError()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class UnaryConnection(Connection, ABC):
     source: LValue
     destination: RValue
@@ -303,7 +303,7 @@ class PassThrough(UnaryConnection):
         return value
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class BinaryConnection(Connection, ABC):
     lhs: LValue
     rhs: LValue
