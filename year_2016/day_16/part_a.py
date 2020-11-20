@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from aox.challenge import Debugger
 
-from utils import BaseChallenge, in_groups
+from utils import BaseChallenge
+from aox.utils import in_groups
 
 
 class Challenge(BaseChallenge):

@@ -62,10 +62,23 @@ class Machine:
         ... )
         Machine(substitutions={'H': ['HO', 'OH'], 'O': ['HH']})
         """
-        substitutions = map(
+        substitution_items = map(
             cls.parse_substitution, substitutions_text.splitlines())
+        return cls.from_substitution_items(substitution_items)
+
+    @classmethod
+    def from_substitution_items(
+            cls, substitution_items: Iterable[Tuple[str, str]]):
+        """
+        >>> Machine.from_substitution_items([
+        ...     ("H", "HO"),
+        ...     ("H", "OH"),
+        ...     ("O", "HH"),
+        ... ])
+        Machine(substitutions={'H': ['HO', 'OH'], 'O': ['HH']})
+        """
         return cls(helper.group_by(
-            substitutions, key=lambda pair: pair[0],
+            substitution_items, key=lambda pair: pair[0],
             value=lambda pair: pair[1]))
 
     @classmethod
@@ -122,7 +135,7 @@ class Machine:
                 return
             extra_prefix, suffix = parts
             yield f"{prefix}{extra_prefix}{result}{suffix}"
-            prefix = f"{prefix}{extra_prefix}{match[:1]}"
+            prefix = f"{prefix}{extra_prefix}{match}"
             remaining = start[len(prefix):]
 
 

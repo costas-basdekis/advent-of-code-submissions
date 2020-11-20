@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from utils import BaseChallenge, Cls, Self
-from utils.collections_utils import in_groups
+from aox.utils import in_groups
 from . import part_a
 
 
