@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Type
 
 import utils
 
@@ -15,17 +15,20 @@ class Challenge(utils.BaseChallenge):
 
 
 class PhraseSet:
+    phrase_class: Type['Phrase']
+
     @classmethod
     def from_phrases_text(cls, phrases_text):
         return cls(list(map(
-            Phrase.from_phrase_text, phrases_text.strip().splitlines())))
+            cls.phrase_class.from_phrase_text,
+            phrases_text.strip().splitlines())))
 
     def __init__(self, phrases):
         self.phrases = phrases
 
     def get_valid_count(self):
         return utils.helper.iterable_length(filter(
-            None, map(Phrase.is_valid, self.phrases)))
+            None, map(self.phrase_class.is_valid, self.phrases)))
 
 
 @dataclass
@@ -50,6 +53,9 @@ class Phrase:
         True
         """
         return len(self.words) == len(set(self.words))
+
+
+PhraseSet.phrase_class = Phrase
 
 
 challenge = Challenge()
