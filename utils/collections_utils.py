@@ -1,6 +1,12 @@
-from typing import Iterable, Tuple, TypeVar
+import itertools
+from typing import Iterable, Tuple, TypeVar, List
 
-__all__ = ['KeyedDefaultDict', 'in_groups', 'get_fixed_length_substrings']
+__all__ = [
+    'KeyedDefaultDict',
+    'in_groups',
+    'get_fixed_length_substrings',
+    'all_possible_combinations',
+]
 
 
 class KeyedDefaultDict(dict):
@@ -82,4 +88,20 @@ def get_fixed_length_substrings(text: str, length: int) -> Iterable[str]:
     return (
         text[start:start + length]
         for start in range(len(text) - length + 1)
+    )
+
+
+def all_possible_combinations(items: List[T]) -> Iterable[Tuple[T, ...]]:
+    """
+    >>> sorted(all_possible_combinations([]))
+    [()]
+    >>> sorted(all_possible_combinations([1]))
+    [(), (1,)]
+    >>> sorted(all_possible_combinations([1, 2, 3]))
+    [(), (1,), (1, 2), (1, 2, 3), (1, 3), (2,), (2, 3), (3,)]
+    """
+    return (
+        combination
+        for length in range(len(items) + 1)
+        for combination in itertools.combinations(items, length)
     )

@@ -47,7 +47,8 @@ class BuildingSolver(Generic[BuildingT]):
         """
         return len(self.solve(building, debug=debug))
 
-    def solve(self, building: BuildingT, debug: bool = False) -> List[BuildingT]:
+    def solve(self, building: BuildingT, debug: bool = False
+              ) -> List[BuildingT]:
         if building.is_complete():
             return []
         previous_map: Dict[BuildingT, BuildingT] = {building: None}
@@ -69,11 +70,12 @@ class BuildingSolver(Generic[BuildingT]):
 
             if debug:
                 if step % 5000 == 0:
+                    # noinspection PyUnboundLocalVariable
                     print(
                         f"Step {step}, time: "
-                        f"{int(timer.current_duration)}s, stack: "
-                        f"{len(stack)}, distance: {distance}, sample building:")
-                    print(current_building.show())
+                        f"{timer.get_pretty_current_duration(0)}s, stack: "
+                        f"{len(stack)}, seen: {len(previous_map)}, "
+                        f"distance: {distance}")
 
         raise Exception(f"Cannot find a solution")
 
