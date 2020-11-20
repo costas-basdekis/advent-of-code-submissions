@@ -1,107 +1,135 @@
 #!/usr/bin/env python3
 import itertools
+import re
 
 import utils
+from year_2019.day_05.part_a import InsufficientInputError
 
 from year_2019.day_05.part_b import get_program_result_and_output_extended
 from year_2019.day_17.part_a import DIRECTION_UP, DIRECTION_DOWN,\
     DIRECTION_RIGHT, DIRECTION_LEFT, get_intersections,\
-    get_neighbour_positions, get_scaffolds_start_position_and_direction, OFFSET_MAP, parse_image
+    get_neighbour_positions, get_scaffolds_start_position_and_direction, \
+    OFFSET_MAP, parse_image
+# noinspection PyUnresolvedReferences
+import year_2019.day_09.part_a
 
 
 class Challenge(utils.BaseChallenge):
     def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
-        42
-        """
-        """
-        'L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6,R,12,L,10,L,4,L,6,L,10,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6'
-        'L,6,R,12'
-        'L,10,L,4'
-        'L,6'
-        'L,10'
-        'L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6,R,12,L,10,L,4,L,6,L,10,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6'
-        'L,10,L,10,L,4'
-        'L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,A,L,6,R,12,L,10,L,4,L,6,A,L,6,L,6,R,12,L,6,A,L,6'
-        'A,A,B,C,A,A,B,C,A,C,D,B,A,B,C,D,B,C,A,C,D,B,C'
-        'L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6,R,12,L,10,L,4,L,6,L,10,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6'
-        'L,6,R,12'
-        'L,10,L,4'
-        'L,10,L,4,L,6'
-        'L,6,L,10'
-        'A,A,C,A,A,C,A,D,B,A,B,D,C,A,D,C'
-        'L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6,R,12,L,10,L,4,L,6,L,10,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6'
-        'L,6'
-        'R,12'
-        'L,10'
-        'L,4'
-        'A,B,A,B,C,D,A,A,B,A,B,C,D,A,A,B,A,C,C,D,A,B,C,D,A,C,C,D,A,A,B,A,C,C,D,A'
-        'L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6,R,12,L,10,L,4,L,6,L,10,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,10,L,4,L,6'
-        'L,6,R,12'
-        'A,A,L,10,L,4,L,6,A,A,L,10,L,4,L,6,A,L,6,L,10,L,10,L,4,A,L,10,L,4,L,6,L,10,L,10,L,4,L,6,A,L,6,L,10,L,10,L,4,L,6'
-        'L,6,L,10,L,10,L,4'
-        'A,A,L,10,L,4,L,6,A,A,L,10,L,4,L,6,A,B,A,L,10,L,4,B,L,6,A,B,L,6'
-        """
-        """
-        ..........................#####..................
-        ..........................#...#..................
-        ..........................#...#..................
-        ..........................#...#..................
-        ..........................#...#..................
-        ..........................#...#..................
-        ..........................#######................
-        ..............................#.#................
-        ............................###########..........
-        ............................#.#.#.....#..........
-        ..................#############.#.....#..........
-        ..................#.........#...#.....#..........
-        ..................#.........#######...#..........
-        ..................#.............#.#...#..........
-        ..................#.............#.#...#..........
-        ..................#.............#.#...#..........
-        ......#############.............#.#...#..........
-        ......#.........................#.#...#..........
-        ###########.....................#######..........
-        #.....#...#.......................#..............
-        #.....#...#.......................#...#######....
-        #.....#...#.......................#...#.....#....
-        #######...#.......................#...#.....#....
-        ..........#.......................#...#.....#....
-        ..........#.......................###########....
-        ..........#...........................#..........
-        ..........#...........................#...#######
-        ..........#...........................#...#.....#
-        ..........#.........................#####.#.....#
-        ..........#.........................#.#.#.#.....#
-        ..........#######...................#.###########
-        ................#...................#...#.#......
-        ................#.............#############......
-        ................#.............#.....#...#........
-        ................#.............#.....#...#........
-        ................#.............#.........#........
-        ................#.............#.........#........
-        ................#.............#.........#........
-        ................#.............###########........
-        ................#................................
-        ................#................................
-        ................#................................
-        ................######^..........................
+        880360
         """
         image = get_image_from_program_text(_input)
         movement_commands_text = get_movement_commands_text_from_image(image)
-        routines = find_routine_and_functions_for_movement_commands(
-            movement_commands_text.replace('12', '6,6').replace('10', '4,6').replace('4', '1,1,1,1').replace('6', '1,1,1,1,1,1'))
-        if not routines:
-            raise Exception("Could not find routines")
+        routine_commands_text, chunks = \
+            find_routine_and_functions_for_movement_commands_new(
+                movement_commands_text)
 
-        routine_text, function_texts = list(sorted(routines, key=lambda rtft: len(rtft[0])))[0]
-        function_texts = {
-            name: function_text.replace('1,1,1,1,1,1', '6').replace('1,1,1,1', '4').replace('6,6', '12').replace('1,1', '2')
-            for name, function_text in function_texts.items()
+        try:
+            _, output = get_program_result_and_output_extended(
+                _input, list(map(ord, (
+                    "{}\n"
+                    "{}"
+                    "n\n".format(
+                        routine_commands_text,
+                        "".join(map("{}\n".format, chunks)),
+                    )
+                ))), substitutions={0: 2})
+        except InsufficientInputError as e:
+            if debug:
+                print("".join(map(chr, e.output_stream)))
+            raise
+
+        *message, result = output
+        if debug:
+            print("".join(map(chr, message)))
+
+        return result
+
+
+def find_routine_and_functions_for_movement_commands_new(
+        movement_commands_text, max_length=20):
+    chunks = find_functions_for_movement_commands(
+        movement_commands_text, max_length=max_length)[0]
+    routine_commands = []
+    function_names = ['A', 'B', 'C']
+    remaining_movement_commands_text = movement_commands_text
+    while remaining_movement_commands_text:
+        matching_chunk, matching_function_name = next((
+            (chunk, name)
+            for chunk, name in zip(chunks, function_names)
+            if remaining_movement_commands_text.startswith(chunk)
+        ), (None, None))
+        if matching_function_name is None:
+            raise Exception(
+                f"Could not find any chunk from {chunks} at the start of "
+                f"{remaining_movement_commands_text}")
+        routine_commands.append(matching_function_name)
+        remaining_movement_commands_text = \
+            remaining_movement_commands_text[len(matching_chunk):]
+        if remaining_movement_commands_text.startswith(','):
+            remaining_movement_commands_text = \
+                remaining_movement_commands_text[1:]
+
+    routine_commands_text = ','.join(routine_commands)
+    return routine_commands_text, chunks
+
+
+def find_functions_for_movement_commands(movement_commands_text, max_length=20):
+    commands_portions = [movement_commands_text]
+    first_chunk_and_commands_portions_list = [
+        ((first_chunk,),
+         replace_chunk_in_portions(commands_portions, first_chunk))
+        for first_chunk in get_chunks(commands_portions, max_length)
+    ]
+    second_chunk_and_commands_portions_list = [
+        ((first_chunk, second_chunk),
+         replace_chunk_in_portions(first_commands_portions, second_chunk))
+        for (first_chunk,), first_commands_portions
+        in first_chunk_and_commands_portions_list
+        for second_chunk in get_chunks(first_commands_portions, max_length)
+    ]
+    third_chunk_and_commands_portions_list = [
+        ((first_chunk, second_chunk, third_chunk),
+         replace_chunk_in_portions(second_commands_portions, third_chunk))
+        for (first_chunk, second_chunk,), second_commands_portions
+        in second_chunk_and_commands_portions_list
+        for third_chunk in get_chunks(second_commands_portions, max_length)
+    ]
+    chunks_list = sorted({
+        tuple(sorted(chunks))
+        for chunks, third_commands_portions
+        in third_chunk_and_commands_portions_list
+        if not third_commands_portions
+    })
+    if not chunks_list:
+        raise Exception("Could not find three commands to split")
+
+    return chunks_list
+
+
+def replace_chunk_in_portions(commands_portions, chunk):
+    return [
+        command_portion.strip(',')
+        for command_portion in filter(None, sum((
+            re.compile(r'(?:,{0})+,'.format(re.escape(chunk)))
+            .split(f",{commands_portion},")
+            for commands_portion in commands_portions
+        ), []))
+    ]
+
+
+def get_chunks(commands_portions, max_length=20):
+    return sorted(
+        chunk
+        for chunk in {
+            ",".join(commands_portion.split(",")[:length])
+            for commands_portion in commands_portions
+            for length in range(1, (max_length + 1) // 2)
         }
-
-        return routine_text, function_texts
+        if len(chunk) <= max_length
+    )
 
 
 def find_routine_and_functions_for_movement_commands(movement_commands):
@@ -263,7 +291,8 @@ def get_movement_commands_text_from_image(image):
         "....#...#......\\n"\
         "....#####......")
     'R,8,R,8,R,4,R,4,R,8,L,6,L,2,R,4,R,4,R,8,R,8,R,8,L,6,L,2'
-    >>> get_movement_commands_text_from_image(get_image_from_program_text())
+    >>> get_movement_commands_text_from_image(
+    ...     get_image_from_program_text(challenge.input))
     'L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,6,R,12,L,10,L,4,L,6,L,6,R,12,L,\
 6,L,10,L,10,L,4,L,6,R,12,L,10,L,4,L,6,L,10,L,10,L,4,L,6,L,6,R,12,L,6,L,10,L,\
 10,L,4,L,6'
