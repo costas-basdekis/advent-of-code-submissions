@@ -903,10 +903,15 @@ class BasePoint(metaclass=BasePointMeta):
         # noinspection PyArgumentList
         return cls(*map(int, coordinate_strs))
 
+    ZERO_POINT: 'BasePoint'
+
     @classmethod
+    @BasePointMeta.auto_assign_to('ZERO_POINT')
     def get_zero_point(cls):
         """
         >>> Point2D.get_zero_point()
+        Point2D(x=0, y=0)
+        >>> Point2D.ZERO_POINT
         Point2D(x=0, y=0)
         >>> Point2D(-3, 4).get_zero_point()
         Point2D(x=0, y=0)
@@ -950,6 +955,15 @@ class BasePoint(metaclass=BasePointMeta):
             in zip(self.coordinates, other.coordinates)
         ))
 
+    def manhattan_length(self):
+        """
+        >>> Point3D(0, 0, 0).manhattan_length()
+        0
+        >>> Point3D(10, -3, -50).manhattan_length()
+        63
+        """
+        return self.manhattan_distance(self.ZERO_POINT)
+
     def manhattan_distance(self, other):
         """
         >>> Point3D(0, 0, 0).manhattan_distance(Point3D(0, 0, 0))
@@ -963,18 +977,48 @@ class BasePoint(metaclass=BasePointMeta):
             in zip(self.coordinates, other.coordinates)
         )
 
-    def offset(self, offsets):
+    def offset(self, offsets, factor=1):
         """
         >>> Point3D(3, -2, 4).offset((-2, -5, 3))
         Point3D(x=1, y=-7, z=7)
+        >>> Point3D(3, -2, 4).offset((-2, -5, 3), factor=-1)
+        Point3D(x=5, y=3, z=1)
         """
         cls = type(self)
         # noinspection PyArgumentList
         return cls(**{
-            name: coordinate + offset
+            name: coordinate + offset * factor
             for name, coordinate, offset
             in zip(self.coordinates_names, self.coordinates, offsets)
         })
+
+    def difference(self, other):
+        """
+        >>> Point3D(3, -2, 4).difference(Point3D(-2, -5, 3))
+        Point3D(x=5, y=3, z=1)
+        """
+        return self.offset(other, factor=-1)
+
+    def difference_sign(self, other):
+        """
+        >>> Point3D(4, -2, 5).difference_sign(Point3D(1, 1, 1))
+        Point3D(x=1, y=-1, z=1)
+        """
+        return self.difference(other).sign()
+
+    def sign(self):
+        """
+        >>> Point3D(0, 0, 0).sign()
+        Point3D(x=0, y=0, z=0)
+        >>> Point3D(-3, 4, 0).sign()
+        Point3D(x=-1, y=1, z=0)
+        """
+        sign_x = self.x // (abs(self.x) or 1)
+        sign_y = self.y // (abs(self.y) or 1)
+        sign_z = self.z // (abs(self.z) or 1)
+
+        cls = type(self)
+        return cls(sign_x, sign_y, sign_z)
 
     def get_manhattan_neighbours(self):
         """
@@ -1031,7 +1075,7 @@ class BasePoint(metaclass=BasePointMeta):
         [(-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)]
         """
         if size not in self.MANHATTAN_NEIGHBOUR_OFFSETS:
-            zero_point = self.get_zero_point()
+            zero_point = self.ZERO_POINT
             neighbourhood = {zero_point}
             previous_layer = [zero_point]
             for distance in range(1, size + 1):

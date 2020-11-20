@@ -19,6 +19,8 @@ class Challenge(utils.BaseChallenge):
 
 
 class RobotSet:
+    robot_class = NotImplemented
+
     @classmethod
     def from_robots_text(cls, robots_text):
         """
@@ -39,7 +41,7 @@ class RobotSet:
         Robot(position=Point3D(x=4, y=0, z=0), radius=3)
         """
         non_empty_lines = filter(None, robots_text.splitlines())
-        return cls(list(map(Robot.from_robot_text, non_empty_lines)))
+        return cls(list(map(cls.robot_class.from_robot_text, non_empty_lines)))
 
     def __init__(self, robots):
         self.robots = robots
@@ -62,7 +64,7 @@ class RobotSet:
         return max(self.robots, key=lambda robot: robot.radius, default=None)
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True, eq=True, order=True)
 class Robot:
     position: Point3D
     radius: int
@@ -116,6 +118,9 @@ class Robot:
         True
         """
         return self.position.manhattan_distance(other.position) <= self.radius
+
+
+RobotSet.robot_class = Robot
 
 
 challenge = Challenge()
