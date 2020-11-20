@@ -4,6 +4,7 @@ from typing import TypeVar, Type, ForwardRef, get_args, Generic, Union, \
 # noinspection PyUnresolvedReferences,PyProtectedMember
 from typing import _type_check
 
+from tests.utils import DummyModule
 from utils.collections_utils import KeyedDefaultDict
 
 __all__ = [
@@ -119,6 +120,43 @@ def resolve_type_argument(cls: Type['Generic'], type_or_var: TypeArgument,
     >>> class A(Generic[T1]): pass
     >>> resolve_type_argument(A, T1, _class_globals)
     <class '....B'>
+    >>> class A(Generic[T1]): pass
+    >>> a_module = DummyModule(B=B)
+    >>> A.__module__ = 'a_module'
+    >>> # noinspection PyTypeChecker
+    >>> sys.modules[A.__module__] = a_module
+    >>> resolve_type_argument(A, T1)
+    <class '....B'>
+    >>> class A1(Generic[T1]): pass
+    >>> a1_module = DummyModule(B=B)
+    >>> A1.__module__ = 'a1_module'
+    >>> # noinspection PyTypeChecker
+    >>> sys.modules[A1.__module__] = a1_module
+    >>> class A2(A1): pass
+    >>> a2_module = DummyModule()
+    >>> A2.__module__ = 'a2_module'
+    >>> # noinspection PyTypeChecker
+    >>> sys.modules[A2.__module__] = a2_module
+    >>> resolve_type_argument(A2, T1)
+    <class '....B'>
+    >>> class A1(Generic[T1]): pass
+    >>> a1_module = DummyModule()
+    >>> A1.__module__ = 'a1_module'
+    >>> # noinspection PyTypeChecker
+    >>> sys.modules[A1.__module__] = a1_module
+    >>> resolve_type_argument(A1, T1)
+    Traceback (most recent call last):
+    ...
+    NameError: name 'B' is not defined
+    >>> class A2(A1): pass
+    >>> a2_module = DummyModule()
+    >>> A2.__module__ = 'a2_module'
+    >>> # noinspection PyTypeChecker
+    >>> sys.modules[A2.__module__] = a2_module
+    >>> resolve_type_argument(A2, T1)
+    Traceback (most recent call last):
+    ...
+    NameError: name 'B' is not defined
     >>> class B1: pass
     >>> class B2: pass
     >>> _class_globals.update({'B1': B1, 'B2': B2})
@@ -133,10 +171,23 @@ def resolve_type_argument(cls: Type['Generic'], type_or_var: TypeArgument,
     if isinstance(type_or_ref, ForwardRef):
         ref: ForwardRef = type_or_ref
         if class_globals is None:
-            class_module = sys.modules[cls.__module__]
-            class_globals = class_module.__dict__
-        # noinspection PyProtectedMember,PyArgumentList
-        _type = ref._evaluate(class_globals, None, set())
+            class_globals_list = []
+            for parent in cls.mro():
+                class_module = sys.modules[parent.__module__]
+                class_globals = class_module.__dict__
+                class_globals_list.append(class_globals)
+        else:
+            class_globals_list = [class_globals]
+        name_error_exception = None
+        for class_globals in class_globals_list:
+            try:
+                # noinspection PyProtectedMember,PyArgumentList
+                _type = ref._evaluate(class_globals, None, set())
+                break
+            except NameError as e:
+                name_error_exception = e
+        else:
+            raise name_error_exception
     else:
         _type = type_or_ref
     if not isinstance(_type, type):
