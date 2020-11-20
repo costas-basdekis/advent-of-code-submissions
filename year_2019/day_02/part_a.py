@@ -13,10 +13,15 @@ def solve(_input=None):
         _input = get_current_directory(__file__)\
             .joinpath("part_a_input.txt")\
             .read_text()
-    program = parse_program(_input)
-    program[1] = 12
-    program[2] = 2
-    program_text = serialise_program(program)
+    return get_program_result(_input, {1: 12, 2: 2})
+
+
+def get_program_result(program_text, substitutions=None):
+    if substitutions:
+        program = parse_program(program_text)
+        for position, substitution in substitutions.items():
+            program[position] = substitution
+        program_text = serialise_program(program)
     result_text = run_program(program_text)
     result = parse_program(result_text)
     return result[0]
