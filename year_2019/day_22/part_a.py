@@ -8,8 +8,8 @@ from utils import get_current_directory
 
 def solve(_input=None):
     """
-    >>> 937 < solve() < 3284
-    True
+    >>> solve()
+    2496
     """
     if _input is None:
         _input = get_current_directory(__file__)\
@@ -19,7 +19,7 @@ def solve(_input=None):
     deck = tuple(range(10007))
     shuffled = shuffles.shuffle_deck(deck)
 
-    return shuffled[2019]
+    return shuffled.index(2019)
 
 
 class Shuffles:
