@@ -5,7 +5,7 @@ leaderboards have submitted the challenges
 
 ## The results
 
-* [2020](year_2020) 13/13 :star: - [See Challenges](https://adventofcode.com/2020)
+* [2020](year_2020) 14/14 :star: - [See Challenges](https://adventofcode.com/2020)
 * [2019](year_2019) 45/50 :star: - [See Challenges](https://adventofcode.com/2019)
 
 ## The submissions
@@ -14,7 +14,7 @@ leaderboards have submitted the challenges
 * Got it wrong: :x:
 * Can't attempt: :grey_exclamation:
 
-* [2020](year_2020) 13 :white_check_mark:  / 0 :x: /  0 :grey_exclamation: - [See Challenges](https://adventofcode.com/2020)
+* [2020](year_2020) 14 :white_check_mark:  / 0 :x: /  0 :grey_exclamation: - [See Challenges](https://adventofcode.com/2020)
   * [1](year_2020/day_01)  - [See Challenge](https://adventofcode.com/2020/day/1) :white_check_mark:
     * [Part A](year_2020/day_01/part_a.py) :white_check_mark:
     * [Part B](year_2020/day_01/part_b.py) :white_check_mark:
@@ -33,8 +33,9 @@ leaderboards have submitted the challenges
   * [6](year_2020/day_06)  - [See Challenge](https://adventofcode.com/2020/day/6) :white_check_mark:
     * [Part A](year_2020/day_06/part_a.py) :white_check_mark:
     * [Part B](year_2020/day_06/part_b.py) :white_check_mark:
-  * [7](year_2020/day_07)  - [See Challenge](https://adventofcode.com/2020/day/7)
+  * [7](year_2020/day_07)  - [See Challenge](https://adventofcode.com/2020/day/7) :white_check_mark:
     * [Part A](year_2020/day_07/part_a.py) :white_check_mark:
+    * [Part B](year_2020/day_07/part_b.py) :white_check_mark:
 * [2019](year_2019) 45 :white_check_mark:  / 3 :x: /  2 :grey_exclamation: - [See Challenges](https://adventofcode.com/2019)
   * [1](year_2019/day_01)  - [See Challenge](https://adventofcode.com/2019/day/1) :white_check_mark:
     * [Part A](year_2019/day_01/part_a.py) :white_check_mark:

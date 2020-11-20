@@ -83,7 +83,7 @@ BagRule(colour='dotted black', contents=())]
         ... ).get_colours_eventually_containing_colour("shiny gold")
         ['bright white', 'dark orange', 'light red', 'muted yellow']
         """
-        eventual_contents = self.get_eventual_contents()
+        eventual_contents, _ = self.get_eventual_contents()
         return sorted(
             colour
             for colour, contents in eventual_contents.items()
@@ -102,7 +102,7 @@ BagRule(colour='dotted black', contents=())]
         ...     "vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.\\n"
         ...     "faded blue bags contain no other bags.\\n"
         ...     "dotted black bags contain no other bags.\\n"
-        ... ).get_eventual_contents().items()))
+        ... ).get_eventual_contents()[0].items()))
         [('bright white', ('dark olive', 'dotted black', 'faded blue', \
 'shiny gold', 'vibrant plum')), ('dark olive', ('dotted black', 'faded blue'\
 )), ('dark orange', ('bright white', 'dark olive', 'dotted black', \
@@ -113,12 +113,39 @@ BagRule(colour='dotted black', contents=())]
 'faded blue', 'shiny gold', 'vibrant plum')), ('shiny gold', ('dark olive', \
 'dotted black', 'faded blue', 'vibrant plum')), ('vibrant plum', \
 ('dotted black', 'faded blue'))]
+        >>> sorted(BagRuleSet.from_bag_rule_set_text(
+        ...     "light red bags contain 1 bright white bag, 2 muted yellow bags.\\n"
+        ...     "dark orange bags contain 3 bright white bags, 4 muted yellow bags.\\n"
+        ...     "bright white bags contain 1 shiny gold bag.\\n"
+        ...     "muted yellow bags contain 2 shiny gold bags, 9 faded blue bags.\\n"
+        ...     "shiny gold bags contain 1 dark olive bag, 2 vibrant plum bags.\\n"
+        ...     "dark olive bags contain 3 faded blue bags, 4 dotted black bags.\\n"
+        ...     "vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.\\n"
+        ...     "faded blue bags contain no other bags.\\n"
+        ...     "dotted black bags contain no other bags.\\n"
+        ... ).get_eventual_contents()[1].items())
+        [('bright white', 34), ('dark olive', 8), ('dark orange', 407), ('dotted black', 1), ('faded blue', 1), ('light red', 187), ('muted yellow', 76), ('shiny gold', 33), ('vibrant plum', 12)]
+        >>> BagRuleSet.from_bag_rule_set_text(
+        ...     "shiny gold bags contain 2 dark red bags.\\n"
+        ...     "dark red bags contain 2 dark orange bags.\\n"
+        ...     "dark orange bags contain 2 dark yellow bags.\\n"
+        ...     "dark yellow bags contain 2 dark green bags.\\n"
+        ...     "dark green bags contain 2 dark blue bags.\\n"
+        ...     "dark blue bags contain 2 dark violet bags.\\n"
+        ...     "dark violet bags contain no other bags.\\n"
+        ... ).get_eventual_contents()[1]["shiny gold"]
+        127
         """
+        actual_contents = {
+            rule.colour: rule.contents
+            for rule in self.bag_rules
+        }
         eventual_contents = {
             rule.colour: {quantity.colour for quantity in rule.contents}
             for rule in self.bag_rules
         }
         terminated_colours = set()
+        content_count = {}
         recently_terminated_colours = {
             rule.colour
             for rule in self.bag_rules
@@ -134,6 +161,12 @@ BagRule(colour='dotted black', contents=())]
                         # print("Add", terminated_contents, "to", colour)
                         contents.update(terminated_contents)
             terminated_colours |= recently_terminated_colours
+            for terminated_colour in recently_terminated_colours:
+                content_count[terminated_colour] = 1 + sum(
+                    content_count[content.colour] * content.count
+                    for content in actual_contents[terminated_colour]
+                )
+                # print("CC", terminated_colour, actual_contents[terminated_colour], content_count[terminated_colour])
             # print("T", terminated_colours)
             recently_terminated_colours = {
                 colour
@@ -153,7 +186,7 @@ BagRule(colour='dotted black', contents=())]
                 "There are not-terminated colours, but not any recently "
                 "terminated ones")
 
-        return eventual_contents
+        return eventual_contents, content_count
 
 
 class BagRule(namedtuple("BagRule", ("colour", "contents"))):
