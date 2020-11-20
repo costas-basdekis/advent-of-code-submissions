@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import itertools
 import re
+import string
 from abc import ABC
 
 import utils
@@ -79,26 +80,49 @@ class Program:
         ... ).run()
         (6, 5, 6, 0, 0, 9)
         """
+        final_registers = registers
+        for step, previous_registers, final_registers \
+                in self.iter_run(registers, instruction_pointer):
+            self.debug(step, previous_registers, final_registers,
+                       debug, report_only_changes, report_count)
+
+        return final_registers
+
+    def iter_run(self, registers=(0,) * 6, instruction_pointer=None):
         if instruction_pointer is not None:
             self.instruction_pointer = instruction_pointer
         final_registers = registers
         for step in itertools.count():
             previous_registers = final_registers
             finished, final_registers = self.step(final_registers)
+            yield step, previous_registers, final_registers
             if finished:
                 break
-            if debug:
-                if report_only_changes is not None:
-                    should_report = any(
-                        previous_registers[index] != final_registers[index]
-                        for index in report_only_changes
-                    )
-                else:
-                    should_report = step % report_count == 0
-                if should_report:
-                    print(step, previous_registers, final_registers)
 
-        return final_registers
+    def debug(self, step, previous_registers, final_registers,
+              debug, report_only_changes, report_count):
+        should_report = self.should_output_debug(
+            step, previous_registers, final_registers, debug,
+            report_only_changes, report_count)
+        if not should_report:
+            return
+
+        self.output_debug(step, previous_registers, final_registers)
+
+    def output_debug(self, step, previous_registers, final_registers):
+        print(step, previous_registers, final_registers)
+
+    def should_output_debug(self, step, previous_registers, final_registers,
+                            debug, report_only_changes, report_count):
+        if not debug:
+            return False
+        elif report_only_changes is not None:
+            return any(
+                previous_registers[index] != final_registers[index]
+                for index in report_only_changes
+            )
+        else:
+            return step % report_count == 0
 
     def step(self, registers, instruction_pointer=None):
         """
@@ -181,6 +205,21 @@ class Program:
         """
         return registers[:pointer] + (value,) + registers[pointer + 1:]
 
+    def show(self):
+        return "\n".join(
+            instruction.show(index, self.instruction_pointer_register)
+            for index, instruction in enumerate(self.instructions)
+        )
+
+    def show_with_names(self):
+        return "\n".join(
+            " {: >2} : {}".format(
+                index,
+                instruction.show_with_names(self.instruction_pointer_register)
+            )
+            for index, instruction in enumerate(self.instructions)
+        )
+
 
 class InstructionExtended(part_a.Instruction, ABC):
     instruction_classes = {}
@@ -214,111 +253,233 @@ class InstructionExtended(part_a.Instruction, ABC):
 
         return cls(*operands)
 
+    def show_with_names(self, instruction_pointer_register):
+        raise NotImplementedError()
+
+    def show(self, index, instruction_pointer_register):
+        return " {: >2} : {: <25} # {}".format(
+            index,
+            self.show_instruction(index, instruction_pointer_register),
+            self.show_with_names(instruction_pointer_register),
+        )
+
+    def show_instruction(self, index, instruction_pointer_register):
+        raise NotImplementedError()
+
 
 class ThreeOperandsInstructionExtended(
         InstructionExtended, part_a.ThreeOperandsInstruction, ABC):
     def __repr__(self):
         return f"{type(self).__name__}({self.op_a}, {self.op_b}, {self.op_c})"
 
+    def show_with_names(self, instruction_pointer_register):
+        op_a, op_b, op_c = (
+            self.show_register_with_name(
+                register_type, register, instruction_pointer_register)
+            for register_type, register in [
+                (self.op_type_a, self.op_a),
+                (self.op_type_b, self.op_b),
+                (self.OP_TYPE_REGISTER, self.op_c),
+            ]
+        )
+        return f"{self.name} {op_a} {op_b} {op_c}"
+
+    def show_register_with_name(self, register_type, register,
+                                instruction_pointer_register, index=None):
+        if register_type == self.OP_TYPE_REGISTER:
+            if register == instruction_pointer_register:
+                if index is not None:
+                    return str(index)
+                else:
+                    return "ip"
+            else:
+                return string.ascii_lowercase[register]
+        elif register_type == self.OP_TYPE_IMMEDIATE:
+            return str(register)
+        elif register_type == self.OP_TYPE_NONE:
+            return "!"
+        else:
+            raise Exception(f"Unknown type {register_type}")
+
+
+class BinaryInstruction(ThreeOperandsInstructionExtended, ABC):
+    operation_display = NotImplemented
+
+    def show_instruction(self, index, instruction_pointer_register):
+        op_a, op_b, op_c = (
+            self.show_register_with_name(
+                register_type, register, instruction_pointer_register,
+                index=show_index)
+            for register_type, register, show_index in [
+                (self.op_type_a, self.op_a, index),
+                (self.op_type_b, self.op_b, index),
+                (self.OP_TYPE_REGISTER, self.op_c, None),
+            ]
+        )
+        if self.op_c == instruction_pointer_register:
+            return f"goto {op_a} {self.operation_display} {op_b} + 1"
+
+        if op_a == op_c:
+            return f"{op_c} {self.operation_display}= {op_b}"
+        else:
+            return f"{op_c} = {op_a} {self.operation_display} {op_b}"
+
 
 @InstructionExtended.register
 class AddIExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.AddI):
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.AddI):
     """
     >>> AddIExtended.try_parse("addi 5 16 5")
     AddIExtended(5, 16, 5)
     >>> AddIExtended.try_parse("seti 5 16 5")
     """
+    operation_display = "+"
 
 
 @InstructionExtended.register
 class AddRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.AddR):
-    pass
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.AddR):
+    operation_display = "+"
 
 
 @InstructionExtended.register
 class MulIExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.MulI):
-    pass
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.MulI):
+    operation_display = "*"
 
 
 @InstructionExtended.register
 class MulRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.MulR):
-    pass
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.MulR):
+    operation_display = "*"
 
 
 @InstructionExtended.register
 class BAnIExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.BAnI):
-    pass
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.BAnI):
+    operation_display = "&"
 
 
 @InstructionExtended.register
 class BAnRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.BAnR):
-    pass
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.BAnR):
+    operation_display = "&"
 
 
 @InstructionExtended.register
 class BOrIExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.BOrI):
-    pass
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.BOrI):
+    operation_display = "|"
 
 
 @InstructionExtended.register
 class BOrRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.BOrR):
-    pass
+        BinaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.BOrR):
+    operation_display = "|"
+
+
+class UnaryInstruction(ThreeOperandsInstructionExtended, ABC):
+    def show_instruction(self, index, instruction_pointer_register):
+        op_a, op_c = (
+            self.show_register_with_name(
+                register_type, register, instruction_pointer_register,
+                index=show_index)
+            for register_type, register, show_index in [
+                (self.op_type_a, self.op_a, index),
+                (self.OP_TYPE_REGISTER, self.op_c, None),
+            ]
+        )
+        if self.op_c == instruction_pointer_register:
+            return f"goto {op_a} + 1"
+
+        if op_a == op_c:
+            return f"noop"
+        else:
+            return f"{op_c} = {op_a}"
 
 
 @InstructionExtended.register
 class SetIExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.SetI):
+        UnaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.SetI):
     pass
 
 
 @InstructionExtended.register
 class SetRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.SetR):
+        UnaryInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.SetR):
     pass
+
+
+class ConditionalInstruction(ThreeOperandsInstructionExtended, ABC):
+    operation_display = NotImplemented
+
+    def show_instruction(self, index, instruction_pointer_register):
+        op_a, op_b, op_c = (
+            self.show_register_with_name(
+                register_type, register, instruction_pointer_register,
+                index=show_index)
+            for register_type, register, show_index in [
+                (self.op_type_a, self.op_a, index),
+                (self.op_type_b, self.op_b, index),
+                (self.OP_TYPE_REGISTER, self.op_c, None),
+            ]
+        )
+        if self.op_c == instruction_pointer_register:
+            return f"goto 2 if {op_a} {self.operation_display} {op_b} else goto 1"
+
+        return f"{op_c} = 1 if {op_a} {self.operation_display} {op_b} else 0"
 
 
 @InstructionExtended.register
 class GTIRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.GTIR):
-    pass
+        ConditionalInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.GTIR):
+    operation_display = ">"
 
 
 @InstructionExtended.register
 class GTRIExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.GTRI):
-    pass
+        ConditionalInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.GTRI):
+    operation_display = ">"
 
 
 @InstructionExtended.register
 class GTRRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.GTRR):
-    pass
+        ConditionalInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.GTRR):
+    operation_display = ">"
 
 
 @InstructionExtended.register
 class EqIRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.EqIR):
-    pass
+        ConditionalInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.EqIR):
+    operation_display = "=="
 
 
 @InstructionExtended.register
 class EqRIExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.EqRI):
-    pass
+        ConditionalInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.EqRI):
+    operation_display = "=="
 
 
 @InstructionExtended.register
 class EqRRExtended(
-        ThreeOperandsInstructionExtended, InstructionExtended, part_a.EqRR):
-    pass
+        ConditionalInstruction, ThreeOperandsInstructionExtended,
+        InstructionExtended, part_a.EqRR):
+    operation_display = "=="
 
 
 challenge = Challenge()

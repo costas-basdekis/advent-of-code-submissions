@@ -1,0 +1,32 @@
+a, b, c, e, f = 0, 0, 0, 0, 0
+  0 : b = 123
+[ 1]: b &= 456
+  2 : b = 1 if b == 72 else 0
+  3 : goto 5 if b == 72 else goto 4
+[ 4]: goto 1
+[ 5]: b = 0                     # seti 0 ! b
+[ 6]: c = b | 65536             # bori b 65536 c
+  7 : b = 10605201              # seti 10605201 ! b
+[ 8]: f = c & 255               # bani c 255 f
+  9 : b += f                    # addr b f b
+ 10 : b &= 16777215             # bani b 16777215 b
+ 11 : b *= 65899                # muli b 65899 b
+ 12 : b &= 16777215             # bani b 16777215 b
+ 13 : f = 1 if 256 > c else 0   # gtir 256 c f
+ 14 : goto 16 if 256 > c else goto 15
+[15]: goto 17
+[16]: goto 28
+[17]: f = 0                     # seti 0 ! f
+[18]: e = f + 1                 # addi f 1 e
+ 19 : e *= 256                  # muli e 256 e
+ 20 : e = 1 if e > c else 0     # gtrr e c e
+ 21 : goto 23 if e > c else goto 22
+[22]: goto 24
+[23]: goto 26
+[24]: f += 1                    # addi f 1 f
+ 25 : goto 18
+[26]: c = f                     # setr f ! c
+ 27 : goto 8
+[28]: f = 1 if b == a else 0    # eqrr b a f
+ 29 : goto 31 if b == a else goto 30
+[30]: goto 6
