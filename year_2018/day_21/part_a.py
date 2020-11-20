@@ -14,12 +14,12 @@ class Challenge(utils.BaseChallenge):
         return get_acceptable_a()
 
 
-def get_acceptable_a():
+def get_acceptable_a(start=0):
     """
     >>> get_acceptable_a()
     11592302
     """
-    c = 65536
+    c = start | 65536
     b = 10605201
     while True:
         b = (((b + (c & 255)) & 16777215) * 65899) & 16777215
