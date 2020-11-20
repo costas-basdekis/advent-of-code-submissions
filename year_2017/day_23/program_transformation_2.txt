@@ -1,0 +1,23 @@
+a, b, c, d, e, f, g, h = 1, 106500, 123500, 0, 0, 0, 0, 0
+
+ 09 : while True:
+    :   f = 1
+ 10 :   d = 2
+ 11 :   while True
+    :     e = 2
+ 12 :     while True
+    :       g = d * e - b
+ 15 :       if not g:
+ 16 :           f = 0
+ 17 :       e += 1
+ 18 :       g = e - b
+ 20 :       if not g: break
+ 21 :     d += 1
+ 22 :     g = d - b
+ 24 :     if not g: break
+ 25 :   if not f:
+ 26 :     h += 1
+ 27 :   g = b - c
+ 29 :   if not g:
+ 30 :     break
+ 31 :   b += 17
