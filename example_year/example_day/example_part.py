@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+import doctest
+
+from utils import get_current_directory
+
+
+def solve(_input=None):
+    """
+    >>> solve()
+    42
+    """
+    if _input is None:
+        _input = get_current_directory(__file__)\
+            .joinpath("part_a_input.txt")\
+            .read_text()
+
+
+if __name__ == '__main__':
+    doctest.testmod()
+    print("Tests passed")
+    print("Solution:", solve())
