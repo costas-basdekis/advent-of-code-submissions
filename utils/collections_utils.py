@@ -6,6 +6,7 @@ __all__ = [
     'in_groups',
     'get_fixed_length_substrings',
     'all_possible_combinations',
+    'get_windows',
 ]
 
 
@@ -105,3 +106,26 @@ def all_possible_combinations(items: List[T]) -> Iterable[Tuple[T, ...]]:
         for length in range(len(items) + 1)
         for combination in itertools.combinations(items, length)
     )
+
+
+def get_windows(items: Iterable[T], size: int) -> Iterable[Tuple[T, ...]]:
+    """
+    >>> list(get_windows(range(0), 3))
+    []
+    >>> list(get_windows(range(1), 3))
+    []
+    >>> list(get_windows(range(2), 3))
+    []
+    >>> list(get_windows(range(3), 3))
+    [(0, 1, 2)]
+    >>> list(get_windows(range(6), 3))
+    [(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 5)]
+    >>> list(get_windows(range(7), 3))
+    [(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)]
+    """
+    next_window = tuple()
+    for item in items:
+        next_window += (item,)
+        if len(next_window) >= size:
+            next_window = next_window[-size:]
+            yield next_window
