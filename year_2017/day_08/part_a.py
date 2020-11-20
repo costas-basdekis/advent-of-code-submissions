@@ -10,7 +10,7 @@ class Challenge(utils.BaseChallenge):
     def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
-        42
+        5143
         """
         return InstructionSet.from_instructions_text(_input)\
             .get_max_value_after_application()
@@ -132,7 +132,6 @@ class Instruction:
             registers[self.register] = new_value
 
         return registers
-
 
 
 @dataclass
