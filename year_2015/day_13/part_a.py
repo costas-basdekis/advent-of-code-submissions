@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from dataclasses import field, dataclass
 from itertools import permutations
-from typing import Dict, Tuple, List, Iterable, Sized
+from typing import Dict, Tuple, List, Iterable, Sized, Set
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, get_windows
@@ -160,12 +160,21 @@ class AttendeeSet:
         [('a', 'b', 'c'), ('a', 'c', 'b'), ('b', 'a', 'c'), ('b', 'c', 'a'),
             ('c', 'a', 'b'), ('c', 'b', 'a')]
         """
-        attendees = sorted({
+        attendees = sorted(self.get_attendees())
+        return permutations(attendees, len(attendees))
+
+    def get_attendees(self) -> Set[str]:
+        """
+        >>> sorted(AttendeeSet({('a', 'b'): 2, ('b', 'a'): 2, ('b', 'c'): -1,
+        ...     ('c', 'a'): 5})\\
+        ...     .get_attendees())
+        ['a', 'b', 'c']
+        """
+        return {
             attendee
             for edge in self.happiness_map
             for attendee in edge
-        })
-        return permutations(attendees, len(attendees))
+        }
 
     def get_arrangement_happiness(self, arrangement: Tuple[str, ...]) -> int:
         """
