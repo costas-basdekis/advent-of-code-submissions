@@ -16,8 +16,13 @@ def solve(_input=None):
         _input = get_current_directory(__file__)\
             .joinpath("part_a_input.txt")\
             .read_text()
-    input_stream = get_script().as_input_stream()
-    _, output = get_program_result_and_output_extended(_input, input_stream)
+    return run_spring_robot(get_script(), _input)
+
+
+def run_spring_robot(script, program_text, running=False):
+    input_stream = script.as_input_stream(running=running)
+    _, output = get_program_result_and_output_extended(
+        program_text, input_stream)
     if not output:
         raise Exception("No output")
     if output[-1] <= 255:
@@ -47,34 +52,46 @@ class SpringScript:
         self.instruction_lines = ()
         self.add_instruction_lines(instruction_lines)
 
-    def as_input_stream(self):
+    def as_input_stream(self, running=False):
         """
         >>> "".join(map(chr, SpringScript().as_input_stream()))
         'WALK\\n'
         >>> "".join(map(chr, SpringScript().and_('T', 'J').as_input_stream()))
         'AND T J\\nWALK\\n'
+        >>> "".join(map(chr, SpringScript().as_input_stream(True)))
+        'RUN\\n'
+        >>> "".join(map(chr, SpringScript().and_('T', 'J').as_input_stream(True)))
+        'AND T J\\nRUN\\n'
         """
-        return list(map(ord, self.as_input_text()))
+        return list(map(ord, self.as_input_text(running=running)))
 
-    def as_input_text(self):
+    def as_input_text(self, running=False):
         """
         >>> SpringScript().as_input_text()
         'WALK\\n'
         >>> SpringScript().and_('T', 'J').as_input_text()
         'AND T J\\nWALK\\n'
+        >>> SpringScript().as_input_text(True)
+        'RUN\\n'
+        >>> SpringScript().and_('T', 'J').as_input_text(True)
+        'AND T J\\nRUN\\n'
         """
-        return "".join(map("{}\n".format, self.instruction_lines)) + "WALK\n"
+        return "".join(map("{}\n".format, self.instruction_lines)) + (
+            "RUN\n"
+            if running else
+            "WALK\n"
+        )
 
     PATH_PARSE_MAP = {
         ".": False,
         "#": True,
     }
 
-    def simulate(self, path_text):
+    def simulate(self, path_text, running=False):
         """
-        >>> SpringScript().simulate(".####.#..########")
+        >>> SpringScript().simulate(".####.#..###########")
         0
-        >>> SpringScript().simulate("#####.#..########")
+        >>> SpringScript().simulate("#####.#..###########")
         5
         """
         path = tuple(map(self.PATH_PARSE_MAP.__getitem__, path_text))
@@ -84,29 +101,31 @@ class SpringScript:
         registers = {
             'T': False,
             'J': False,
-            'A': None,
-            'B': None,
-            'C': None,
-            'D': None,
+            **{
+                register: None
+                for register in SSOperator.RUN_GROUND_REGISTERS
+            },
         }
         position = 0
+        reading_count = len(SSOperator.RUN_GROUND_REGISTERS)
         while position < len(path):
             step = path[position]
             if not step:
                 return position
-            if position >= len(path) - 4:
+            if position >= len(path) - reading_count:
                 return None
             self.update_read_registers(
-                path[position + 1:position + 5], registers)
+                path[position + 1:position + 1 + reading_count], registers,
+                running=running)
             # print("before", registers)
-            self.simulate_round(registers)
+            self.simulate_round(registers, running=running)
             if not registers['J']:
                 advance = 1
             else:
                 advance = 4
             position += advance
 
-    def simulate_round(self, registers):
+    def simulate_round(self, registers, running=False):
         """
         >>> SpringScript().set_('D', 'J').not_('A', 'T').or_('T', 'J')\\
         ...     .simulate_round({
@@ -122,16 +141,18 @@ class SpringScript:
         {'T': True, 'J': True, 'A': False, 'B': True, 'C': False, 'D': False}
         """
         for line in self.instruction_lines:
-            line.simulate(registers)
+            line.simulate(registers, running=running)
             # print(line, registers)
         return registers
 
-    def update_read_registers(self, path, registers):
+    def update_read_registers(self, path, registers, running=False):
+        if running:
+            ground_registers = SSOperator.RUN_GROUND_REGISTERS
+        else:
+            ground_registers = SSOperator.WALK_GROUND_REGISTERS
         registers.update({
-            'A': path[0],
-            'B': path[1],
-            'C': path[2],
-            'D': path[3],
+            register: reading
+            for register, reading in zip(ground_registers, path)
         })
 
     def add_instruction_lines(self, lines):
@@ -176,7 +197,11 @@ class SpringScript:
 
 class SSOperator:
     WRITABLE_REGISTERS = ('T', 'J')
-    READABLE_REGISTERS = WRITABLE_REGISTERS + ('A', 'B', 'C', 'D')
+    WALK_GROUND_REGISTERS = ('A', 'B', 'C', 'D')
+    RUN_ONLY_GROUND_REGISTERS = ('E', 'F', 'G', 'H', 'I')
+    RUN_GROUND_REGISTERS = WALK_GROUND_REGISTERS + RUN_ONLY_GROUND_REGISTERS
+    WALK_REGISTERS = WRITABLE_REGISTERS + WALK_GROUND_REGISTERS
+    READABLE_REGISTERS = WRITABLE_REGISTERS + RUN_GROUND_REGISTERS
 
     operator = NotImplemented
 
@@ -189,6 +214,11 @@ class SSOperator:
         if register not in self.READABLE_REGISTERS:
             raise Exception(
                 f"Register '{register}' is not a readable register")
+
+    def check_walking(self, register):
+        if register not in self.WALK_REGISTERS:
+            raise Exception(
+                f"Register '{register}' is not a walking register")
 
     def simulate(self, registers):
         raise NotImplementedError()
@@ -205,7 +235,10 @@ class SSBinary(SSOperator, ABC):
     def __str__(self):
         return f"{self.operator} {self.a} {self.b}"
 
-    def simulate(self, registers):
+    def simulate(self, registers, running=False):
+        if not running:
+            self.check_walking(self.a)
+            self.check_walking(self.b)
         registers[self.b] = self.binary_operation(
             registers[self.a], registers[self.b])
         return registers
