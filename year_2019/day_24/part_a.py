@@ -114,86 +114,9 @@ def get_biodiversity_rating(scan):
     """
     return sum((
         weight
-        for (x, y), weight in zip(BIODIVERSITY_ORDER, BIODIVERSITY_WEIGHTS)
-        if scan[y][x]
+        for position, weight in zip(BIODIVERSITY_ORDER, BIODIVERSITY_WEIGHTS)
+        if scan[position]
     ), 0)
-
-
-def repeat_evolve_scan(scan, count):
-    """
-    >>> print(show_scan(repeat_evolve_scan(parse_scan(
-    ...     "....#\\n"
-    ...     "#..#.\\n"
-    ...     "#..##\\n"
-    ...     "..#..\\n"
-    ...     "#....\\n"
-    ... ), 4)))
-    ####.
-    ....#
-    ##..#
-    .....
-    ##...
-    >>> scan_a = parse_scan(
-    ...     ".....\\n"
-    ...     ".....\\n"
-    ...     ".....\\n"
-    ...     "#....\\n"
-    ...     ".#...\\n"
-    ... )
-    >>> repeat_evolve_scan(scan_a, 12) == scan_a
-    True
-    """
-    current_scan = scan
-    for _ in range(count):
-        current_scan = evolve_scan(current_scan)
-
-    return current_scan
-
-
-def evolve_scan(scan):
-    """
-    >>> print(show_scan(evolve_scan(parse_scan(
-    ...     "....#\\n"
-    ...     "#..#.\\n"
-    ...     "#..##\\n"
-    ...     "..#..\\n"
-    ...     "#....\\n"
-    ... ))))
-    #..#.
-    ####.
-    ###.#
-    ##.##
-    .##..
-    >>> print(show_scan(evolve_scan(evolve_scan(evolve_scan(evolve_scan(parse_scan(
-    ...     "....#\\n"
-    ...     "#..#.\\n"
-    ...     "#..##\\n"
-    ...     "..#..\\n"
-    ...     "#....\\n"
-    ... )))))))
-    ####.
-    ....#
-    ##..#
-    .....
-    ##...
-    """
-    neighbour_counts = get_all_neighbour_counts(scan)
-
-    return [
-        [
-            (
-                True
-                if neighbour_count == 1 else
-                False
-            ) if spot else (
-                True
-                if neighbour_count in (1, 2) else
-                False
-            )
-            for neighbour_count, spot in zip(neighbour_counts_line, line)
-        ]
-        for neighbour_counts_line, line in zip(neighbour_counts, scan)
-    ]
 
 
 def get_spot_next_state(spot, neighbour_count):
@@ -221,26 +144,6 @@ def get_spot_next_state(spot, neighbour_count):
         return neighbour_count in (1, 2)
 
 
-def get_all_neighbour_counts(scan):
-    """
-    >>> list(map(list, get_all_neighbour_counts(parse_scan(
-    ...     "..#.#\\n"
-    ...     "#####\\n"
-    ...     ".#...\\n"
-    ...     "...#.\\n"
-    ...     "##...\\n"
-    ... ))))
-    [[1, 2, 1, 3, 1], [1, 3, 3, 2, 2], [2, 1, 2, 2, 1], [1, 2, 1, 0, 1], [1, 1, 1, 1, 0]]
-    """
-    return (
-        (
-            get_neighbour_count(scan, x, y)
-            for x, spot in enumerate(line)
-        )
-        for y, line in enumerate(scan)
-    )
-
-
 OFFSETS = list(sorted([
     (0, -1),
     (0, 1),
@@ -249,34 +152,69 @@ OFFSETS = list(sorted([
 ]))
 
 
-def get_neighbour_count(scan, x, y):
+def create_neighbour_map():
     """
-    >>> get_neighbour_count([[True]], 0, 0)
-    0
-    >>> get_neighbour_count(
-    ...     [[True, False, True], [False, True, False], [True, False, True]],
-    ...     1, 1)
-    0
-    >>> get_neighbour_count(
-    ...     [[True, False, True], [False, True, False], [True, False, True]],
-    ...     0, 0)
-    0
-    >>> get_neighbour_count(
-    ...     [[True, False, True], [False, True, False], [True, False, True]],
-    ...     1, 0)
-    3
-    >>> get_neighbour_count(
-    ...     [[True, False, True], [False, True, False], [True, False, True]],
-    ...     0, 1)
-    3
+    >>> NEIGHBOUR_MAP[(0, 0)]
+    ((0, 1), (1, 0))
+    >>> NEIGHBOUR_MAP[(2, 2)]
+    ((1, 2), (2, 1), (2, 3), (3, 2))
+    >>> NEIGHBOUR_MAP[(4, 4)]
+    ((3, 4), (4, 3))
+    >>> {
+    ...     position: non_reciprocal_neighbours
+    ...     for position, non_reciprocal_neighbours in (
+    ...         (position, sorted(tuple(
+    ...             neighbour
+    ...             for neighbour in neighbours
+    ...             if position not in NEIGHBOUR_MAP[neighbour]
+    ...         )))
+    ...         for position, neighbours in NEIGHBOUR_MAP.items()
+    ...     )
+    ...     if non_reciprocal_neighbours
+    ... }
+    {}
+    >>> {
+    ...     position: external_neighbours
+    ...     for position, external_neighbours in (
+    ...         (position, sorted(tuple(
+    ...             (neighbour_x, neighbour_y)
+    ...             for neighbour_x, neighbour_y in neighbours
+    ...             if (
+    ...                 neighbour_x < 0
+    ...                 or neighbour_x > 4
+    ...                 or neighbour_y < 0
+    ...                 or neighbour_y > 4
+    ...             )
+    ...         )))
+    ...         for position, neighbours in NEIGHBOUR_MAP.items()
+    ...     )
+    ...     if external_neighbours
+    ... }
+    {}
+    >>> {
+    ...     position: non_adjacent_neighbours
+    ...     for position, non_adjacent_neighbours in (
+    ...         ((x, y), sorted(tuple(
+    ...             (neighbour_x, neighbour_y)
+    ...             for neighbour_x, neighbour_y in neighbours
+    ...             if abs(neighbour_x - x) + abs(neighbour_y - y) != 1
+    ...         )))
+    ...         for (x, y), neighbours in NEIGHBOUR_MAP.items()
+    ...     )
+    ...     if non_adjacent_neighbours
+    ... }
+    {}
     """
-    return sum(
-        1
-        for neighbour_x, neighbour_y in get_neighbours(x, y)
-        if 0 <= neighbour_y < len(scan)
-        and 0 <= neighbour_x < len(scan[neighbour_y])
-        and scan[neighbour_y][neighbour_x]
-    )
+    return {
+        (x, y): tuple(sorted(
+            (neighbour_x, neighbour_y)
+            for neighbour_x, neighbour_y in get_neighbours(x, y)
+            if 0 <= neighbour_y < 5
+            and 0 <= neighbour_x < 5
+        ))
+        for x in range(5)
+        for y in range(5)
+    }
 
 
 def get_neighbours(x, y):
@@ -294,13 +232,104 @@ def get_neighbours(x, y):
     ]
 
 
+NEIGHBOUR_MAP = create_neighbour_map()
+
+
+# noinspection PyDefaultArgument
+def repeat_evolve_scan(scan, count, neighbour_map=NEIGHBOUR_MAP):
+    """
+    >>> print(show_scan(repeat_evolve_scan(parse_scan(
+    ...     "....#\\n"
+    ...     "#..#.\\n"
+    ...     "#..##\\n"
+    ...     "..#..\\n"
+    ...     "#....\\n"
+    ... ), 4)))
+    ####.
+    ....#
+    ##..#
+    .....
+    ##...
+    >>> scan_a = parse_scan(
+    ...     ".....\\n"
+    ...     ".....\\n"
+    ...     ".....\\n"
+    ...     "#....\\n"
+    ...     ".#...\\n"
+    ... )
+    >>> repeat_evolve_scan(scan_a, 12) == scan_a
+    True
+    """
+    current_scan = scan
+    for _ in range(count):
+        current_scan = evolve_scan(current_scan, neighbour_map=neighbour_map)
+
+    return current_scan
+
+
+# noinspection PyDefaultArgument
+def evolve_scan(scan, neighbour_map=NEIGHBOUR_MAP):
+    """
+    >>> print(show_scan(evolve_scan(parse_scan(
+    ...     "....#\\n"
+    ...     "#..#.\\n"
+    ...     "#..##\\n"
+    ...     "..#..\\n"
+    ...     "#....\\n"
+    ... ))))
+    #..#.
+    ####.
+    ###.#
+    ##.##
+    .##..
+    >>> print(show_scan(evolve_scan(evolve_scan(evolve_scan(evolve_scan(parse_scan(
+    ...     "....#\\n"
+    ...     "#..#.\\n"
+    ...     "#..##\\n"
+    ...     "..#..\\n"
+    ...     "#....\\n"
+    ... )))))))
+    ####.
+    ....#
+    ##..#
+    .....
+    ##...
+    """
+    return {
+        position: get_spot_next_state(
+            spot, get_neighbour_count(
+                scan, position, neighbour_map=neighbour_map))
+        for position, spot in scan.items()
+    }
+
+
+# noinspection PyDefaultArgument
+def get_neighbour_count(scan, position, neighbour_map=NEIGHBOUR_MAP):
+    """
+    >>> get_neighbour_count(parse_scan('#.#\\n.#.\\n#.#'), (1, 1))
+    0
+    >>> get_neighbour_count(parse_scan('#.#\\n.#.\\n#.#'), (0, 0))
+    0
+    >>> get_neighbour_count(parse_scan('#.#\\n.#.\\n#.#'), (1, 0))
+    3
+    >>> get_neighbour_count(parse_scan('#.#\\n.#.\\n#.#'), (0, 1))
+    3
+    """
+    return sum(
+        1
+        for neighbour in neighbour_map[position]
+        if scan[neighbour]
+    )
+
+
 SHOW_SCAN_MAP = {
     True: '#',
     False: '.',
 }
 
 
-def show_scan(scan):
+# noinspection PyDefaultArgument
+def show_scan(scan, show_scan_map=SHOW_SCAN_MAP):
     """
     >>> print(show_scan(parse_scan(
     ...     "..#.#\\n"
@@ -317,10 +346,10 @@ def show_scan(scan):
     """
     return "\n".join(
         "".join(
-            SHOW_SCAN_MAP[spot]
-            for spot in line
+            show_scan_map[scan[(x, y)]]
+            for x in range(5)
         )
-        for line in scan
+        for y in range(5)
     )
 
 
@@ -330,28 +359,15 @@ PARSE_SCAN_MAP = {
 }
 
 
-def parse_scan(scan_text):
-    """
-    >>> parse_scan(
-    ...     "..#.#\\n"
-    ...     "#####\\n"
-    ...     ".#...\\n"
-    ...     "...#.\\n"
-    ...     "##...\\n"
-    ... )
-    [[False, False, True, False, True], [True, True, True, True, True], \
-[False, True, False, False, False], [False, False, False, True, False], \
-[True, True, False, False, False]]
-    """
+# noinspection PyDefaultArgument
+def parse_scan(scan_text, parse_scan_map=PARSE_SCAN_MAP):
     lines = scan_text.splitlines()
     non_empty_lines = filter(None, lines)
-    return [
-        [
-            PARSE_SCAN_MAP[spot_text]
-            for spot_text in line
-        ]
-        for line in non_empty_lines
-    ]
+    return {
+        (x, y): parse_scan_map[spot_text]
+        for y, line in enumerate(non_empty_lines)
+        for x, spot_text in enumerate(line)
+    }
 
 
 if __name__ == '__main__':
