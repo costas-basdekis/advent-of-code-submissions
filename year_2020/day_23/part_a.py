@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import time
-
 import utils
 
 
@@ -37,42 +35,12 @@ class Game:
         cups_in_order = self.cups[cup_1_index + 1:] + self.cups[:cup_1_index]
         return "".join(map(str, cups_in_order))
 
-    def step_many(self, count, debug=False):
+    def step_many(self, count):
         """
         >>> Game((3, 8, 9, 1, 2, 5, 4, 6, 7)).step_many(10)
         Game(cups=(8, 3, 7, 4, 1, 9, 2, 6, 5))
         """
-        if debug:
-            start = time.time()
-            previous_end = start
-        for step in range(count):
-            if debug:
-                end = time.time()
-                duration = end - start
-                report_duration = end - previous_end
-                if step % 10000 == 0 or report_duration > 5:
-                    previous_end = end
-                    print(
-                        f"Step {step}, "
-                        f"{int(10000 * step / count) / 100}% complete, "
-                        f"{int(duration)} seconds passed, "
-                        f"{int(duration / (step + 1) * (count - step) / 60)} "
-                        F"minutes left")
-                    import itertools
-                    if len(self.cups.parts) < 20:
-                        pass
-                        # print(", ".join(
-                        #     f"{_type.__name__} * {sum(1 for _ in items)}"
-                        #     for _type, items
-                        #     in itertools.groupby(map(type, self.cups.parts))
-                        # ))
-                    else:
-                        # print(self.cups)
-                        print(len(self.cups.parts))
-                    cup_1_index = self.cups.index(1)
-                    cup_a = self.cups[cup_1_index + 1 % len(self.cups)]
-                    cup_b = self.cups[cup_1_index + 2 % len(self.cups)]
-                    print(f"Star hash: {cup_a} * {cup_b} = {cup_a * cup_b}")
+        for _ in range(count):
             self.step()
 
         return self
@@ -87,7 +55,7 @@ class Game:
         current_cup = self.cups[0]
         picked_cups, destination_cup = \
             self.select_picked_and_destination_cups()
-        cups = self.cups[:1] + self.cups[4:]
+        cups = tuple(cup for cup in self.cups if cup not in picked_cups)
         destination_index = cups.index(destination_cup)
         cups = (
             cups[:destination_index + 1]
@@ -97,9 +65,8 @@ class Game:
         updated_current_index = cups.index(current_cup)
         current_index = updated_current_index + 1
         if current_index == len(self.cups):
-            self.cups = cups
-        else:
-            self.cups = cups[current_index:] + cups[:current_index]
+            current_index = 0
+        self.cups = cups[current_index:] + cups[:current_index]
 
         return self
 
@@ -112,7 +79,7 @@ class Game:
         ...     .select_picked_and_destination_cups()
         ((8, 9, 1), 7)
         """
-        picked_cups = self.cups[1:4]
+        picked_cups = (self.cups * 2)[1:4]
         for offset in range(4):
             destination_cup = (
                 self.cups[0]
