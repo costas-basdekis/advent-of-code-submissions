@@ -13,7 +13,7 @@ class Challenge(BaseChallenge):
         >>> Challenge().default_solve()
         119
         """
-        return InstructionSet.from_instructions_text(_input).apply(Screen())\
+        return InstructionSet.result_from_instructions_text(_input)\
             .get_lit_count()
 
 
@@ -121,15 +121,25 @@ class Screen:
 
 
 InstructionT = TV['Instruction']
+ScreenT = TV['Screen']
 
 
 @dataclass
-class InstructionSet(Generic[InstructionT]):
+class InstructionSet(Generic[InstructionT, ScreenT]):
     instructions: List[InstructionT]
 
     @classmethod
     def get_instruction_class(cls) -> Type[InstructionT]:
         return get_type_argument_class(cls, InstructionT)
+
+    @classmethod
+    def get_screen_class(cls) -> Type[ScreenT]:
+        return get_type_argument_class(cls, ScreenT)
+
+    @classmethod
+    def result_from_instructions_text(cls, instructions_text: str) -> ScreenT:
+        instruction_set = cls.from_instructions_text(instructions_text)
+        return instruction_set.get_result()
 
     @classmethod
     def from_instructions_text(
@@ -149,7 +159,10 @@ class InstructionSet(Generic[InstructionT]):
         return cls(list(map(
             instruction_class.parse, instructions_text.splitlines())))
 
-    def apply(self, screen: Screen) -> Screen:
+    def get_result(self) -> ScreenT:
+        return self.apply(self.get_screen_class()())
+
+    def apply(self, screen: ScreenT) -> ScreenT:
         """
         >>> print("!" + InstructionSet([]).apply(Screen(3, 3)).show())
         !...
@@ -224,7 +237,7 @@ class Instruction:
                   ) -> Optional[Self['Instruction']]:
         raise NotImplementedError()
 
-    def apply(self, screen: Screen):
+    def apply(self, screen: Screen) -> Screen:
         raise NotImplementedError()
 
 
