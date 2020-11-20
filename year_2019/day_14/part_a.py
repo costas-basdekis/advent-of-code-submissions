@@ -20,8 +20,13 @@ def solve(_input=None):
     return get_ore_requirements(reactions)
 
 
-def get_ore_requirements(reactions):
+def get_ore_requirements(reactions, fuel_count=1):
     """
+    >>> get_ore_requirements(parse_reactions(\
+        "1 ORE => 5 A\\n"\
+        "1 ORE => 5 B\\n"\
+        "1 A, 1 B => 1 FUEL"), 15)
+    6
     >>> get_ore_requirements(parse_reactions(\
         "10 ORE => 10 A\\n"\
         "1 ORE => 1 B\\n"\
@@ -84,7 +89,15 @@ def get_ore_requirements(reactions):
         "5 BHXH, 4 VRPVC => 5 LTCX"))
     2210736
     """
-    balance = defaultdict(lambda: 0, {'FUEL': 1})
+    balance = get_balance(reactions, {'FUEL': fuel_count})
+
+    if 'ORE' not in balance:
+        raise Exception("Finished all requirements, but not ORE was required")
+    return balance['ORE']
+
+
+def get_balance(reactions, target):
+    balance = defaultdict(lambda: 0, target)
     while True:
         needs = [
             result
@@ -102,9 +115,15 @@ def get_ore_requirements(reactions):
         for ingredient, quantity in ingredients:
             balance[ingredient] += quantity * reaction_count
 
-    if 'ORE' not in balance:
-        raise Exception("Finished all requirements, but not ORE was required")
-    return balance['ORE']
+    zero_needs = [
+        need
+        for need, quantity in balance.items()
+        if quantity == 0
+    ]
+    for need in zero_needs:
+        del balance[need]
+
+    return balance
 
 
 def parse_reactions(reactions_text):
