@@ -1,6 +1,7 @@
 import copy
 import doctest
 import importlib
+import itertools
 import math
 import os
 import re
@@ -1110,6 +1111,84 @@ class BasePoint(metaclass=BasePointMeta):
             )
 
         return self.MANHATTAN_NEIGHBOUR_OFFSETS[size]
+
+    def get_euclidean_neighbours(self):
+        """
+        >>> sorted(Point2D(0, 0).get_euclidean_neighbours())
+        [Point2D(x=-1, y=-1), Point2D(x=-1, y=0), Point2D(x=-1, y=1),
+            Point2D(x=0, y=-1), Point2D(x=0, y=1),
+            Point2D(x=1, y=-1), Point2D(x=1, y=0), Point2D(x=1, y=1)]
+        """
+        return (
+            self.offset(offset)
+            for offset in self.EUCLIDEAN_OFFSETS
+        )
+
+    EUCLIDEAN_OFFSETS: List[Tuple[int, ...]]
+
+    @classmethod
+    @BasePointMeta.auto_assign_to('EUCLIDEAN_OFFSETS')
+    def get_euclidean_offsets(cls):
+        """
+        >>> sorted(Point2D.EUCLIDEAN_OFFSETS)
+        [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        >>> sorted(Point2D(0, 0).get_euclidean_offsets())
+        [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        >>> # We run it twice to make sure we didn't use a read-once iterator
+        >>> sorted(Point2D.EUCLIDEAN_OFFSETS)
+        [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        """
+        coordinate_count = len(cls.coordinates_names)
+        return [
+            offsets
+            for offsets
+            in itertools.product((-1, 0, 1), repeat=coordinate_count)
+            if any(offsets)
+        ]
+
+    def get_euclidean_neighbourhood(self, size):
+        """
+        >>> sorted(Point2D(0, 0).get_euclidean_neighbourhood(0))
+        [Point2D(x=0, y=0)]
+        >>> sorted(Point2D(0, 0).get_euclidean_neighbourhood(1))
+        [Point2D(x=-1, y=-1), Point2D(x=-1, y=0), Point2D(x=-1, y=1),
+            Point2D(x=0, y=-1), Point2D(x=0, y=0), Point2D(x=0, y=1),
+            Point2D(x=1, y=-1), Point2D(x=1, y=0), Point2D(x=1, y=1)]
+        """
+        return (
+            self.offset(offset)
+            for offset in self.get_euclidean_neighbourhood_offsets(size)
+        )
+
+    EUCLIDEAN_NEIGHBOUR_OFFSETS = {}
+
+    def get_euclidean_neighbourhood_offsets(self, size):
+        """
+        >>> sorted(Point2D(0, 0).get_euclidean_neighbourhood_offsets(0))
+        [(0, 0)]
+        >>> sorted(Point2D(0, 0).get_euclidean_neighbourhood_offsets(1))
+        [(-1, -1), (-1, 0), (-1, 1),
+            (0, -1), (0, 0), (0, 1),
+            (1, -1), (1, 0), (1, 1)]
+        """
+        if size not in self.EUCLIDEAN_NEIGHBOUR_OFFSETS:
+            zero_point = self.ZERO_POINT
+            neighbourhood = {zero_point}
+            previous_layer = [zero_point]
+            for distance in range(1, size + 1):
+                current_layer = []
+                for point in previous_layer:
+                    neighbours = \
+                        set(point.get_euclidean_neighbours()) - neighbourhood
+                    neighbourhood.update(neighbours)
+                    current_layer.extend(neighbours)
+                previous_layer = current_layer
+            self.EUCLIDEAN_NEIGHBOUR_OFFSETS[size] = tuple(
+                tuple(point.coordinates)
+                for point in neighbourhood
+            )
+
+        return self.EUCLIDEAN_NEIGHBOUR_OFFSETS[size]
 
 
 class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
