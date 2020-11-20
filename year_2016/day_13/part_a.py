@@ -77,6 +77,8 @@ class MazeSolver:
             position = stack.pop(0)
             neighbours = position.get_manhattan_neighbours()
             for neighbour in neighbours:
+                if not maze.is_position_valid(neighbour):
+                    continue
                 if neighbour in previous:
                     continue
                 if maze.get(neighbour):
@@ -125,9 +127,17 @@ class Maze:
         return self
 
     def get(self, position: Position) -> bool:
+        if not self.is_position_valid(position):
+            raise ValueError(
+                f"Position {position} is not valid: it needs to have x>=0 and "
+                f"y>=0")
         if position not in self.contents:
             self.contents[position] = self.is_position_wall(position)
         return self.contents[position]
+
+    def is_position_valid(self, position: Position) -> bool:
+        x, y = position
+        return x >= 0 and y >= 0
 
     def is_position_wall(self, position: Position) -> bool:
         base_value = self.get_base_value(position)
