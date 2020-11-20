@@ -19,7 +19,38 @@ def solve(_input=None):
     return Program.from_program_text(_input).run().manhattan_distance()
 
 
-class Ship(namedtuple("Ship", ("position", "direction"))):
+class BaseShip:
+    position = NotImplemented
+
+    def move(self, delta):
+        raise NotImplementedError()
+
+    def move_forward(self, count):
+        raise NotImplementedError()
+
+    def rotate(self, quarter_turns):
+        raise NotImplementedError()
+
+    def manhattan_distance(self):
+        """
+        >>> Ship().manhattan_distance()
+        0
+        >>> Ship((2, 3)).manhattan_distance()
+        5
+        >>> Ship((-2, 3)).manhattan_distance()
+        5
+        >>> Ship((2, -3)).manhattan_distance()
+        5
+        >>> Ship((-2, -3)).manhattan_distance()
+        5
+        >>> Ship((17, 8)).manhattan_distance()
+        25
+        """
+        x, y = self.position
+        return abs(x) + abs(y)
+
+
+class Ship(namedtuple("Ship", ("position", "direction")), BaseShip):
     DIRECTION_EAST = 'east'
     DIRECTION_WEST = 'west'
     DIRECTION_NORTH = 'north'
@@ -95,26 +126,10 @@ class Ship(namedtuple("Ship", ("position", "direction"))):
         new_direction = self.DIRECTION_SEQUENCE[new_direction_index]
         return self._replace(direction=new_direction)
 
-    def manhattan_distance(self):
-        """
-        >>> Ship().manhattan_distance()
-        0
-        >>> Ship((2, 3)).manhattan_distance()
-        5
-        >>> Ship((-2, 3)).manhattan_distance()
-        5
-        >>> Ship((2, -3)).manhattan_distance()
-        5
-        >>> Ship((-2, -3)).manhattan_distance()
-        5
-        >>> Ship((17, 8)).manhattan_distance()
-        25
-        """
-        x, y = self.position
-        return abs(x) + abs(y)
-
 
 class Program:
+    ship_class = Ship
+
     @classmethod
     def from_program_text(cls, program_text):
         """
@@ -135,7 +150,7 @@ class Program:
         Ship(position=(17, 8), direction='south')
         """
         if ship is None:
-            ship = Ship()
+            ship = self.ship_class()
 
         for instruction in self.instructions:
             ship = instruction.step(ship)
