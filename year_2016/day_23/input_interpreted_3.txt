@@ -1,0 +1,13 @@
+a, b, c, d = 12, 11, 0, 0
+
+    a *= reduce(int.__mul__, range(2, 12))
+    b = 1
+    c = 2
+    d = 0
+ 19 c = 95  # cpy 95 c
+[20]!goto 20 + d -> d = 91  # jnz 91 d -> cpy 91 d
+[21]    a += 1  # inc a
+ 22         d += 1 -> d -= 1  # inc d -> dec d
+ 23         if d != 0: goto 21  # jnz d -2
+ 24     c += 1 -> c -= 1  # inc c -> dec c
+ 25     if c != 0: goto 20 ; else: return  # jnz c -5

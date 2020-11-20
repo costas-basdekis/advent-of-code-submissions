@@ -107,26 +107,37 @@ class InstructionSetExtended(part_12_a.InstructionSet['InstructionExtended']):
         if not (0 <= state.program_counter < len(state.instructions)):
             return state
         instruction = state.instructions[state.program_counter]
-        if instruction:
+        if instruction.enabled:
             instruction.apply(state)
 
         return state
 
 
 class InstructionExtended(part_12_a.Instruction, ABC, root=True):
+    enabled: bool
+
     def reinterpret_as(self, _type: Type['InstructionExtended'],
-                       ) -> Optional['InstructionExtended']:
+                       ) -> 'InstructionExtended':
         """
         >>> InstructionExtended.parse("cpy a b").reinterpret_as(Jnz)
-        Jnz(check=Register(target='a'), offset=Register(target='b'))
+        Jnz(check=Register(target='a'), offset=Register(target='b'),
+            enabled=True)
         >>> InstructionExtended.parse("jnz 1 2").reinterpret_as(Cpy)
+        Cpy(source=Constant(value=1), destination=Constant(value=2),
+            enabled=False)
         """
-        return self.reinterpret(_type.name)
+        reinterpreted = self.reinterpret(_type.name)
+        if reinterpreted is None:
+            # noinspection PyArgumentList
+            reinterpreted = _type(*self.get_parameters(), enabled=False)
+
+        return reinterpreted
 
     def reinterpret(self, name: str) -> Optional['InstructionExtended']:
         """
         >>> InstructionExtended.parse("cpy a b").reinterpret('jnz')
-        Jnz(check=Register(target='a'), offset=Register(target='b'))
+        Jnz(check=Register(target='a'), offset=Register(target='b'),
+            enabled=True)
         >>> InstructionExtended.parse("jnz 1 2").reinterpret('cpy')
         """
         try:
@@ -165,27 +176,32 @@ class InstructionExtended(part_12_a.Instruction, ABC, root=True):
             for field_name, annotation in get_type_hints(type(self)).items()
             if isinstance(annotation, type)
             and issubclass(annotation, part_12_a.Value)
+            and field_name != 'enabled'
         ]
 
 
 @InstructionExtended.override
+@dataclass
 class Cpy(part_12_a.Cpy, InstructionExtended):
-    pass
+    enabled: bool = True
 
 
 @InstructionExtended.override
+@dataclass
 class Inc(part_12_a.Inc, InstructionExtended):
-    pass
+    enabled: bool = True
 
 
 @InstructionExtended.override
+@dataclass
 class Dec(part_12_a.Dec, InstructionExtended):
-    pass
+    enabled: bool = True
 
 
 @InstructionExtended.override
+@dataclass
 class Jnz(part_12_a.Jnz, InstructionExtended):
-    pass
+    enabled: bool = True
 
 
 @InstructionExtended.register
@@ -193,6 +209,7 @@ class Jnz(part_12_a.Jnz, InstructionExtended):
 class Tgl(InstructionExtended):
     name = 'tgl'
     offset: part_12_a.LValue
+    enabled: bool = True
 
     re_toggle = re.compile(r"^tgl ([^ ]+)$")
 
@@ -200,13 +217,13 @@ class Tgl(InstructionExtended):
     def try_parse(cls, text: str):
         """
         >>> Tgl.try_parse("tgl a")
-        Tgl(offset=Register(target='a'))
+        Tgl(offset=Register(target='a'), enabled=True)
         >>> Tgl.try_parse("tgl -2")
-        Tgl(offset=Constant(value=-2))
+        Tgl(offset=Constant(value=-2), enabled=True)
         >>> InstructionExtended.parse("tgl a")
-        Tgl(offset=Register(target='a'))
+        Tgl(offset=Register(target='a'), enabled=True)
         >>> InstructionExtended.parse("tgl -2")
-        Tgl(offset=Constant(value=-2))
+        Tgl(offset=Constant(value=-2), enabled=True)
         """
         match = cls.re_toggle.match(text)
         if not match:
@@ -225,16 +242,13 @@ class Tgl(InstructionExtended):
 
         return state
 
-    def reinterpret_instruction(
-            self, instruction: Optional[InstructionExtended],
-    ) -> Optional[InstructionExtended]:
+    def reinterpret_instruction(self, instruction: InstructionExtended,
+                                ) -> InstructionExtended:
         """
         >>> Tgl(part_12_a.Constant(0)).reinterpret_instruction(
         ...     Inc(part_12_a.Register('a')))
-        Dec(register=Register(target='a'))
+        Dec(register=Register(target='a'), enabled=True)
         """
-        if not instruction:
-            return None
         return instruction.reinterpret(
             self.REINTERPRET_MAP[type(instruction)].name)
 

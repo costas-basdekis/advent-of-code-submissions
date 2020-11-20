@@ -1,0 +1,28 @@
+a, b, c, d = 12, 0, 0, 0
+
+ 00 b = a  # cpy a b
+ 01 b -= 1  # dec b
+[02]d = a  # cpy a d
+ 03 a = 0  # cpy 0 a
+[04]c = b  # cpy b c
+[05]a += 1  # inc a
+ 06 c -= 1  # dec c
+ 07 if c != 0: goto 05  # jnz c -2
+ 08 d -= 1  # dec d
+ 09 if d != 0: goto 04  # jnz d -5
+ 10 b -= 1  # dec b
+ 11 c = b  # cpy b c
+ 12 d = c  # cpy c d
+[13]d -= 1  # dec d
+ 14 c += 1  # inc c
+ 15 if d != 0: goto 13  # jnz d -2
+ 16 !toggle 16 + c  # tgl c
+ 17 c = -16  # cpy -16 c
+ 18 goto 02  # jnz 1 c
+ 19 c = 95  # cpy 95 c
+[20]!goto 20 + d  # jnz 91 d
+[21]a += 1  # inc a
+ 22 d += 1  # inc d
+ 23 if d != 0: goto 21  # jnz d -2
+ 24 c += 1  # inc c
+ 25 if c != 0: goto 20 ; else: return  # jnz c -5
