@@ -8,7 +8,7 @@ from year_2018.day_09 import part_a
 def solve(_input=None):
     """
     >>> solve()
-    42
+    3527845091
     """
     if _input is None:
         _input = get_current_directory(__file__)\
