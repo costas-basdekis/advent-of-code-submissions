@@ -24,30 +24,32 @@ class Schedule:
         ...     "939\\n"
         ...     "7,13,x,x,59,x,31,19\\n"
         ... )
-        >>> schedule.min_departure_time, schedule.bus_numbers, schedule.discontinued_buses_indexes
-        (939, (7, 13, 59, 31, 19), (2, 3, 5))
+        >>> schedule.min_departure_time, schedule.bus_numbers_and_indexes
+        (939, {7: 0, 13: 1, 59: 4, 31: 6, 19: 7})
         """
         min_departure_time_text, buses_text = \
             filter(None, schedule_text.splitlines())
         min_departure_time = int(min_departure_time_text)
-        bus_numbers = tuple(
-            int(number_text)
-            for number_text in buses_text.split(",")
-            if number_text != 'x'
-        )
-        discontinued_buses_indexes = tuple(
-            index
+        return cls.from_buses_text(buses_text, min_departure_time)
+
+    @classmethod
+    def from_buses_text(cls, buses_text, min_departure_time=0):
+        """
+        >>> schedule = Schedule.from_buses_text("7,13,x,x,59,x,31,19")
+        >>> schedule.min_departure_time, schedule.bus_numbers_and_indexes
+        (0, {7: 0, 13: 1, 59: 4, 31: 6, 19: 7})
+        """
+        bus_numbers_and_indexes = {
+            int(number_text): index
             for index, number_text in enumerate(buses_text.split(","))
-            if number_text == 'x'
-        )
+            if number_text != 'x'
+        }
 
-        return cls(min_departure_time, bus_numbers, discontinued_buses_indexes)
+        return cls(min_departure_time, bus_numbers_and_indexes)
 
-    def __init__(self, min_departure_time, bus_numbers,
-                 discontinued_buses_indexes):
+    def __init__(self, min_departure_time, bus_numbers_and_indexes):
         self.min_departure_time = min_departure_time
-        self.bus_numbers = bus_numbers
-        self.discontinued_buses_indexes = discontinued_buses_indexes
+        self.bus_numbers_and_indexes = bus_numbers_and_indexes
 
     def get_earliest_bus_hash(self):
         """
@@ -72,7 +74,7 @@ class Schedule:
         """
         modulo_by_bus_number = {
             bus_number: self.min_departure_time % bus_number
-            for bus_number in self.bus_numbers
+            for bus_number in self.bus_numbers_and_indexes
         }
         immediate_bus_numbers = [
             bus_number
