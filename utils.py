@@ -1,4 +1,5 @@
 import doctest
+import itertools
 import math
 import os
 import sys
@@ -6,6 +7,7 @@ import timeit
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Tuple, List
 
 import click
 
@@ -173,9 +175,49 @@ class Helper:
         stats.update({'end': end, 'duration': end - start})
 
 
-class BasePoint:
-    _fields = NotImplemented
-    coordinates_names = NotImplemented
+class BasePointMeta(type):
+    @classmethod
+    def auto_assign_to(mcs, attribute):
+        def decorator(method):
+            method.auto_assign_to = attribute
+            return method
+
+        return decorator
+
+    def __new__(mcs, *args, **kwargs):
+        # noinspection PyPep8Naming
+        Point = super().__new__(mcs, *args, **kwargs)
+
+        mcs.assign_auto_attributes(mcs, Point)
+
+        return Point
+
+    # noinspection PyPep8Naming
+    def assign_auto_attributes(cls, Point):
+        if Point.__name__ == 'BasePoint':
+            return
+        for name in dir(Point):
+            attribute = getattr(Point, name)
+            if attribute == cls:
+                continue
+            auto_assign_to = getattr(attribute, 'auto_assign_to', None)
+            if auto_assign_to is None:
+                continue
+            setattr(Point, auto_assign_to, attribute())
+
+
+class BasePoint(metaclass=BasePointMeta):
+    _fields: Tuple[str, ...]
+    coordinates_names: Tuple[str, ...]
+
+    @classmethod
+    def from_comma_delimited_text(cls, point_text):
+        """
+        >>> Point4D.from_comma_delimited_text("0,-8,-4,-6")
+        Point4D(x=0, y=-8, z=-4, t=-6)
+        """
+        parts = map(str.strip, point_text.split(","))
+        return cls.from_int_texts(*parts)
 
     @classmethod
     def from_int_texts(cls, *coordinate_strs, **named_coordinate_strs):
@@ -202,6 +244,17 @@ class BasePoint:
                 f"{len(coordinate_strs)}")
         # noinspection PyArgumentList
         return cls(*map(int, coordinate_strs))
+
+    @classmethod
+    def get_zero_point(cls):
+        """
+        >>> Point2D.get_zero_point()
+        Point2D(x=0, y=0)
+        >>> Point2D(-3, 4).get_zero_point()
+        Point2D(x=0, y=0)
+        """
+        # noinspection PyArgumentList
+        return cls(*(0,) * len(cls.coordinates_names))
 
     @property
     def coordinates(self):
@@ -252,6 +305,92 @@ class BasePoint:
             in zip(self.coordinates, other.coordinates)
         )
 
+    def offset(self, offsets):
+        """
+        >>> Point3D(3, -2, 4).offset((-2, -5, 3))
+        Point3D(x=1, y=-7, z=7)
+        """
+        cls = type(self)
+        # noinspection PyArgumentList
+        return cls(**{
+            name: coordinate + offset
+            for name, coordinate, offset
+            in zip(self.coordinates_names, self.coordinates, offsets)
+        })
+
+    def get_manhattan_neighbours(self):
+        """
+        >>> sorted(Point2D(0, 0).get_manhattan_neighbours())
+        [Point2D(x=-1, y=0), Point2D(x=0, y=-1), Point2D(x=0, y=1),
+            Point2D(x=1, y=0)]
+        """
+        return (
+            self.offset(offset)
+            for offset in self.MANHATTAN_OFFSETS
+        )
+
+    MANHATTAN_OFFSETS: List[Tuple[int, ...]]
+
+    @classmethod
+    @BasePointMeta.auto_assign_to('MANHATTAN_OFFSETS')
+    def get_manhattan_offsets(cls):
+        """
+        >>> sorted(Point2D.MANHATTAN_OFFSETS)
+        [(-1, 0), (0, -1), (0, 1), (1, 0)]
+        >>> sorted(Point2D(0, 0).get_manhattan_offsets())
+        [(-1, 0), (0, -1), (0, 1), (1, 0)]
+        >>> # We run it twice to make sure we didn't use a read-once iterator
+        >>> sorted(Point2D.MANHATTAN_OFFSETS)
+        [(-1, 0), (0, -1), (0, 1), (1, 0)]
+        """
+        coordinate_count = len(cls.coordinates_names)
+        return [
+            (0,) * index + (delta,) + (0,) * (coordinate_count - index - 1)
+            for index in range(coordinate_count)
+            for delta in (-1, 1)
+        ]
+
+    def get_manhattan_neighbourhood(self, size):
+        """
+        >>> sorted(Point2D(0, 0).get_manhattan_neighbourhood(0))
+        [Point2D(x=0, y=0)]
+        >>> sorted(Point2D(0, 0).get_manhattan_neighbourhood(1))
+        [Point2D(x=-1, y=0), Point2D(x=0, y=-1), Point2D(x=0, y=0),
+            Point2D(x=0, y=1), Point2D(x=1, y=0)]
+        """
+        return (
+            self.offset(offset)
+            for offset in self.get_manhattan_neighbourhood_offsets(size)
+        )
+
+    MANHATTAN_NEIGHBOUR_OFFSETS = {}
+
+    def get_manhattan_neighbourhood_offsets(self, size):
+        """
+        >>> sorted(Point2D(0, 0).get_manhattan_neighbourhood_offsets(0))
+        [(0, 0)]
+        >>> sorted(Point2D(0, 0).get_manhattan_neighbourhood_offsets(1))
+        [(-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)]
+        """
+        if size not in self.MANHATTAN_NEIGHBOUR_OFFSETS:
+            zero_point = self.get_zero_point()
+            neighbourhood = {zero_point}
+            previous_layer = [zero_point]
+            for distance in range(1, size + 1):
+                current_layer = []
+                for point in previous_layer:
+                    neighbours = \
+                        set(point.get_manhattan_neighbours()) - neighbourhood
+                    neighbourhood.update(neighbours)
+                    current_layer.extend(neighbours)
+                previous_layer = current_layer
+            self.MANHATTAN_NEIGHBOUR_OFFSETS[size] = tuple(
+                tuple(point.coordinates)
+                for point in neighbourhood
+            )
+
+        return self.MANHATTAN_NEIGHBOUR_OFFSETS[size]
+
 
 class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
     coordinates_names = ("x", "y")
@@ -259,6 +398,10 @@ class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
 
 class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
     coordinates_names = ("x", "y", "z")
+
+
+class Point4D(namedtuple("Point4D", ("x", "y", "z", "t")), BasePoint):
+    coordinates_names = ("x", "y", "z", "t")
 
 
 helper = Helper()
