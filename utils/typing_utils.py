@@ -4,11 +4,12 @@ from typing import TypeVar, Type, ForwardRef, get_args, Generic, Union, \
 # noinspection PyUnresolvedReferences,PyProtectedMember
 from typing import _type_check
 
-from tests.utils import DummyModule
 from utils.collections_utils import KeyedDefaultDict
 
 __all__ = [
+    'Bound',
     'Cls', 'Self',
+    'TV',
     'get_type_argument_class',
     'resolve_type_argument',
     'get_type_argument',
@@ -16,7 +17,10 @@ __all__ = [
 ]
 
 
-def create_named_self(bound):
+Bound = Union[str, Type]
+
+
+def create_named_self(bound: Bound) -> TypeVar:
     """
     >>> create_named_self('SomeClass')
     ~Self
@@ -36,7 +40,7 @@ def create_named_self(bound):
     return TypeVar('Self', bound=bound)
 
 
-def create_named_cls(bound):
+def create_named_cls(bound: Bound):
     """
     >>> create_named_cls('SomeClass')
     typing.Type[~Self]
@@ -58,6 +62,36 @@ def create_named_cls(bound):
 Self = KeyedDefaultDict(create_named_self)
 Cls = KeyedDefaultDict(create_named_cls)
 
+
+def create_bound_type_var(bound: Bound) -> TypeVar:
+    """
+    >>> create_bound_type_var('A')
+    ~AT
+    >>> class A: pass
+    >>> create_bound_type_var(A)
+    ~AT
+    >>> TV['A']
+    ~AT
+    >>> TV[A]
+    ~AT
+    >>> TV['A'] is TV['A']
+    True
+    >>> TV[A] is TV[A]
+    True
+    >>> TV['A'] is TV[A]
+    False
+    """
+    if isinstance(bound, str):
+        name = f"{bound}T"
+    else:
+        _class = bound
+        name = f"{_class.__name__}T"
+    # noinspection PyTypeHints
+    return TypeVar(name, bound=bound)
+
+
+T = TypeVar('T')
+TV: Dict[Bound, T] = KeyedDefaultDict(create_bound_type_var)
 
 TypeArgument = Union[TypeVar, ForwardRef, Type]
 
@@ -113,6 +147,10 @@ def resolve_type_argument(cls: Type['Generic'], type_or_var: TypeArgument,
     """
     Convert a `TypeVar` or a `ForwardRef` to their actual type.
 
+    >>> class DummyModule:
+    ...     def __init__(self, **kwargs):
+    ...         for key, value in kwargs.items():
+    ...             setattr(self, key, value)
     >>> # noinspection PyTypeChecker
     >>> T1 = TypeVar('T1', bound='B')
     >>> class B: pass
