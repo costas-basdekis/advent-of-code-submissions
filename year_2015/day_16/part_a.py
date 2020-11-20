@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import re
 from dataclasses import dataclass
-from typing import Optional, List, get_type_hints, Dict, Generic, Type, Tuple
+from typing import Optional, List, get_type_hints, Dict, Generic, Type, Tuple, \
+    Iterable
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, TV, get_type_argument_class
@@ -52,7 +53,7 @@ class AuntSet(Generic[SampleT]):
         aunt_id, = (
             aunt_id
             for aunt_id, aunt_sample in self.aunts
-            if sample.is_compatible_with(aunt_sample)
+            if sample.is_sample_for(aunt_sample)
         )
 
         return aunt_id
@@ -139,38 +140,48 @@ class Sample:
 
         return cls(**{**cls.get_default_pairs(), **pairs})
 
-    def is_compatible_with(self, other: 'Sample') -> bool:
+    def is_sample_for(self, other: 'Sample') -> bool:
         """
-        >>> Sample.from_sample_text("").is_compatible_with(
+        >>> Sample.from_sample_text("").is_sample_for(
         ...     Sample.from_sample_text(""))
         True
-        >>> Sample.from_sample_text("cars: 9").is_compatible_with(
+        >>> Sample.from_sample_text("cars: 9").is_sample_for(
         ...     Sample.from_sample_text("cars: 5, children: 9"))
         False
-        >>> Sample.from_sample_text("cars: 9, children: 5").is_compatible_with(
+        >>> Sample.from_sample_text("cars: 9, children: 5").is_sample_for(
         ...     Sample.from_sample_text("cars: 9, children: 9"))
         False
-        >>> Sample.from_sample_text("cars: 9").is_compatible_with(
+        >>> Sample.from_sample_text("cars: 9").is_sample_for(
         ...     Sample.from_sample_text("children: 9"))
         True
-        >>> Sample.from_sample_text("cars: 9").is_compatible_with(
+        >>> Sample.from_sample_text("cars: 9").is_sample_for(
         ...     Sample.from_sample_text("cars: 9, children: 9"))
         True
-        >>> Sample.from_sample_text("cars: 9").is_compatible_with(
+        >>> Sample.from_sample_text("cars: 9").is_sample_for(
         ...     Sample.from_sample_text("cars: 9"))
         True
-        >>> Sample.from_sample_text("").is_compatible_with(
+        >>> Sample.from_sample_text("").is_sample_for(
         ...     Sample.from_sample_text("cars: 9"))
         True
         """
+        return self.is_sample_for_with_for_fields(other, self.get_field_names())
+
+    def is_sample_for_with_for_fields(self, other: 'Sample',
+                                      field_names: Iterable[str]) -> bool:
         fields = [
-            (getattr(self, field_name), getattr(other, field_name))
-            for field_name in self.get_field_names()
+            (field_name, getattr(self, field_name), getattr(other, field_name))
+            for field_name in field_names
         ]
         return all(
-            lhs is None or rhs is None or lhs == rhs
-            for lhs, rhs in fields
+            from_sample is None or from_other is None
+            or self.is_value_from_sample_for(
+                field_name, from_sample, from_other)
+            for field_name, from_sample, from_other in fields
         )
+
+    def is_value_from_sample_for(self, field_name: str,
+                                 from_sample: int, from_other: int) -> bool:
+        return from_sample == from_other
 
 
 Challenge.main()
