@@ -2,13 +2,12 @@
 import re
 from collections import Iterable
 from dataclasses import dataclass
-from hashlib import md5
 from itertools import count
 from typing import Optional
 
 from aox.utils import Timer
 
-from utils import BaseChallenge, get_windows
+from utils import BaseChallenge, get_windows, get_md5_hex_hash
 
 
 class Challenge(BaseChallenge):
@@ -138,18 +137,7 @@ class KeyGenerator:
         >>> KeyGenerator("abc").get_hash(816)
         '...eeeee...'
         """
-        return self.hash_text(f"{self.salt}{index}")
-
-    def hash_text(self, text: str) -> str:
-        """
-        >>> KeyGenerator("").hash_text("abc18")
-        '...cc38887a5...'
-        >>> KeyGenerator("").hash_text("abc39")
-        '...eee...'
-        >>> KeyGenerator("").hash_text("abc816")
-        '...eeeee...'
-        """
-        return md5(text.encode()).digest().hex()
+        return get_md5_hex_hash(f"{self.salt}{index}")
 
 
 Challenge.main()

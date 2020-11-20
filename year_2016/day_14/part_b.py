@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 
-from utils import BaseChallenge
+from utils import BaseChallenge, get_md5_hex_hash
 from . import part_a
 
 
@@ -32,7 +32,7 @@ class KeyGeneratorExtended(part_a.KeyGenerator):
         """
         _hash = super().get_hash(index)
         for _ in range(self.extra_hash_iterations):
-            _hash = self.hash_text(_hash)
+            _hash = get_md5_hex_hash(_hash)
 
         return _hash
 

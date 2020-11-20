@@ -3,6 +3,7 @@ import importlib
 from .base_challenge import *
 from .bitpacking import *
 from .collections_utils import *
+from .crypto import *
 from .helper import *
 from .math_utils import *
 from .point import *
@@ -15,6 +16,7 @@ test_modules = sum((
         importlib.import_module('utils.base_challenge'),
         importlib.import_module('utils.bitpacking'),
         importlib.import_module('utils.collections_utils'),
+        importlib.import_module('utils.crypto'),
         importlib.import_module('utils.math_utils'),
         importlib.import_module('utils.helper'),
         importlib.import_module('utils.point'),
