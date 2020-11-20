@@ -59,13 +59,40 @@ def get_orbit_count(start, mapping):
         "COM)B\\nB)C\\nC)D\\nD)E\\nE)F\\nB)G\\nG)H\\nD)I\\nE)J\\nJ)K\\nK)L")))
     0
     """
-    count = 0
+    path = get_orbit_path(start, mapping)
+
+    return len(path) - 1
+
+
+def get_orbit_path(start, mapping):
+    """
+    >>> get_orbit_path('COM', {'A': 'COM', 'B': 'A', 'C': 'B', 'D': 'B'})
+    ['COM']
+    >>> get_orbit_path('A', {'A': 'COM', 'B': 'A', 'C': 'B', 'D': 'B'})
+    ['A', 'COM']
+    >>> get_orbit_path('B', {'A': 'COM', 'B': 'A', 'C': 'B', 'D': 'B'})
+    ['B', 'A', 'COM']
+    >>> get_orbit_path('C', {'A': 'COM', 'B': 'A', 'C': 'B', 'D': 'B'})
+    ['C', 'B', 'A', 'COM']
+    >>> get_orbit_path('D', {'A': 'COM', 'B': 'A', 'C': 'B', 'D': 'B'})
+    ['D', 'B', 'A', 'COM']
+    >>> get_orbit_path('D', create_orbit_mapping(parse_orbits(\
+        "COM)B\\nB)C\\nC)D\\nD)E\\nE)F\\nB)G\\nG)H\\nD)I\\nE)J\\nJ)K\\nK)L")))
+    ['D', 'C', 'B', 'COM']
+    >>> get_orbit_path('L', create_orbit_mapping(parse_orbits(\
+        "COM)B\\nB)C\\nC)D\\nD)E\\nE)F\\nB)G\\nG)H\\nD)I\\nE)J\\nJ)K\\nK)L")))
+    ['L', 'K', 'J', 'E', 'D', 'C', 'B', 'COM']
+    >>> get_orbit_path('COM', create_orbit_mapping(parse_orbits(\
+        "COM)B\\nB)C\\nC)D\\nD)E\\nE)F\\nB)G\\nG)H\\nD)I\\nE)J\\nJ)K\\nK)L")))
+    ['COM']
+    """
+    path = [start]
     position = start
     while position != UNIVERSAL_CENTER_OF_MASS:
         position = mapping[position]
-        count += 1
+        path.append(position)
 
-    return count
+    return path
 
 
 def create_orbit_mapping(orbits):
