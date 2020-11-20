@@ -21,6 +21,10 @@ def solve(_input=None):
 
 
 class Solver:
+    rule_set_class = NotImplemented
+    ticket_class = NotImplemented
+    ticket_set_class = NotImplemented
+
     @classmethod
     def from_text(cls, text):
         """
@@ -46,19 +50,20 @@ class Solver:
         """
         rules_text, your_ticket_section, nearby_tickets_section = \
             text.strip().split("\n\n")
-        rule_set = RuleSet.from_rules_text(rules_text)
+        rule_set = cls.rule_set_class.from_rules_text(rules_text)
 
         your_ticket, your_ticket_text = your_ticket_section.splitlines()
         if your_ticket != "your ticket:":
             raise Exception(f"Expected 'your ticket:' but got {your_ticket}")
-        your_ticket = Ticket.from_ticket_text(your_ticket_text)
+        your_ticket = cls.ticket_class.from_ticket_text(your_ticket_text)
 
         nearby_tickets, nearby_tickets_text = \
             nearby_tickets_section.split("\n", 1)
         if nearby_tickets != "nearby tickets:":
             raise Exception(
                 f"Expected 'nearby tickets:' but got {nearby_tickets}")
-        ticket_set = TicketSet.from_tickets_text(nearby_tickets_text)
+        ticket_set = cls.ticket_set_class\
+            .from_tickets_text(nearby_tickets_text)
 
         return cls(rule_set, your_ticket, ticket_set)
 
@@ -118,6 +123,8 @@ class Solver:
 
 
 class RuleSet:
+    rule_class = NotImplemented
+
     @classmethod
     def from_rules_text(cls, rules_text):
         """
@@ -129,7 +136,7 @@ class RuleSet:
         Rule(name='departure station', values={39, ..., 960})])
         """
         non_empty_lines = filter(None, rules_text.splitlines())
-        return cls(list(map(Rule.from_rule_text, non_empty_lines)))
+        return cls(list(map(cls.rule_class.from_rule_text, non_empty_lines)))
 
     def __init__(self, rules):
         self.rules = rules
@@ -138,30 +145,33 @@ class RuleSet:
     def __repr__(self):
         return f"{type(self).__name__}({self.rules})"
 
-    def get_valid_values(self, tickets):
+    def get_valid_values(self, rules):
         """
         >>> RuleSet([]).get_valid_values([])
         set()
         >>> RuleSet([]).get_valid_values([
-        ...     Ticket(values={1, 2, 3}),
+        ...     Rule(name="a", values={1, 2, 3}),
         ... ])
         {1, 2, 3}
         >>> RuleSet([]).get_valid_values([
-        ...     Ticket(values={1, 2, 3}),
-        ...     Ticket(values={7, 8, 9}),
+        ...     Rule(name="a", values={1, 2, 3}),
+        ...     Rule(name="b", values={7, 8, 9}),
         ... ])
         {1, 2, 3, 7, 8, 9}
         >>> RuleSet([]).get_valid_values([
-        ...     Ticket(values={1, 2, 3}),
-        ...     Ticket(values={7, 8, 9}),
-        ...     Ticket(values={2, 7, 10}),
+        ...     Rule(name="a", values={1, 2, 3}),
+        ...     Rule(name="b", values={7, 8, 9}),
+        ...     Rule(name="c", values={2, 7, 10}),
         ... ])
         {1, 2, 3, 7, 8, 9, 10}
         """
         return functools.reduce(set.__or__, (
-            ticket.values
-            for ticket in tickets
+            rule.values
+            for rule in rules
         ), set())
+
+
+Solver.rule_set_class = RuleSet
 
 
 class Rule(namedtuple("Rule", ("name", "values"))):
@@ -185,7 +195,12 @@ class Rule(namedtuple("Rule", ("name", "values"))):
         ))
 
 
+RuleSet.rule_class = Rule
+
+
 class TicketSet:
+    ticket_class = NotImplemented
+
     @classmethod
     def from_tickets_text(cls, tickets_text):
         """
@@ -201,7 +216,8 @@ class TicketSet:
         578, 575, 901, 151, 440, 494, 283, 274))])
         """
         non_empty_lines = filter(None, tickets_text.splitlines())
-        return cls(list(map(Ticket.from_ticket_text, non_empty_lines)))
+        return cls(list(map(
+            cls.ticket_class.from_ticket_text, non_empty_lines)))
 
     def __init__(self, tickets):
         self.tickets = tickets
@@ -286,6 +302,9 @@ class TicketSet:
         ]
 
 
+Solver.ticket_set_class = TicketSet
+
+
 class Ticket:
     @classmethod
     def from_ticket_text(cls, ticket_text):
@@ -329,8 +348,13 @@ class Ticket:
         return bool(self.get_invalid_values(valid_values))
 
 
+Solver.ticket_class = Ticket
+TicketSet.ticket_class = Ticket
+
+
 if __name__ == '__main__':
-    if doctest.testmod(optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE).failed:
+    optionflags = doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE
+    if doctest.testmod(optionflags=optionflags).failed:
         print("Tests failed")
     else:
         print("Tests passed")
