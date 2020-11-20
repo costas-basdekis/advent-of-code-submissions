@@ -9,7 +9,7 @@ leaderboards have submitted the challenges
 
 | Total | 2020 | 2019 | 2018 |
 | --- | --- | --- | --- |
-| 144 :star: | 50 :star: :star: | 46 :star: | 48 :star: |
+| 145 :star: | 50 :star: :star: | 46 :star: | 49 :star: |
 
 [//]: # (summary-end)
 
@@ -21,35 +21,35 @@ leaderboards have submitted the challenges
 
 [//]: # (submissions-start)
 
-|       | 2020                                     | 2019                                                             | 2018                                                             |
-|  ---: | :---:                                    | :---:                                                            | :---:                                                            |
-|       | Code &             [Challenges][ch-20]   | [Code][co-19]    &                         [Challenges][ch-19]   | [Code][co-18]    &                         [Challenges][ch-18]   |
-|       | 50 :star: :star:                         | 46 :star: / 3 :x: / 1 :grey_exclamation:                         | 48 :star: / 1 :x: / 1 :grey_exclamation:                         |
-|  1    | Code :star: :star: [Challenge][ch-20-01] | [Code][co-19-01] :star: :star:             [Challenge][ch-19-01] | [Code][co-18-01] :star: :star:             [Challenge][ch-18-01] |
-|  2    | Code :star: :star: [Challenge][ch-20-02] | [Code][co-19-02] :star: :star:             [Challenge][ch-19-02] | [Code][co-18-02] :star: :star:             [Challenge][ch-18-02] |
-|  3    | Code :star: :star: [Challenge][ch-20-03] | [Code][co-19-03] :star: :star:             [Challenge][ch-19-03] | [Code][co-18-03] :star: :star:             [Challenge][ch-18-03] |
-|  4    | Code :star: :star: [Challenge][ch-20-04] | [Code][co-19-04] :star: :star:             [Challenge][ch-19-04] | [Code][co-18-04] :star: :star:             [Challenge][ch-18-04] |
-|  5    | Code :star: :star: [Challenge][ch-20-05] | [Code][co-19-05] :star: :star:             [Challenge][ch-19-05] | [Code][co-18-05] :star: :star:             [Challenge][ch-18-05] |
-|  6    | Code :star: :star: [Challenge][ch-20-06] | [Code][co-19-06] :star: :star:             [Challenge][ch-19-06] | [Code][co-18-06] :star: :star:             [Challenge][ch-18-06] |
-|  7    | Code :star: :star: [Challenge][ch-20-07] | [Code][co-19-07] :star: :star:             [Challenge][ch-19-07] | [Code][co-18-07] :star: :star:             [Challenge][ch-18-07] |
-|  8    | Code :star: :star: [Challenge][ch-20-08] | [Code][co-19-08] :star: :star:             [Challenge][ch-19-08] | [Code][co-18-08] :star: :star:             [Challenge][ch-18-08] |
-|  9    | Code :star: :star: [Challenge][ch-20-09] | [Code][co-19-09] :star: :star:             [Challenge][ch-19-09] | [Code][co-18-09] :star: :star:             [Challenge][ch-18-09] |
-| 10    | Code :star: :star: [Challenge][ch-20-10] | [Code][co-19-10] :star: :star:             [Challenge][ch-19-10] | [Code][co-18-10] :star: :star:             [Challenge][ch-18-10] |
-| 11    | Code :star: :star: [Challenge][ch-20-11] | [Code][co-19-11] :star: :star:             [Challenge][ch-19-11] | [Code][co-18-11] :star: :star:             [Challenge][ch-18-11] |
-| 12    | Code :star: :star: [Challenge][ch-20-12] | [Code][co-19-12] :star: :star:             [Challenge][ch-19-12] | [Code][co-18-12] :star: :star:             [Challenge][ch-18-12] |
-| 13    | Code :star: :star: [Challenge][ch-20-13] | [Code][co-19-13] :star: :star:             [Challenge][ch-19-13] | [Code][co-18-13] :star: :star:             [Challenge][ch-18-13] |
-| 14    | Code :star: :star: [Challenge][ch-20-14] | [Code][co-19-14] :star: :star:             [Challenge][ch-19-14] | [Code][co-18-14] :star: :x:                [Challenge][ch-18-14] |
-| 15    | Code :star: :star: [Challenge][ch-20-15] | [Code][co-19-15] :star: :star:             [Challenge][ch-19-15] | [Code][co-18-15] :star: :star:             [Challenge][ch-18-15] |
-| 16    | Code :star: :star: [Challenge][ch-20-16] | [Code][co-19-16] :star: :x:                [Challenge][ch-19-16] | [Code][co-18-16] :star: :star:             [Challenge][ch-18-16] |
-| 17    | Code :star: :star: [Challenge][ch-20-17] | [Code][co-19-17] :star: :x:                [Challenge][ch-19-17] | [Code][co-18-17] :star: :star:             [Challenge][ch-18-17] |
-| 18    | Code :star: :star: [Challenge][ch-20-18] | [Code][co-19-18] :star: :star:             [Challenge][ch-19-18] | [Code][co-18-18] :star: :star:             [Challenge][ch-18-18] |
-| 19    | Code :star: :star: [Challenge][ch-20-19] | [Code][co-19-19] :star: :star:             [Challenge][ch-19-19] | [Code][co-18-19] :star: :star:             [Challenge][ch-18-19] |
-| 20    | Code :star: :star: [Challenge][ch-20-20] | [Code][co-19-20] :star: :star:             [Challenge][ch-19-20] | [Code][co-18-20] :star: :star:             [Challenge][ch-18-20] |
-| 21    | Code :star: :star: [Challenge][ch-20-21] | [Code][co-19-21] :star: :star:             [Challenge][ch-19-21] | [Code][co-18-21] :star: :star:             [Challenge][ch-18-21] |
-| 22    | Code :star: :star: [Challenge][ch-20-22] | [Code][co-19-22] :star: :x:                [Challenge][ch-19-22] | [Code][co-18-22] :star: :star:             [Challenge][ch-18-22] |
-| 23    | Code :star: :star: [Challenge][ch-20-23] | [Code][co-19-23] :star: :star:             [Challenge][ch-19-23] | [Code][co-18-23] :star: :star:             [Challenge][ch-18-23] |
-| 24    | Code :star: :star: [Challenge][ch-20-24] | [Code][co-19-24] :star: :star:             [Challenge][ch-19-24] | [Code][co-18-24] :star: :star:             [Challenge][ch-18-24] |
-| 25    | Code :star: :star: [Challenge][ch-20-25] | [Code][co-19-25] :star: :grey_exclamation: [Challenge][ch-19-25] | [Code][co-18-25] :star: :grey_exclamation: [Challenge][ch-18-25] |
+|       | 2020                                     | 2019                                                             | 2018                                                 |
+|  ---: | :---:                                    | :---:                                                            | :---:                                                |
+|       | Code &             [Challenges][ch-20]   | [Code][co-19]    &                         [Challenges][ch-19]   | [Code][co-18]    &             [Challenges][ch-18]   |
+|       | 50 :star: :star:                         | 46 :star: / 3 :x: / 1 :grey_exclamation:                         | 49 :star: / 0 :x: / 0 :grey_exclamation:             |
+|  1    | Code :star: :star: [Challenge][ch-20-01] | [Code][co-19-01] :star: :star:             [Challenge][ch-19-01] | [Code][co-18-01] :star: :star: [Challenge][ch-18-01] |
+|  2    | Code :star: :star: [Challenge][ch-20-02] | [Code][co-19-02] :star: :star:             [Challenge][ch-19-02] | [Code][co-18-02] :star: :star: [Challenge][ch-18-02] |
+|  3    | Code :star: :star: [Challenge][ch-20-03] | [Code][co-19-03] :star: :star:             [Challenge][ch-19-03] | [Code][co-18-03] :star: :star: [Challenge][ch-18-03] |
+|  4    | Code :star: :star: [Challenge][ch-20-04] | [Code][co-19-04] :star: :star:             [Challenge][ch-19-04] | [Code][co-18-04] :star: :star: [Challenge][ch-18-04] |
+|  5    | Code :star: :star: [Challenge][ch-20-05] | [Code][co-19-05] :star: :star:             [Challenge][ch-19-05] | [Code][co-18-05] :star: :star: [Challenge][ch-18-05] |
+|  6    | Code :star: :star: [Challenge][ch-20-06] | [Code][co-19-06] :star: :star:             [Challenge][ch-19-06] | [Code][co-18-06] :star: :star: [Challenge][ch-18-06] |
+|  7    | Code :star: :star: [Challenge][ch-20-07] | [Code][co-19-07] :star: :star:             [Challenge][ch-19-07] | [Code][co-18-07] :star: :star: [Challenge][ch-18-07] |
+|  8    | Code :star: :star: [Challenge][ch-20-08] | [Code][co-19-08] :star: :star:             [Challenge][ch-19-08] | [Code][co-18-08] :star: :star: [Challenge][ch-18-08] |
+|  9    | Code :star: :star: [Challenge][ch-20-09] | [Code][co-19-09] :star: :star:             [Challenge][ch-19-09] | [Code][co-18-09] :star: :star: [Challenge][ch-18-09] |
+| 10    | Code :star: :star: [Challenge][ch-20-10] | [Code][co-19-10] :star: :star:             [Challenge][ch-19-10] | [Code][co-18-10] :star: :star: [Challenge][ch-18-10] |
+| 11    | Code :star: :star: [Challenge][ch-20-11] | [Code][co-19-11] :star: :star:             [Challenge][ch-19-11] | [Code][co-18-11] :star: :star: [Challenge][ch-18-11] |
+| 12    | Code :star: :star: [Challenge][ch-20-12] | [Code][co-19-12] :star: :star:             [Challenge][ch-19-12] | [Code][co-18-12] :star: :star: [Challenge][ch-18-12] |
+| 13    | Code :star: :star: [Challenge][ch-20-13] | [Code][co-19-13] :star: :star:             [Challenge][ch-19-13] | [Code][co-18-13] :star: :star: [Challenge][ch-18-13] |
+| 14    | Code :star: :star: [Challenge][ch-20-14] | [Code][co-19-14] :star: :star:             [Challenge][ch-19-14] | [Code][co-18-14] :star: :star: [Challenge][ch-18-14] |
+| 15    | Code :star: :star: [Challenge][ch-20-15] | [Code][co-19-15] :star: :star:             [Challenge][ch-19-15] | [Code][co-18-15] :star: :star: [Challenge][ch-18-15] |
+| 16    | Code :star: :star: [Challenge][ch-20-16] | [Code][co-19-16] :star: :x:                [Challenge][ch-19-16] | [Code][co-18-16] :star: :star: [Challenge][ch-18-16] |
+| 17    | Code :star: :star: [Challenge][ch-20-17] | [Code][co-19-17] :star: :x:                [Challenge][ch-19-17] | [Code][co-18-17] :star: :star: [Challenge][ch-18-17] |
+| 18    | Code :star: :star: [Challenge][ch-20-18] | [Code][co-19-18] :star: :star:             [Challenge][ch-19-18] | [Code][co-18-18] :star: :star: [Challenge][ch-18-18] |
+| 19    | Code :star: :star: [Challenge][ch-20-19] | [Code][co-19-19] :star: :star:             [Challenge][ch-19-19] | [Code][co-18-19] :star: :star: [Challenge][ch-18-19] |
+| 20    | Code :star: :star: [Challenge][ch-20-20] | [Code][co-19-20] :star: :star:             [Challenge][ch-19-20] | [Code][co-18-20] :star: :star: [Challenge][ch-18-20] |
+| 21    | Code :star: :star: [Challenge][ch-20-21] | [Code][co-19-21] :star: :star:             [Challenge][ch-19-21] | [Code][co-18-21] :star: :star: [Challenge][ch-18-21] |
+| 22    | Code :star: :star: [Challenge][ch-20-22] | [Code][co-19-22] :star: :x:                [Challenge][ch-19-22] | [Code][co-18-22] :star: :star: [Challenge][ch-18-22] |
+| 23    | Code :star: :star: [Challenge][ch-20-23] | [Code][co-19-23] :star: :star:             [Challenge][ch-19-23] | [Code][co-18-23] :star: :star: [Challenge][ch-18-23] |
+| 24    | Code :star: :star: [Challenge][ch-20-24] | [Code][co-19-24] :star: :star:             [Challenge][ch-19-24] | [Code][co-18-24] :star: :star: [Challenge][ch-18-24] |
+| 25    | Code :star: :star: [Challenge][ch-20-25] | [Code][co-19-25] :star: :grey_exclamation: [Challenge][ch-19-25] | [Code][co-18-25] :star:        [Challenge][ch-18-25] |
 
 [ch-20]: https://adventofcode.com/2020
 [co-20]: year_2020

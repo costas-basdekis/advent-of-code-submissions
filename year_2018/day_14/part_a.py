@@ -8,9 +8,8 @@ class Challenge(utils.BaseChallenge):
     def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
-        7861362411
+        '7861362411'
         """
-
         return RecipeBoard().tick_and_get_score(int(_input))
 
 
@@ -31,9 +30,9 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
     def from_board_text(cls, board_text):
         """
         >>> RecipeBoard.from_board_text("(3)[7] 1  0 ")
-        RecipeBoard(sequence=(3, 7, 1, 0), indexes=(0, 1))
+        RecipeBoard(sequence='3710', indexes=(0, 1))
         >>> RecipeBoard.from_board_text(" 3  7  1 [0](1) 0 ")
-        RecipeBoard(sequence=(3, 7, 1, 0, 1, 0), indexes=(4, 3))
+        RecipeBoard(sequence='371010', indexes=(4, 3))
         """
         if len(board_text) % 3 != 0:
             raise Exception(
@@ -62,7 +61,7 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
                       key=cls.by_opening_indicator_index)
         )
 
-        return cls._make((sequence, indexes))
+        return cls._make(("".join(map(str, sequence)), indexes))
 
     @classmethod
     def by_opening_indicator_index(cls, index_and_opening_indicator):
@@ -70,13 +69,13 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
         return cls.OPENING_INDEX_INDICATORS.index(opening_indicator)
 
     # noinspection PyInitNewSignature
-    def __new__(cls, sequence=(3, 7), indexes=(0, 1)):
+    def __new__(cls, sequence='37', indexes=(0, 1)):
         """
         >>> RecipeBoard()
-        RecipeBoard(sequence=(3, 7), indexes=(0, 1))
+        RecipeBoard(sequence='37', indexes=(0, 1))
         """
         # noinspection PyArgumentList
-        return super().__new__(cls, tuple(sequence), tuple(indexes))
+        return super().__new__(cls, sequence, tuple(indexes))
 
     def tick_and_get_score(self, count, length=10):
         """
@@ -109,7 +108,7 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
             raise Exception(
                 f"Not enough items to get {length}-score after {count}: only "
                 f"got {len(score_items)} items")
-        return "".join(map(str, score_items))
+        return score_items
 
     def tick_many(self, count, min_length=None):
         """
@@ -132,13 +131,16 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
         (3)[7] 1  0
         """
         next_score = sum(
-            self.sequence[index]
+            int(self.sequence[index])
             for index in self.indexes
         )
-        next_scores = tuple(map(int, str(next_score)))
-        next_sequence = self.sequence + next_scores
+        next_sequence = self.sequence + str(next_score)
         next_indexes = tuple(
-            (index + self.sequence[index] + 1) % len(next_sequence)
+            (
+                index
+                + int(self.sequence[index])
+                + 1
+            ) % len(next_sequence)
             for index in self.indexes
         )
         return self._make((next_sequence, next_indexes))
@@ -147,9 +149,9 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
         """
         >>> print(RecipeBoard().show())
         (3)[7]
-        >>> print(RecipeBoard((3, 7, 1, 0)).show().strip())
+        >>> print(RecipeBoard('3710').show().strip())
         (3)[7] 1  0
-        >>> print(RecipeBoard((3, 7, 1, 0, 1, 0), (4, 3)).show().rstrip())
+        >>> print(RecipeBoard('371010', (4, 3)).show().rstrip())
          3  7  1 [0](1) 0
         """
         if len(self.indexes) > len(self.INDEXES_INDICATORS):

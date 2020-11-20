@@ -5,17 +5,19 @@ from year_2018.day_14 import part_a
 
 
 class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
+
     def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
-        42
+        20203532
         """
-
-        return RecipeBoardExtended().tick_and_find_position(_input)
+        return RecipeBoardExtended()\
+            .tick_and_find_position(_input.strip(), debug=debug)
 
 
 class RecipeBoardExtended(part_a.RecipeBoard):
-    def tick_and_find_position(self, text, max_length=None):
+    def tick_and_find_position(self, text, max_length=None, debug=False):
         """
         >>> RecipeBoardExtended().tick_and_find_position("51589", 9 + 5)
         9
@@ -26,46 +28,33 @@ class RecipeBoardExtended(part_a.RecipeBoard):
         >>> RecipeBoardExtended().tick_and_find_position("59414", 2018 + 5)
         2018
         """
-        result = self
-        position = self.get_position(text)
-        if position is not None:
-            return position
-        suffix_length = len(text) + 2
-        while text not in result.get_suffix_string(suffix_length):
-            if max_length is not None and max_length < len(result.sequence):
-                raise Exception(
-                    f"Too big sequence, and couldn't find text: naive answer "
-                    f"is {result.get_position(text)}")
-            result = result.tick()
-            print(len(result.sequence), result.get_suffix_string(suffix_length))
-        suffix = result.get_suffix_string(suffix_length)
-        suffix_index = suffix.index(text)
-        index = len(result.sequence) - suffix_length + suffix_index
+        sequence = self.sequence
+        indexes = self.indexes
+        while text not in sequence[-(len(text) + 2):]:
+            if max_length is not None and max_length < len(sequence):
+                raise Exception(f"Too big sequence, and couldn't find text")
+            next_score = (
+                int(sequence[indexes[0]])
+                + int(sequence[indexes[1]])
+            )
+            sequence += str(next_score)
+            indexes = (
+                (
+                    indexes[0]
+                    + int(sequence[indexes[0]])
+                    + 1
+                ) % len(sequence),
+                (
+                    indexes[1]
+                    + int(sequence[indexes[1]])
+                    + 1
+                ) % len(sequence),
+            )
+            if debug:
+                if len(sequence) % 1000000 in (0, 1):
+                    print(len(sequence))
 
-        return index
-
-    def get_position(self, text):
-        """
-        >>> RecipeBoardExtended().tick_many(15).get_position("51589")
-        9
-        >>> RecipeBoardExtended().tick_many(15).get_position("01245")
-        5
-        >>> RecipeBoardExtended().tick_many(23).get_position("92510")
-        18
-        >>> RecipeBoardExtended().tick_many(2023).get_position("59414")
-        2018
-        """
-        try:
-            return self.get_suffix_string().index(text)
-        except ValueError:
-            return None
-
-    def get_suffix_string(self, length=None):
-        if length is None:
-            suffix = self.sequence
-        else:
-            suffix = self.sequence[-length:]
-        return "".join(map(str, suffix))
+        return sequence.index(text, len(sequence) - (len(text) + 2))
 
 
 challenge = Challenge()
