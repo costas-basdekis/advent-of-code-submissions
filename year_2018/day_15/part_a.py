@@ -2,31 +2,46 @@
 import itertools
 import string
 
+import click
+
 import utils
 
 
 class Challenge(utils.BaseChallenge):
     def solve(self, _input, debug=False):
         """
-        >>> Challenge().default_solve() < 224200
-        True
+        >>> Challenge().default_solve()
+        220480
         """
-
         cave = Cave.from_cave_text(_input)
-        if debug:
-            while not cave.has_finished():
-                print(cave.step_count, cave.get_total_health())
-                print(cave.show(show_health=True))
-                cave.tick()
-        else:
-            cave.tick_many()
-
-        if debug:
-            print(cave.step_count, cave.get_total_health())
-            print(cave.show(show_health=True))
-            print(cave.step_count, cave.get_total_health())
-
+        cave.tick_many(debug=debug)
         return cave.get_outcome()
+
+    def play(self):
+        cave = Cave.from_cave_text(self.input)
+        snapshots = [cave.show(show_health=True, add_stats=True)]
+        while not cave.has_finished():
+            cave.tick()
+            snapshots.append(cave.show(show_health=True, add_stats=True))
+
+        index = 0
+        while True:
+            print(snapshots[index])
+            click.echo(
+                f"At step {index}/{len(snapshots) - 1}: left for previous, "
+                f"right for next, q to quit")
+            user_input = click.getchar()
+            while user_input not in ('q', '\x1b[D', '\x1b[C'):
+                click.echo(
+                    "Invalid command: left for previous, right for next, q to "
+                    "quit")
+                user_input = click.getchar()
+            if user_input == 'q':
+                break
+            if user_input == '\x1b[D':
+                index = max(0, index - 1)
+            else:
+                index = min(len(snapshots) - 1, index + 1)
 
 
 class Cave:
@@ -38,9 +53,11 @@ class Cave:
         ...     "#.GE#\\n"
         ...     "#####\\n"
         ... )
-        Cave(spaces=((False, False, False, False, False), \
-(False, True, True, True, False), (False, False, False, False, False)), \
-units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attack=3, health=200)))
+        Cave(spaces=((False, False, False, False, False),
+            (False, True, True, True, False),
+                (False, False, False, False, False)),
+            units=(Goblin(position=(2, 1), attack=3, health=200),
+                Elf(position=(3, 1), attack=3, health=200)))
         """
         lines = list(filter(None, cave_text.splitlines()))
         spaces = tuple(
@@ -99,15 +116,18 @@ units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attac
 
     @classmethod
     def sort_key_health_reading_order(cls, unit):
-        x, y = unit.position
-        return unit.health, y, x
+        return unit.health, cls.sort_key_reading_order_position(unit.position)
+
+    @classmethod
+    def sort_key_reading_order(cls, unit):
+        return cls.sort_key_reading_order_position(unit.position)
 
     @classmethod
     def sort_key_reading_order_position(cls, position):
         x, y = position
         return y, x
 
-    def get_outcome(self):
+    def get_outcome(self, allow_provisional=False):
         """
         >>> Cave.from_cave_text(
         ...     "#########\\n"
@@ -184,7 +204,7 @@ units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attac
         ... ).tick_many().get_outcome()
         18740
         """
-        if not self.has_finished():
+        if not allow_provisional and not self.has_finished():
             raise Exception("Cave has not finished yet")
         return self.get_total_health() * self.step_count
 
@@ -260,7 +280,7 @@ units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attac
             for unit in self.units
         )
 
-    def tick_many(self, count=None, verbose=False):
+    def tick_many(self, count=None, debug=False):
         """
         >>> print(Cave.from_cave_text(
         ...     "#########\\n"
@@ -443,11 +463,11 @@ units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attac
         for _ in steps:
             if self.has_finished():
                 break
-            self.tick(verbose=verbose)
+            self.tick(debug=debug)
 
         return self
 
-    def tick(self, verbose=False):
+    def tick(self, debug=False):
         """
         >>> cave_a = Cave.from_cave_text(
         ...     "#########\\n"
@@ -513,20 +533,20 @@ units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attac
         units_by_position = self.get_units_by_position()
         move_order = self.get_move_order()
         finished = False
-        if verbose:
+        if debug:
             print(self.step_count, len(move_order), ":", end="", flush=True)
         for unit in move_order:
-            if verbose:
+            if debug:
                 print(f"{move_order.index(unit)}, ", end="", flush=True)
             if unit.is_dead():
                 continue
             finished = unit.tick(
-                self.spaces, units_by_position, verbose=False)
+                self.spaces, units_by_position, debug=False)
             if finished:
                 break
         else:
             self.step_count += 1
-        if verbose:
+        if debug:
             print("done")
 
         self.units = [unit for unit in self.units if unit.is_alive()]
@@ -606,7 +626,7 @@ units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attac
         x, y = position
         return y, x
 
-    def show(self, distances=None, show_health=False):
+    def show(self, distances=None, show_health=False, add_stats=False):
         """
         >>> print(Cave.from_cave_text(
         ...     "#######\\n"
@@ -620,12 +640,33 @@ units=(Goblin(position=(2, 1), attack=3, health=200), Elf(position=(3, 1), attac
         #E.G.E#
         #.G.E.#
         #######
+        >>> print(Cave.from_cave_text(
+        ...     "#######\\n"
+        ...     "#.G.E.#\\n"
+        ...     "#E.G.E#\\n"
+        ...     "#.G.E.#\\n"
+        ...     "#######\\n"
+        ... ).show(show_health=True, add_stats=True))
+        #######
+        #.G.E.#   G(200), E(200)
+        #E.G.E#   E(200), G(200), E(200)
+        #.G.E.#   G(200), E(200)
+        #######
+        Step: 0, health: 1400, outcome: 0
         """
         units_by_position = self.get_units_by_position()
-        return "\n".join(
+        shown = "\n".join(
             self.show_line(y, line, units_by_position, distances, show_health)
             for y, line in enumerate(self.spaces)
         )
+        if add_stats:
+            shown += (
+                f"\nStep: {self.step_count}, "
+                f"health: {self.get_total_health()}, "
+                f"outcome: {self.get_outcome(allow_provisional=True)}"
+            )
+
+        return shown
 
     def show_line(self, y, line, units_by_position, distances, show_health):
         line_str = "".join(
@@ -693,7 +734,7 @@ class Unit:
         """
         return not self.is_alive()
 
-    def tick(self, spaces, units_by_position, verbose=False):
+    def tick(self, spaces, units_by_position, debug=False):
         """
         >>> cave_a = Cave.from_cave_text(
         ...     "#########\\n"
@@ -759,20 +800,20 @@ class Unit:
         if not enemies:
             return True
         next_position, closest_enemy = self.get_next_step_to_closest_enemy(
-            spaces, enemies, units_by_position, verbose=verbose)
+            spaces, enemies, units_by_position, debug=debug)
         if not next_position:
             return False
         if next_position != self.position:
-            self.move(next_position, units_by_position)
+            self.move(next_position, units_by_position, spaces=spaces)
             next_position, closest_enemy = self.get_next_step_to_closest_enemy(
-                spaces, enemies, units_by_position, verbose=verbose)
+                spaces, enemies, units_by_position, debug=debug)
         if next_position == self.position:
             self.attack_enemy(closest_enemy, units_by_position)
 
         return False
 
     def get_next_step_to_closest_enemy(self, spaces, enemies,
-                                       units_by_position, verbose=False):
+                                       units_by_position, debug=False):
         """
         >>> cave_a = Cave.from_cave_text(
         ...     "#########\\n"
@@ -812,11 +853,11 @@ class Unit:
         if not closest_enemy:
             return None, None
         next_step = self.get_next_step(
-            distances, closest_enemy.position, verbose=verbose)
+            distances, closest_enemy.position, debug=debug)
 
         return next_step, closest_enemy
 
-    def get_next_step(self, distances, target, verbose=False):
+    def get_next_step(self, distances, target, debug=False):
         """
         >>> Goblin((1, 1)).get_next_step(Cave.parse_distances(
         ...     "#########\\n"
@@ -874,13 +915,13 @@ class Unit:
 
         stack = [target]
         next_steps = set()
-        if verbose:
+        if debug:
             print("Get next step: ", end="", flush=True)
         while stack:
             position = stack.pop(0)
             next_distance, next_positions = self.get_next_step_iteration(
                 distances, position)
-            if verbose:
+            if debug:
                 print(next_distance, ", ", end="", flush=True)
             if next_distance == 1:
                 next_steps.update(next_positions)
@@ -888,7 +929,7 @@ class Unit:
             for next_position in next_positions:
                 if next_position not in stack:
                     stack.append(next_position)
-        if verbose:
+        if debug:
             print(f"done: {len(next_steps)}")
 
         if not next_steps:
@@ -975,15 +1016,54 @@ class Unit:
         ...     "#########\\n"
         ... )
         >>> units_by_position_b = cave_b.get_units_by_position()
-        >>> unit_b = units_by_position_a[(4, 1)]
+        >>> unit_b = units_by_position_b[(4, 1)]
         >>> enemies_b = [
-        ...     unit for unit in cave_a.units
+        ...     unit for unit in cave_b.units
         ...     if not isinstance(unit, type(unit_b))
         ... ]
         >>> distances_b = unit_b.get_distances(
         ...     cave_b.spaces, enemies_b, units_by_position_b)
         >>> unit_b.get_closest_enemy(enemies_b, distances_b)
         Elf(position=(4, 4), attack=3, health=200)
+        >>> cave_c = Cave.from_cave_text(
+        ...     "####\\n"
+        ...     "#GE#\\n"
+        ...     "#E.#\\n"
+        ...     "####\\n"
+        ... )
+        >>> units_by_position_c = cave_c.get_units_by_position()
+        >>> unit_c = units_by_position_c[(1, 1)]
+        >>> enemies_c = [
+        ...     unit for unit in cave_c.units
+        ...     if not isinstance(unit, type(unit_c))
+        ... ]
+        >>> distances_c = unit_c.get_distances(
+        ...     cave_c.spaces, enemies_c, units_by_position_c)
+        >>> unit_c.get_closest_enemy(enemies_c, distances_c)
+        Elf(position=(2, 1), attack=3, health=200)
+        >>> units_by_position_c[(1, 2)].health = 100
+        >>> unit_c.get_closest_enemy(enemies_c, distances_c)
+        Elf(position=(1, 2), attack=3, health=100)
+        >>> cave_c = Cave.from_cave_text(
+        ...     "#####\\n"
+        ...     "#G.E#\\n"
+        ...     "#...#\\n"
+        ...     "#E..#\\n"
+        ...     "#####\\n"
+        ... )
+        >>> units_by_position_c = cave_c.get_units_by_position()
+        >>> unit_c = units_by_position_c[(1, 1)]
+        >>> enemies_c = [
+        ...     unit for unit in cave_c.units
+        ...     if not isinstance(unit, type(unit_c))
+        ... ]
+        >>> distances_c = unit_c.get_distances(
+        ...     cave_c.spaces, enemies_c, units_by_position_c)
+        >>> unit_c.get_closest_enemy(enemies_c, distances_c)
+        Elf(position=(3, 1), attack=3, health=200)
+        >>> units_by_position_c[(1, 3)].health = 100
+        >>> unit_c.get_closest_enemy(enemies_c, distances_c)
+        Elf(position=(3, 1), attack=3, health=200)
         """
         enemies_distances = {
             enemy: distances[enemy.position]
@@ -998,8 +1078,12 @@ class Unit:
             for enemy, distance in enemies_distances.items()
             if distance == closest_distance
         ]
-        closest_enemy = min(
-            closest_enemies, key=Cave.sort_key_health_reading_order)
+        if closest_distance == 1:
+            closest_enemy = min(
+                closest_enemies, key=Cave.sort_key_health_reading_order)
+        else:
+            closest_enemy = min(
+                closest_enemies, key=Cave.sort_key_reading_order)
 
         return closest_enemy
 
@@ -1125,26 +1209,53 @@ class Unit:
         """
         x, y = position
         return (
-            (neighbour_x, neighbour_y)
-            for neighbour_x, neighbour_y in (
+            neighbour
+            for neighbour in (
                 (x + d_x, y + d_y)
                 for d_x, d_y in self.NEIGHBOUR_OFFSETS
             )
-            if 0 <= neighbour_x < len(spaces[0])
-            and 0 <= neighbour_y < len(spaces)
+            if self.is_position_space(neighbour, spaces)
         )
 
-    def move(self, next_position, units_by_position):
+    def is_position_space(self, position, spaces):
+        x, y = position
+        return (
+            0 <= x < len(spaces[0])
+            and 0 <= y < len(spaces)
+        )
+
+    def move(self, next_position, units_by_position, spaces):
         """
         >>> elf, goblin = Elf((0, 0)), Goblin((1, 0))
         >>> units_by_position_a = {(0, 0): elf, (1, 0): goblin}
-        >>> elf.move((0, 1), units_by_position_a)
+        >>> elf.move((0, 1), units_by_position_a, ((True, True), (True, True)))
         >>> units_by_position_a
-        {(1, 0): Goblin(position=(1, 0), attack=3, health=200), (0, 1): Elf(position=(0, 1), attack=3, health=200)}
+        {(1, 0): Goblin(position=(1, 0), attack=3, health=200),
+            (0, 1): Elf(position=(0, 1), attack=3, health=200)}
         """
+        if self.is_dead():
+            raise Exception(f"Unit {self} tried to move but it was dead")
+        if units_by_position.get(self.position) != self:
+            raise Exception(
+                f"Unit {self} tried to move from {self.position} but it wasn't "
+                f"there: instead {units_by_position.get(self.position)} was")
+        if next_position in units_by_position:
+            raise Exception(
+                f"Unit {self} tried to move to {next_position} but "
+                f"{units_by_position[next_position]} was there")
+        manhattan_distance = utils.Point2D(*self.position)\
+            .manhattan_distance(utils.Point2D(*next_position))
+        if manhattan_distance != 1:
+            raise Exception(
+                f"Unit {self} at {self.position} tried to move to "
+                f"{next_position} but the distance was {manhattan_distance}")
+        if not self.is_position_space(next_position, spaces):
+            raise Exception(
+                f"Unit {self} tried to move to {next_position} but it was not "
+                f"a space")
         del units_by_position[self.position]
         self.position = next_position
-        units_by_position[next_position] = self
+        units_by_position[self.position] = self
 
     def attack_enemy(self, enemy, units_by_position):
         """
@@ -1152,7 +1263,8 @@ class Unit:
         >>> units_by_position_a = {(0, 0): elf, (1, 0): goblin}
         >>> elf.attack_enemy(goblin, units_by_position_a)
         >>> units_by_position_a
-        {(0, 0): Elf(position=(0, 0), attack=3, health=200), (1, 0): Goblin(position=(1, 0), attack=3, health=197)}
+        {(0, 0): Elf(position=(0, 0), attack=3, health=200),
+            (1, 0): Goblin(position=(1, 0), attack=3, health=197)}
         >>> goblin.health = 3
         >>> elf.attack_enemy(goblin, units_by_position_a)
         >>> units_by_position_a
@@ -1163,8 +1275,26 @@ class Unit:
         >>> units_by_position_a
         {(0, 0): Elf(position=(0, 0), attack=3, health=200)}
         """
+        if self.is_dead():
+            raise Exception(f"Unit {self} tried to attack but it was dead")
         if enemy.is_dead():
-            raise Exception("Attacking dead enemy")
+            raise Exception(f"Tried to attack {enemy} but it was dead")
+        if units_by_position.get(self.position) != self:
+            raise Exception(
+                f"Unit {self} tried to attack from {self.position} but it "
+                f"wasn't there: instead {units_by_position.get(self.position)} "
+                f"was")
+        if units_by_position.get(enemy.position) != enemy:
+            raise Exception(
+                f"Tried to attack {enemy} at {enemy.position} but it "
+                f"wasn't there: instead "
+                f"{units_by_position.get(enemy.position)} was")
+        manhattan_distance = utils.Point2D(*self.position)\
+            .manhattan_distance(utils.Point2D(*enemy.position))
+        if manhattan_distance != 1:
+            raise Exception(
+                f"Unit {self} at {self.position} tried to attack {enemy} at "
+                f"{enemy.position} but their distance was {manhattan_distance}")
         enemy.health -= self.attack
         if enemy.is_dead():
             del units_by_position[enemy.position]
@@ -1194,7 +1324,8 @@ class Unit:
         ...     (7, 4): Goblin(position=(7, 4), attack=3, health=200),
         ...     (7, 7): Goblin(position=(7, 7), attack=3, health=200),
         ... })]
-        ['Goblin', 'Goblin', 'Goblin', 'Goblin', 'Goblin', 'Goblin', 'Goblin', 'Goblin']
+        ['Goblin', 'Goblin', 'Goblin', 'Goblin', 'Goblin', 'Goblin', 'Goblin',
+            'Goblin']
         """
         cls = type(self)
         return [
