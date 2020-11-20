@@ -15,6 +15,9 @@ class Challenge(utils.BaseChallenge):
 
 
 class Node:
+    garbage_class = NotImplemented
+    group_class = NotImplemented
+
     @classmethod
     def from_node_text(cls, node_text):
         """
@@ -44,7 +47,7 @@ class Node:
         ...
         Exception: ...
         """
-        group, remaining = Group.parse(node_text)
+        group, remaining = cls.group_class.parse(node_text)
         if remaining:
             raise Exception(
                 f"Got extra text after end of group: "
@@ -121,6 +124,9 @@ class Garbage(Node):
         return 0
 
 
+Node.garbage_class = Garbage
+
+
 @dataclass
 class Group(Node):
     contents: List[Node]
@@ -180,8 +186,8 @@ class Group(Node):
             if remaining[0] == cls.START:
                 content, remaining = cls.parse(remaining)
                 contents.append(content)
-            elif remaining[0] == Garbage.START:
-                content, remaining = Garbage.parse(remaining)
+            elif remaining[0] == cls.garbage_class.START:
+                content, remaining = cls.garbage_class.parse(remaining)
                 contents.append(content)
             else:
                 raise Exception(
@@ -215,6 +221,9 @@ class Group(Node):
             content.get_score(my_score)
             for content in self.contents
         )
+
+
+Node.group_class = Group
 
 
 challenge = Challenge()
