@@ -284,7 +284,7 @@ def get_minimum_distance_to_oxygen(game):
     oxygen_location = game["oxygen_location"]
     if not oxygen_location:
         raise Exception("Have not found oxygen yet")
-    minimum_distances = get_minimum_distances(game)
+    minimum_distances = get_minimum_distances(game, (0, 0))
     if not is_game_fully_discovered(game, minimum_distances):
         raise Exception("Have not discovered everything yet")
 
@@ -293,7 +293,7 @@ def get_minimum_distance_to_oxygen(game):
 
 def is_game_fully_discovered(game, minimum_distances=None):
     if minimum_distances is None:
-        minimum_distances = get_minimum_distances(game)
+        minimum_distances = get_minimum_distances(game, (0, 0))
 
     return not any(
         minimum_distance == -1
@@ -301,11 +301,11 @@ def is_game_fully_discovered(game, minimum_distances=None):
     )
 
 
-def get_minimum_distances(game):
+def get_minimum_distances(game, source):
     minimum_distances = {
-        (0, 0): 0,
+        source: 0,
     }
-    search_stack = [(0, 0)]
+    search_stack = [source]
     visited = set()
     while search_stack:
         position = search_stack.pop(0)
