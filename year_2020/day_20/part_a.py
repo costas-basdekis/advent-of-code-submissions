@@ -20,41 +20,41 @@ class Challenge(utils.BaseChallenge):
             .get_corner_hash()
 
 
-class TileArrangement:
+class TileBorderArrangement:
     size = None
     classes_by_size = {}
 
     @classmethod
     def of_size(cls, size):
         """
-        >>> TileArrangement.of_size(20)([], {})
-        TileArrangementOfSize20
-        >>> TileArrangement.of_size(20).size
+        >>> TileBorderArrangement.of_size(20)([], {})
+        TileBorderArrangementOfSize20
+        >>> TileBorderArrangement.of_size(20).size
         20
         """
         if size in cls.classes_by_size:
             return cls.classes_by_size[size]
         _size = size
 
-        class TileArrangementOfSize(cls):
+        class TileBorderArrangementOfSize(cls):
             size = _size
 
-        TileArrangementOfSize.__name__ = f"{cls.__name__}OfSize{size}"
-        cls.classes_by_size[size] = TileArrangementOfSize
+        TileBorderArrangementOfSize.__name__ = f"{cls.__name__}OfSize{size}"
+        cls.classes_by_size[size] = TileBorderArrangementOfSize
 
-        return TileArrangementOfSize
+        return TileBorderArrangementOfSize
 
     @classmethod
     def from_tile_set(cls, tile_set):
         """
-        >>> TileArrangement.from_tile_set(TileSet.from_tiles_text(
+        >>> TileBorderArrangement.from_tile_set(TileSet.from_tiles_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
         ...     "#.#\\n"
         ... ))
-        TileArrangementOfSize1
-        >>> TileArrangement.from_tile_set(TileSet.from_tiles_text(
+        TileBorderArrangementOfSize1
+        >>> TileBorderArrangement.from_tile_set(TileSet.from_tiles_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
@@ -264,14 +264,14 @@ class TileArrangement:
 
     def show_ids(self):
         """
-        >>> print(TileArrangement.from_tile_set(TileSet.from_tiles_text(
+        >>> print(TileBorderArrangement.from_tile_set(TileSet.from_tiles_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
         ...     "#.#\\n"
         ... )).show_ids())
         2473
-        >>> print(TileArrangement.from_tile_set(
+        >>> print(TileBorderArrangement.from_tile_set(
         ...     TileSet.from_tiles_text("\\n".join(
         ...         f"Tile {_id}:\\n"
         ...         ".##\\n"
@@ -294,7 +294,7 @@ class TileArrangement:
 
     def show(self):
         """
-        >>> print(TileArrangement.from_tile_set(TileSet.from_tiles_text(
+        >>> print(TileBorderArrangement.from_tile_set(TileSet.from_tiles_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
@@ -303,7 +303,7 @@ class TileArrangement:
         .##
         #..
         #.#
-        >>> print(TileArrangement.from_tile_set(
+        >>> print(TileBorderArrangement.from_tile_set(
         ...     TileSet.from_tiles_text("\\n".join(
         ...         f"Tile {_id}:\\n"
         ...         ".##\\n"
@@ -334,9 +334,9 @@ class TileArrangement:
 
     def show_row(self, tile_show_row):
         """
-        >>> print(TileArrangement([], {}).show_row([]))
+        >>> print(TileBorderArrangement([], {}).show_row([]))
         <BLANKLINE>
-        >>> print(TileArrangement([], {}).show_row([Tile.from_tile_text(
+        >>> print(TileBorderArrangement([], {}).show_row([Tile.from_tile_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
@@ -345,7 +345,7 @@ class TileArrangement:
         .##
         #..
         #.#
-        >>> print(TileArrangement([], {}).show_row([Tile.from_tile_text(
+        >>> print(TileBorderArrangement([], {}).show_row([Tile.from_tile_text(
         ...     "Tile 2473:\\n"
         ...     ".##\\n"
         ...     "#..\\n"
@@ -365,6 +365,8 @@ class TileArrangement:
 
 
 class TileSet:
+    tile_class = NotImplemented
+
     @classmethod
     def from_tiles_text(cls, tiles_text):
         """
@@ -397,7 +399,7 @@ class TileSet:
         non_empty_lines = filter(None, tiles_text.strip().split("\n\n"))
         tiles_by_id = {
             tile.id: tile
-            for tile in map(Tile.from_tile_text, non_empty_lines)
+            for tile in map(cls.tile_class.from_tile_text, non_empty_lines)
         }
         sizes = {tile.size for tile in tiles_by_id.values()}
         if len(sizes) > 1:
@@ -411,7 +413,7 @@ class TileSet:
         return f"{type(self).__name__}"
 
     def to_arrangement(self):
-        return TileArrangement.from_tile_set(self)
+        return TileBorderArrangement.from_tile_set(self)
 
 
 class Tile(namedtuple("Tile", ("id", "points"))):
@@ -574,8 +576,12 @@ class Tile(namedtuple("Tile", ("id", "points"))):
         return f"{tile_id}\n{content}"
 
 
+TileSet.tile_class = Tile
+
+
 class TileBorder(namedtuple(
         "TileBorder", ("id", "top", "right", "bottom", "left"))):
+    tile_class = Tile
     size = None
     classes_by_size = {}
 
@@ -643,7 +649,7 @@ class TileBorder(namedtuple(
         )
 
     def to_tile(self):
-        return Tile.from_border(self)
+        return self.tile_class.from_border(self)
 
     @property
     def sides(self):
