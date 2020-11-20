@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import re
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Iterable
 
 from utils import BaseChallenge
 
@@ -53,22 +53,41 @@ class Decompressor:
         >>> Decompressor().decompress("X(8x2)(3x3)ABCY")
         'X(3x3)ABC(3x3)ABCY'
         """
+        return "".join(
+            repeat_string * repeat_count
+            for repeat_string, repeat_count in self.stream_decompress(text)
+        )
+
+    def stream_decompress(self, text: str) -> Iterable[Tuple[str, int]]:
+        """
+        >>> list(Decompressor().stream_decompress("    ADVENT   "))
+        [('A', 1), ('D', 1), ('V', 1), ('E', 1), ('N', 1), ('T', 1)]
+        >>> list(Decompressor().stream_decompress("ADVENT"))
+        [('A', 1), ('D', 1), ('V', 1), ('E', 1), ('N', 1), ('T', 1)]
+        >>> list(Decompressor().stream_decompress("A(1x5)BC"))
+        [('A', 1), ('B', 5), ('C', 1)]
+        >>> list(Decompressor().stream_decompress("(3x3)XYZ"))
+        [('XYZ', 3)]
+        >>> list(Decompressor().stream_decompress("A(2x2)BCD(2x2)EFG"))
+        [('A', 1), ('BC', 2), ('D', 1), ('EF', 2), ('G', 1)]
+        >>> list(Decompressor().stream_decompress("(6x1)(1x3)A"))
+        [('(1x3)A', 1)]
+        >>> list(Decompressor().stream_decompress("X(8x2)(3x3)ABCY"))
+        [('X', 1), ('(3x3)ABC', 2), ('Y', 1)]
+        """
         text = text.strip()
         position = 0
-        result = ""
         while position < len(text):
             marker = self.get_marker(text[position:])
             if not marker:
-                result += text[position]
+                yield text[position], 1
                 position += 1
                 continue
             repeat_length, repeat_count, marker_length = marker
             position += marker_length
             repeat_string = text[position:position + repeat_length]
             position += repeat_length
-            result += repeat_string * repeat_count
-
-        return result
+            yield repeat_string, repeat_count
 
     def get_marker(self, text: str) -> Optional[Tuple[int, int, int]]:
         """
