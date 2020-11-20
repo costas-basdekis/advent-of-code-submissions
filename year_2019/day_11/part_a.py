@@ -51,10 +51,17 @@ def solve(_input=None):
             .joinpath("part_a_input.txt")\
             .read_text()
     program_text = _input
+    paint_map = paint_panels(program_text)
 
+    return len(paint_map)
+
+
+def paint_panels(program_text, initial_paint=None):
     position = (0, 0)
     direction = DIRECTION_UP
     paint_map = defaultdict(lambda: 0)
+    if initial_paint:
+        paint_map.update(initial_paint)
     error = None
     input_stream = []
     while True:
@@ -92,7 +99,7 @@ def solve(_input=None):
         # paint = paint_map[position]
         # print(f"In {position}, facing {direction}, paint is {paint}")
 
-    return len(paint_map)
+    return paint_map
 
 
 def rotate(direction, rotation):
