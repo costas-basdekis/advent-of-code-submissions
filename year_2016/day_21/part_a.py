@@ -84,6 +84,37 @@ class OperationSet(Generic[OperationT]):
 
         return result
 
+    def unapply(self, text: str) -> str:
+        """
+        >>> OperationSet.from_operations_text(
+        ...     "swap position 4 with position 0\\n"
+        ...     "swap letter d with letter b\\n"
+        ...     "reverse positions 0 through 4\\n"
+        ...     "rotate left 1 step\\n"
+        ...     "move position 1 to position 4\\n"
+        ...     "move position 3 to position 0\\n"
+        ...     "rotate based on position of letter b\\n"
+        ...     "rotate based on position of letter d\\n"
+        ... ).unapply("decab")
+        Traceback (most recent call last):
+        ...
+        Exception: Got too many possible positions: ...
+        """
+        result = text
+        for operation in reversed(self.operations):
+            new_result = operation.unapply(result)
+            if len(new_result) != len(text):
+                raise Exception(
+                    f"Operation {operation} converted {result} into different "
+                    f"length {new_result}")
+            if set(new_result) != set(text):
+                raise Exception(
+                    f"Operation {operation} converted {result} into different "
+                    f"letters {new_result}")
+            result = new_result
+
+        return result
+
 
 class Operation(PolymorphicParser, ABC, root=True):
     """
@@ -108,6 +139,9 @@ class Operation(PolymorphicParser, ABC, root=True):
     """
 
     def apply(self, text: str) -> str:
+        raise NotImplementedError()
+
+    def unapply(self, text: str) -> str:
         raise NotImplementedError()
 
 
@@ -151,6 +185,13 @@ class SwapPositions(Operation):
             f"{text[self.position_b + 1:]}"
         )
 
+    def unapply(self, text: str) -> str:
+        """
+        >>> SwapPositions(0, 4).unapply("ebcda")
+        'abcde'
+        """
+        return self.apply(text)
+
 
 @Operation.register
 @dataclass
@@ -193,6 +234,13 @@ class SwapLetters(Operation):
             f"{text[position_a]}"
             f"{text[position_b + 1:]}"
         )
+
+    def unapply(self, text: str) -> str:
+        """
+        >>> SwapLetters("b", "d").apply("edcba")
+        'ebcda'
+        """
+        return self.apply(text)
 
 
 @Operation.register
@@ -238,6 +286,13 @@ class Rotate(Operation):
         steps %= len(text)
         return f"{text[-steps:]}{text[:-steps]}"
 
+    def unapply(self, text: str) -> str:
+        """
+        >>> Rotate(-1).unapply("bcdea")
+        'abcde'
+        """
+        return Rotate(-self.steps).apply(text)
+
 
 @Operation.register
 @dataclass
@@ -271,7 +326,46 @@ class RotateBasedOnLetter(Operation):
         'decab'
         """
         position = text.index(self.letter)
-        return Rotate(position + 1 + (1 if position >= 4 else 0)).apply(text)
+        rotations = self.get_rotations(position)
+        return Rotate(rotations).apply(text)
+
+    def get_rotations(self, position: int) -> int:
+        return position + 1 + (1 if position >= 4 else 0)
+
+    def get_new_position(self, position: int, length: int) -> int:
+        """
+        >>> # noinspection PyUnresolvedReferences
+        >>> [RotateBasedOnLetter("a").get_new_position(p, 5) for p in range(5)]
+        [1, 3, 0, 2, 0]
+        >>> # noinspection PyUnresolvedReferences
+        >>> [RotateBasedOnLetter("a").get_new_position(p, 8) for p in range(8)]
+        [1, 3, 5, 7, 2, 4, 6, 0]
+        """
+        return (position + self.get_rotations(position)) % length
+
+    def unapply(self, text: str) -> str:
+        """
+        >>> RotateBasedOnLetter("d").unapply("decab")
+        Traceback (most recent call last):
+        ...
+        Exception: Got too many possible positions: [2, 4]
+        >>> RotateBasedOnLetter("b").unapply("ecabd")
+        'abdec'
+        """
+        new_position = text.index(self.letter)
+        possible_positions = [
+            position
+            for position in range(len(text))
+            if self.get_new_position(position, len(text)) == new_position
+        ]
+        if len(possible_positions) > 1:
+            raise Exception(
+                f"Got too many possible positions: {possible_positions}")
+        elif not possible_positions:
+            raise Exception(f"Got no possible positions")
+        position, = possible_positions
+        rotations = self.get_rotations(position)
+        return Rotate(-rotations).apply(text)
 
 
 @Operation.register
@@ -308,6 +402,13 @@ class ReversePositions(Operation):
             f"{text[self.end + 1:]}"
         )
 
+    def unapply(self, text: str) -> str:
+        """
+        >>> ReversePositions(0, 4).unapply("abcde")
+        'edcba'
+        """
+        return self.apply(text)
+
 
 @Operation.register
 @dataclass
@@ -342,6 +443,15 @@ class MovePosition(Operation):
         letter = text[self.source]
         removed = f"{text[:self.source]}{text[self.source + 1:]}"
         return f"{removed[:self.target]}{letter}{removed[self.target:]}"
+
+    def unapply(self, text: str) -> str:
+        """
+        >>> MovePosition(3, 0).unapply("abdec")
+        'bdeac'
+        >>> MovePosition(1, 4).unapply("bdeac")
+        'bcdea'
+        """
+        return MovePosition(self.target, self.source).apply(text)
 
 
 Challenge.main()
