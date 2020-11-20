@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Dict, Union
+from typing import List, Dict, Iterable
 
-from utils import BaseChallenge, Point2D
+from utils import BaseChallenge, Point2D, min_and_max_tuples
 from utils.typing_utils import Cls, Self
 
 
@@ -19,26 +19,41 @@ class Challenge(BaseChallenge):
 
 @dataclass
 class Numpad:
-    min_x: int
-    max_x: int
-    min_y: int
-    max_y: int
-    button_by_position: Dict[Point2D, int]
-    position_by_button: Dict[int, Point2D] = field(init=False)
+    button_by_position: Dict[Point2D, str]
+    position_by_button: Dict[str, Point2D] = field(init=False)
 
     @classmethod
     def standard_9_buttons(cls):
         # noinspection PyArgumentList
-        return cls(0, 2, 0, 2, {
-            Point2D(0, 0): 1,
-            Point2D(1, 0): 2,
-            Point2D(2, 0): 3,
-            Point2D(0, 1): 4,
-            Point2D(1, 1): 5,
-            Point2D(2, 1): 6,
-            Point2D(0, 2): 7,
-            Point2D(1, 2): 8,
-            Point2D(2, 2): 9,
+        return cls({
+            Point2D(0, 0): '1',
+            Point2D(1, 0): '2',
+            Point2D(2, 0): '3',
+            Point2D(0, 1): '4',
+            Point2D(1, 1): '5',
+            Point2D(2, 1): '6',
+            Point2D(0, 2): '7',
+            Point2D(1, 2): '8',
+            Point2D(2, 2): '9',
+        })
+
+    @classmethod
+    def standard_13_buttons(cls):
+        # noinspection PyArgumentList
+        return cls({
+            Point2D(2, 0): '1',
+            Point2D(1, 1): '2',
+            Point2D(2, 1): '3',
+            Point2D(3, 1): '4',
+            Point2D(0, 2): '5',
+            Point2D(1, 2): '6',
+            Point2D(2, 2): '7',
+            Point2D(3, 2): '8',
+            Point2D(4, 2): '9',
+            Point2D(1, 3): 'A',
+            Point2D(2, 3): 'B',
+            Point2D(3, 3): 'C',
+            Point2D(2, 4): 'D',
         })
 
     def __post_init__(self):
@@ -51,9 +66,10 @@ class Numpad:
         >>> {
         ...     button: numpad.button_by_position[
         ...         numpad.position_by_button[button]]
-        ...     for button in range(1, 10)
+        ...     for button in map(str, range(1, 10))
         ... }
-        {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9}
+        {'1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7',
+         '8': '8', '9': '9'}
         """
         self.position_by_button = {
             button: position
@@ -61,7 +77,7 @@ class Numpad:
         }
 
     def get_code(self, instruction_lines: List['InstructionLine'],
-                 start: int = 5) -> str:
+                 start: str = '5') -> str:
         """
         >>> numpad = Numpad.standard_9_buttons()
         >>> numpad.get_code([])
@@ -69,19 +85,23 @@ class Numpad:
         >>> numpad.get_code(InstructionLine.from_lines_text(
         ...     'ULL\\nRRDDD\\nLURDL\\nUUUUD'))
         '1985'
+        >>> numpad = Numpad.standard_13_buttons()
+        >>> numpad.get_code(InstructionLine.from_lines_text(
+        ...     'ULL\\nRRDDD\\nLURDL\\nUUUUD'))
+        '5DB3'
         """
-        return "".join(map(str, self.get_button_sequence(instruction_lines)))
+        return "".join(self.get_button_sequence(instruction_lines))
 
     def get_button_sequence(
-            self, instruction_lines: List['InstructionLine'], start: int = 5,
-    ) -> List[int]:
+            self, instruction_lines: List['InstructionLine'], start: str = '5',
+    ) -> List[str]:
         """
         >>> numpad = Numpad.standard_9_buttons()
         >>> numpad.get_button_sequence([])
         []
         >>> numpad.get_button_sequence(InstructionLine.from_lines_text(
         ...     'ULL\\nRRDDD\\nLURDL\\nUUUUD'))
-        [1, 9, 8, 5]
+        ['1', '9', '8', '5']
         """
         sequence = []
         position = start
@@ -91,22 +111,31 @@ class Numpad:
 
         return sequence
 
-    def move_button(self, start: int, instruction_line: 'InstructionLine'
-                    ) -> int:
+    def move_button(self, start: str, instruction_line: 'InstructionLine'
+                    ) -> str:
         """
         >>> numpad = Numpad.standard_9_buttons()
-        >>> numpad.move_button(5, InstructionLine.from_line_text('ULL'))
-        1
-        >>> numpad.move_button(1, InstructionLine.from_line_text('RRDDD'))
-        9
-        >>> numpad.move_button(9, InstructionLine.from_line_text('LURDL'))
-        8
-        >>> numpad.move_button(8, InstructionLine.from_line_text('UUUUD'))
-        5
+        >>> numpad.move_button('5', InstructionLine.from_line_text('ULL'))
+        '1'
+        >>> numpad.move_button('1', InstructionLine.from_line_text('RRDDD'))
+        '9'
+        >>> numpad.move_button('9', InstructionLine.from_line_text('LURDL'))
+        '8'
+        >>> numpad.move_button('8', InstructionLine.from_line_text('UUUUD'))
+        '5'
+        >>> numpad = Numpad.standard_13_buttons()
+        >>> numpad.move_button('5', InstructionLine.from_line_text('ULL'))
+        '5'
+        >>> numpad.move_button('5', InstructionLine.from_line_text('RRDDD'))
+        'D'
+        >>> numpad.move_button('D', InstructionLine.from_line_text('LURDL'))
+        'B'
+        >>> numpad.move_button('B', InstructionLine.from_line_text('UUUUD'))
+        '3'
         """
         start_position = self.position_by_button[start]
         end_position = instruction_line.move(
-            start_position, self.min_x, self.max_x, self.min_y, self.max_y)
+            start_position, self.button_by_position)
         return self.button_by_position[end_position]
 
     def show(self):
@@ -115,14 +144,22 @@ class Numpad:
         1 2 3
         4 5 6
         7 8 9
+        >>> print(Numpad.standard_13_buttons().show())
+            1
+          2 3 4
+        5 6 7 8 9
+          A B C
+            D
         """
+        (min_x, min_y), (max_x, max_y) = \
+            min_and_max_tuples(self.button_by_position)
         # noinspection PyArgumentList
         return "\n".join(
             " ".join(
-                str(self.button_by_position[Point2D(x, y)])
-                for x in range(self.min_x, self.max_x + 1)
-            )
-            for y in range(self.min_y, self.max_y + 1)
+                self.button_by_position.get(Point2D(x, y), " ")
+                for x in range(min_x, max_x + 1)
+            ).rstrip()
+            for y in range(min_y, max_y + 1)
         )
 
 
@@ -174,69 +211,68 @@ class InstructionLine:
         """
         return cls(list(map(cls.Direction, line_text)))
 
-    def move(self, position: Point2D, min_x: int, max_x: int, min_y: int,
-             max_y: int) -> Point2D:
+    def move(self, position: Point2D, positions: Iterable[Point2D]) -> Point2D:
         """
+        >>> # noinspection PyUnresolvedReferences
+        >>> positions_9 = {
+        ...     Point2D(x, y) for x in range(0, 3) for y in range(0, 3)}
         >>> InstructionLine.from_line_text('')\\
-        ...     .move(Point2D(1, 1), 0, 2, 0, 2)
+        ...     .move(Point2D(1, 1), positions_9)
         Point2D(x=1, y=1)
         >>> InstructionLine.from_line_text('ULL')\\
-        ...     .move(Point2D(1, 1), 0, 2, 0, 2)
+        ...     .move(Point2D(1, 1), positions_9)
         Point2D(x=0, y=0)
         >>> InstructionLine.from_line_text('UUUDDD')\\
-        ...     .move(Point2D(1, 1), 0, 2, 0, 2)
+        ...     .move(Point2D(1, 1), positions_9)
         Point2D(x=1, y=2)
+        >>> # noinspection PyUnresolvedReferences
+        >>> positions_49 = {
+        ...     Point2D(x, y) for x in range(0, 7) for y in range(0, 7)}
         >>> InstructionLine.from_line_text('ULL')\\
-        ...     .move(Point2D(3, 3), 0, 6, 0, 6)
+        ...     .move(Point2D(3, 3), positions_49)
         Point2D(x=1, y=2)
         """
         for direction in self.directions:
-            position = self.move_in_direction(
-                position, direction, min_x, max_x, min_y, max_y)
+            position = self.move_in_direction(position, direction, positions)
 
         return position
 
     def move_in_direction(self, position: Point2D, direction: Direction,
-                          min_x: int, max_x: int, min_y: int, max_y: int) \
-            -> Point2D:
+                          positions: Iterable[Point2D]) -> Point2D:
         """
+        >>> # noinspection PyUnresolvedReferences
+        >>> positions_9 = {
+        ...     Point2D(x, y) for x in range(0, 3) for y in range(0, 3)}
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(1, 1), InstructionLine.Direction.Up, 0, 2, 0, 2)
+        ...     Point2D(1, 1), InstructionLine.Direction.Up, positions_9)
         Point2D(x=1, y=0)
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(1, 0), InstructionLine.Direction.Up, 0, 2, 0, 2)
+        ...     Point2D(1, 0), InstructionLine.Direction.Up, positions_9)
         Point2D(x=1, y=0)
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(1, 1), InstructionLine.Direction.Down, 0, 2, 0, 2)
+        ...     Point2D(1, 1), InstructionLine.Direction.Down, positions_9)
         Point2D(x=1, y=2)
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(1, 2), InstructionLine.Direction.Down, 0, 2, 0, 2)
+        ...     Point2D(1, 2), InstructionLine.Direction.Down, positions_9)
         Point2D(x=1, y=2)
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(1, 1), InstructionLine.Direction.Left, 0, 2, 0, 2)
+        ...     Point2D(1, 1), InstructionLine.Direction.Left, positions_9)
         Point2D(x=0, y=1)
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(0, 1), InstructionLine.Direction.Left, 0, 2, 0, 2)
+        ...     Point2D(0, 1), InstructionLine.Direction.Left, positions_9)
         Point2D(x=0, y=1)
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(1, 1), InstructionLine.Direction.Right, 0, 2, 0, 2)
+        ...     Point2D(1, 1), InstructionLine.Direction.Right, positions_9)
         Point2D(x=2, y=1)
         >>> InstructionLine([]).move_in_direction(
-        ...     Point2D(2, 1), InstructionLine.Direction.Right, 0, 2, 0, 2)
+        ...     Point2D(2, 1), InstructionLine.Direction.Right, positions_9)
         Point2D(x=2, y=1)
         """
-        x, y = position.offset(self.DIRECTION_OFFSETS[direction])
-        if x < min_x:
-            x = position.x
-        elif x > max_x:
-            x = position.x
-        if y < min_y:
-            y = position.y
-        elif y > max_y:
-            y = position.y
+        new_position = position.offset(self.DIRECTION_OFFSETS[direction])
+        if new_position not in positions:
+            return position
 
-        # noinspection PyArgumentList
-        return Point2D(x, y)
+        return new_position
 
     def show(self):
         """
