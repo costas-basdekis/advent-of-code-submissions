@@ -15,8 +15,7 @@ def solve(_input=None):
         _input = get_current_directory(__file__)\
             .joinpath("part_a_input.txt")\
             .read_text()
-    _, _, scores = MarbleGame.from_marble_game_text(_input).play_game()
-    return max(scores)
+    return MarbleGame.from_marble_game_text(_input).get_high_score()
 
 
 class MarbleGame(namedtuple("MarbleGame", ("player_count", "marble_count"))):
@@ -35,10 +34,39 @@ class MarbleGame(namedtuple("MarbleGame", ("player_count", "marble_count"))):
         marble_count = int(max_marble_value_str) + 1
         return cls(player_count, marble_count)
 
+    def get_high_score(self):
+        """
+        >>> MarbleGame(10, 1619).get_high_score()
+        8317
+        >>> MarbleGame(13, 8000).get_high_score()
+        146373
+        >>> MarbleGame(17, 1105).get_high_score()
+        2764
+        >>> MarbleGame(21, 6112).get_high_score()
+        54718
+        >>> MarbleGame(30, 5808).get_high_score()
+        37305
+        """
+        scores = [0] * self.player_count
+        for step, score in self.get_scores():
+            player = step % self.player_count
+            scores[player] += score
+
+        return max(scores)
+
+    def get_scores(self):
+        for _, _, step, score in self.get_all_steps():
+            if score:
+                yield step, score
+
     def play_game(self):
         """
+        >>> MarbleGame(9, 1).play_game()
+        ((0,), 0, [0, 0, 0, 0, 0, 0, 0, 0, 0])
         >>> MarbleGame(9, 26).play_game()
         ((0, 16, 8, 17, 4, 18, 19, 2, 24, 20, 25, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15), 10, [0, 0, 0, 0, 32, 0, 0, 0, 0])
+        >>> MarbleGame(9, 47).play_game()
+        ((0, 39, 16, 40, 8, 41, 42, 4, 43, 18, 44, 19, 45, 2, 24, 20, 25, 10, 26, 21, 27, 5, 28, 22, 29, 11, 30, 1, 31, 12, 32, 6, 33, 13, 34, 3, 35, 14, 36, 7, 37, 15, 38), 6, [63, 0, 0, 0, 32, 0, 0, 0, 0])
         >>> max(MarbleGame(10, 1619).play_game()[2])
         8317
         >>> max(MarbleGame(13, 8000).play_game()[2])
@@ -50,23 +78,40 @@ class MarbleGame(namedtuple("MarbleGame", ("player_count", "marble_count"))):
         >>> max(MarbleGame(30, 5808).play_game()[2])
         37305
         """
-        players = list(range(self.player_count))
-        player = 0
-        marbles_left = list(range(self.marble_count))
         scores = [0] * self.player_count
-        circle = (marbles_left.pop(0),)
+        circle = ()
         position = 0
-        while marbles_left:
-            marble = marbles_left.pop(0)
-            if marble % 23 == 0:
-                circle, position, removed_marbles = \
-                    self.remove_marbles(circle, position, marble)
-                scores[player] += sum(removed_marbles)
-            else:
-                circle, position = self.insert_marble(circle, position, marble)
-            player = (player + 1) % len(players)
+        for circle, position, step, score in self.get_all_steps():
+            player = step % self.player_count
+            scores[player] += score
 
         return circle, position, scores
+
+    def get_all_steps(self):
+        marbles_left = list(range(self.marble_count))
+        circle = (marbles_left.pop(0),)
+        position = 0
+        step = 0
+        yield circle, position, step, 0
+        yield from self.exhaust_marbles(circle, position, step, marbles_left)
+
+    def exhaust_marbles(self, circle, position, step, marbles_left):
+        while marbles_left:
+            marble = marbles_left.pop(0)
+            circle, position, removed_marbles = \
+                self.do_step(circle, position, marble)
+            yield circle, position, step, sum(removed_marbles)
+            step += 1
+
+    def do_step(self, circle, position, marble):
+        if marble % 23 == 0:
+            circle, position, removed_marbles =\
+                self.remove_marbles(circle, position, marble)
+        else:
+            circle, position = self.insert_marble(circle, position, marble)
+            removed_marbles = ()
+
+        return circle, position, removed_marbles
 
     def remove_marbles(self, circle, position, marble):
         """
