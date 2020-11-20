@@ -1,6 +1,6 @@
 from typing import Iterable, Tuple, TypeVar
 
-__all__ = ['KeyedDefaultDict', 'in_groups']
+__all__ = ['KeyedDefaultDict', 'in_groups', 'get_fixed_length_substrings']
 
 
 class KeyedDefaultDict(dict):
@@ -64,3 +64,22 @@ def in_groups(iterable: Iterable[T], size: int) -> Iterable[Tuple[T, ...]]:
             group = ()
     if group:
         yield group
+
+
+def get_fixed_length_substrings(text: str, length: int) -> Iterable[str]:
+    """
+    >>> list(get_fixed_length_substrings("", 4))
+    []
+    >>> list(get_fixed_length_substrings("abc", 4))
+    []
+    >>> list(get_fixed_length_substrings("abc", 3))
+    ['abc']
+    >>> list(get_fixed_length_substrings("abc", 2))
+    ['ab', 'bc']
+    >>> list(get_fixed_length_substrings("abcdefg", 2))
+    ['ab', 'bc', 'cd', 'de', 'ef', 'fg']
+    """
+    return (
+        text[start:start + length]
+        for start in range(len(text) - length + 1)
+    )
