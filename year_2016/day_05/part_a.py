@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from hashlib import md5
 from itertools import count
-from typing import Optional
+from typing import Optional, Tuple, Iterable
 
 from utils import BaseChallenge, Self, Cls
 
@@ -24,14 +24,14 @@ class Hasher:
     def from_text(cls: Cls['Hasher'], text: str) -> Self['Hasher']:
         return cls(text)
 
-    def get_password(self, size: int = 8):
+    def get_password(self, size: int = 8) -> str:
         """
         >>> Hasher('abc').get_password()
         '18f47a30'
         """
         return "".join(map("{:x}".format, self.get_digits(size)))
 
-    def get_digits(self, _count: Optional[int] = None):
+    def get_digits(self, _count: Optional[int] = None) -> Iterable[int]:
         """
         >>> list(Hasher('abc').get_digits(3))
         [1, 8, 15]
@@ -44,7 +44,7 @@ class Hasher:
             yield digit
             next_index = index + 1
 
-    def get_next_digit(self, start_index: int = 0):
+    def get_next_digit(self, start_index: int = 0) -> Tuple[int, int]:
         """
         >>> Hasher('abc').get_next_digit()
         (3231929, 1)
@@ -56,9 +56,9 @@ class Hasher:
         for index in count(start_index):
             potential_digit = self.get_potential_digit(index)
             if potential_digit <= 0xf:
-                return (index, potential_digit)
+                return index, potential_digit
 
-    def get_potential_digit(self, index):
+    def get_potential_digit(self, index: int) -> int:
         """
         >>> Hasher('abc').get_potential_digit(3231929)
         1
