@@ -63,9 +63,22 @@ class Disk:
         >>> Disk.from_hash_input('flqrgnkx').get_cell_count()
         8108
         """
-        return sum(
-            utils.helper.iterable_length(filter(None, row))
-            for row in self.cells
+        return utils.helper.iterable_length(self.get_cells())
+
+    def get_cells(self):
+        """
+        >>> sorted(set(Disk.from_hash_input('flqrgnkx').get_cells()) & {
+        ...     utils.Point2D(x, y)
+        ...     for x in range(3)
+        ...    for y in range(3)
+        ... })
+        [Point2D(x=0, y=0), Point2D(x=1, y=0), Point2D(x=1, y=1)]
+        """
+        return (
+            utils.Point2D(x, y)
+            for y, row in enumerate(self.cells)
+            for x, cell in enumerate(row)
+            if cell
         )
 
     SHOW_MAP = {
