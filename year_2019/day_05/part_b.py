@@ -3,7 +3,7 @@ import doctest
 
 from utils import get_current_directory
 from year_2019.day_05.part_a import get_program_result_and_output, OP_HANDLERS,\
-    get_values, MODE_POSITION, run_program_extended
+    get_values, MODE_POSITION, run_program_extended, MODE_RELATIVE
 
 
 def solve(_input=None):
@@ -150,108 +150,114 @@ def get_program_result_and_output_extended(
 
 @register_op_handler_extended(5)
 def handle_jump_if_true(parameter_modes, program, program_counter,
-                        input_stream, input_stream_counter, output_stream):
+                        input_stream, input_stream_counter, output_stream,
+                        relative_base):
     """
-    >>> handle_jump_if_true('11', [5, 0, 4, 99, 99], 0, [], 0, [])
-    (3, 0)
-    >>> handle_jump_if_true('11', [5, 1, 4, 99, 99], 0, [], 0, [])
-    (4, 0)
-    >>> handle_jump_if_true('', [5, 4, 5, 99, 0, 6, 99], 0, [], 0, [])
-    (3, 0)
-    >>> handle_jump_if_true('', [5, 4, 5, 99, 1, 6, 99], 0, [], 0, [])
-    (6, 0)
+    >>> handle_jump_if_true('11', [5, 0, 4, 99, 99], 0, [], 0, [], 0)
+    (3, 0, 0)
+    >>> handle_jump_if_true('11', [5, 1, 4, 99, 99], 0, [], 0, [], 0)
+    (4, 0, 0)
+    >>> handle_jump_if_true('', [5, 4, 5, 99, 0, 6, 99], 0, [], 0, [], 0)
+    (3, 0, 0)
+    >>> handle_jump_if_true('', [5, 4, 5, 99, 1, 6, 99], 0, [], 0, [], 0)
+    (6, 0, 0)
     """
     program_counter += 1
-    _, (value_1, value_2), program_counter = get_values(
-        2, parameter_modes, program, program_counter)
+    _, (value_1, value_2), program, program_counter = get_values(
+        2, parameter_modes, program, program_counter, relative_base)
 
     if value_1:
         program_counter = value_2
 
-    return program_counter, input_stream_counter
+    return program_counter, input_stream_counter, relative_base
 
 
 @register_op_handler_extended(6)
 def handle_jump_if_false(parameter_modes, program, program_counter,
-                         input_stream, input_stream_counter, output_stream):
+                         input_stream, input_stream_counter, output_stream,
+                         relative_base):
     """
-    >>> handle_jump_if_false('11', [6, 0, 4, 99, 99], 0, [], 0, [])
-    (4, 0)
-    >>> handle_jump_if_false('11', [6, 1, 4, 99, 99], 0, [], 0, [])
-    (3, 0)
-    >>> handle_jump_if_false('', [6, 4, 5, 99, 0, 6, 99], 0, [], 0, [])
-    (6, 0)
-    >>> handle_jump_if_false('', [6, 4, 5, 99, 1, 6, 99], 0, [], 0, [])
-    (3, 0)
+    >>> handle_jump_if_false('11', [6, 0, 4, 99, 99], 0, [], 0, [], 0)
+    (4, 0, 0)
+    >>> handle_jump_if_false('11', [6, 1, 4, 99, 99], 0, [], 0, [], 0)
+    (3, 0, 0)
+    >>> handle_jump_if_false('', [6, 4, 5, 99, 0, 6, 99], 0, [], 0, [], 0)
+    (6, 0, 0)
+    >>> handle_jump_if_false('', [6, 4, 5, 99, 1, 6, 99], 0, [], 0, [], 0)
+    (3, 0, 0)
     """
     program_counter += 1
-    _, (value_1, value_2), program_counter = get_values(
-        2, parameter_modes, program, program_counter)
+    _, (value_1, value_2), program, program_counter = get_values(
+        2, parameter_modes, program, program_counter, relative_base)
 
     if not value_1:
         program_counter = value_2
 
-    return program_counter, input_stream_counter
+    return program_counter, input_stream_counter, relative_base
 
 
 @register_op_handler_extended(7)
 def handle_less_than(parameter_modes, program, program_counter,
-                     input_stream, input_stream_counter, output_stream):
+                     input_stream, input_stream_counter, output_stream,
+                     relative_base):
     """
     >>> _program = [7, 5, 6, 7, 99, 1, 2, 255]
-    >>> _ = handle_less_than('', _program, 0, [], 0, [])
+    >>> _ = handle_less_than('', _program, 0, [], 0, [], 0)
     >>> _program
     [7, 5, 6, 7, 99, 1, 2, 1]
     >>> _program = [7, 5, 6, 7, 99, 2, 2, 255]
-    >>> _ = handle_less_than('', _program, 0, [], 0, [])
+    >>> _ = handle_less_than('', _program, 0, [], 0, [], 0)
     >>> _program
     [7, 5, 6, 7, 99, 2, 2, 0]
     >>> _program = [7, 5, 6, 7, 99, 3, 2, 255]
-    >>> _ = handle_less_than('', _program, 0, [], 0, [])
+    >>> _ = handle_less_than('', _program, 0, [], 0, [], 0)
     >>> _program
     [7, 5, 6, 7, 99, 3, 2, 0]
     """
     program_counter += 1
-    (_, _, pointer_3), (value_1, value_2, _), program_counter = get_values(
-        3, parameter_modes, program, program_counter,
-        force_parameter_modes={2: MODE_POSITION})
+    (_, _, pointer_3), (value_1, value_2, _), program, program_counter = \
+        get_values(
+            3, parameter_modes, program, program_counter, relative_base,
+            force_parameter_modes={2: [MODE_POSITION, MODE_RELATIVE]})
 
     if value_1 < value_2:
         program[pointer_3] = 1
     else:
         program[pointer_3] = 0
 
-    return program_counter, input_stream_counter
+    return program_counter, input_stream_counter, relative_base
 
 
 @register_op_handler_extended(8)
 def handle_equal(parameter_modes, program, program_counter,
-                 input_stream, input_stream_counter, output_stream):
+                 input_stream, input_stream_counter, output_stream,
+                 relative_base):
     """
     >>> _program = [8, 5, 6, 7, 99, 1, 2, 255]
-    >>> _ = handle_equal('', _program, 0, [], 0, [])
+    >>> _ = handle_equal('', _program, 0, [], 0, [], 0)
     >>> _program
     [8, 5, 6, 7, 99, 1, 2, 0]
     >>> _program = [8, 5, 6, 7, 99, 2, 2, 255]
-    >>> _ = handle_equal('', _program, 0, [], 0, [])
+    >>> _ = handle_equal('', _program, 0, [], 0, [], 0)
     >>> _program
     [8, 5, 6, 7, 99, 2, 2, 1]
     >>> _program = [8, 5, 6, 7, 99, 3, 2, 255]
-    >>> _ = handle_equal('', _program, 0, [], 0, [])
+    >>> _ = handle_equal('', _program, 0, [], 0, [], 0)
     >>> _program
     [8, 5, 6, 7, 99, 3, 2, 0]
     """
     program_counter += 1
-    (_, _, pointer_3), (value_1, value_2, _), program_counter = get_values(
-        3, parameter_modes, program, program_counter,
-        force_parameter_modes={2: MODE_POSITION})
+    (_, _, pointer_3), (value_1, value_2, _), program, program_counter = \
+        get_values(
+            3, parameter_modes, program, program_counter, relative_base,
+            force_parameter_modes={2: [MODE_POSITION, MODE_RELATIVE]})
 
     if value_1 == value_2:
         program[pointer_3] = 1
     else:
         program[pointer_3] = 0
 
-    return program_counter, input_stream_counter
+    return program_counter, input_stream_counter, relative_base
 
 
 if __name__ == '__main__':
