@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict
+from typing import Dict, Iterable
 
 from aox.challenge import Debugger
 
@@ -12,7 +12,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input, debugger):
         """
         >>> Challenge().default_solve()
-        42
+        'DRDRULRDRD'
         """
         return MazeSolver(_input.strip()).find_path(debugger=debugger)
 
@@ -56,10 +56,22 @@ class MazeSolver:
         >>> MazeSolver('ulqzkmiv').find_path()
         'DRURDRUDDLLDLUURRDULRLDUUDDDRR'
         """
+        path = next(self.find_paths(start, finish, debugger), None)
+        if path is None:
+            raise Exception(f"Could not find a path from {start} to {finish}")
+
+        return path
+
+    def find_paths(self, start: Point2D = Point2D(0, 0),
+                   finish: Point2D = Point2D(3, 3),
+                   debugger: Debugger = Debugger(enabled=False),
+                   ) -> Iterable[str]:
         if start == finish:
-            return ''
+            yield ''
         stack = [('', Point2D(0, 0))]
         debugger.reset()
+        path_count = 0
+        largest_path = None
         while stack:
             path, position = stack.pop(0)
             path_door_states = self.get_path_door_states(path)
@@ -71,17 +83,20 @@ class MazeSolver:
                     continue
                 next_path = f"{path}{direction.value}"
                 if next_position == finish:
-                    return next_path
-                stack.append((next_path, next_position))
+                    path_count += 1
+                    largest_path = next_path
+                    yield next_path
+                else:
+                    stack.append((next_path, next_position))
+            debugger.step()
             if debugger.should_report():
                 debugger.report(
                     f"Step: {debugger.step_count}, time: "
                     f"{debugger.pretty_duration_since_start}, stack: "
-                    f"{len(stack)}, average speed: {debugger.step_frequency}, "
-                    f"recent speed: "
+                    f"{len(stack)}, paths: {path_count}, largest path: "
+                    f"{largest_path and len(largest_path)}, average speed: "
+                    f"{debugger.step_frequency}, recent speed: "
                     f"{debugger.step_frequency_since_last_report}")
-
-        raise Exception(f"Could not find a path from {start} to {finish}")
 
     def is_position_valid(self, position: Point2D) -> bool:
         """

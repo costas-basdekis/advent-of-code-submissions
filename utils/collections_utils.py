@@ -1,5 +1,5 @@
 import itertools
-from typing import Iterable, Tuple, TypeVar, List
+from typing import Iterable, Tuple, TypeVar, List, Optional
 
 __all__ = [
     'KeyedDefaultDict',
@@ -129,3 +129,33 @@ def get_windows(items: Iterable[T], size: int) -> Iterable[Tuple[T, ...]]:
         if len(next_window) >= size:
             next_window = next_window[-size:]
             yield next_window
+
+
+def last(items: Iterable[T], default: T = NotImplemented) -> Optional[T]:
+    """
+    >>> last([])
+    Traceback (most recent call last):
+    ...
+    StopIteration
+    >>> last([], None)
+    >>> last([1, 2, 3])
+    3
+    >>> last(range(1, 4))
+    3
+    >>> # noinspection PyUnresolvedReferences
+    >>> last(x for x in range(1, 4))
+    3
+    """
+    items = iter(items)
+    for item in items:
+        break
+    else:
+        if default is NotImplemented:
+            raise StopIteration()
+        else:
+            return default
+
+    for item in items:
+        pass
+
+    return item
