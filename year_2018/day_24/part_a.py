@@ -19,6 +19,7 @@ class Challenge(utils.BaseChallenge):
 
 
 class GroupSet:
+    group_class = NotImplemented
     re_faction_name = re.compile(r"^(.+):$")
 
     @classmethod
@@ -59,7 +60,7 @@ class GroupSet:
             name_str, group_strs = non_empty_lines[0], non_empty_lines[1:]
             faction_name, = cls.re_faction_name.match(name_str).groups()
             groups.extend(
-                Group.from_group_text(faction_name, group_str)
+                cls.group_class.from_group_text(faction_name, group_str)
                 for group_str in group_strs
             )
 
@@ -106,7 +107,7 @@ class GroupSet:
             for group in self.groups
         )
 
-    def step_many(self, count=None):
+    def step_many(self, count=None, debug=False, report_count=100000):
         """
         >>> group_set_a = GroupSet.from_groups_text(
         ...     "Immune System:\\n"
@@ -166,10 +167,14 @@ class GroupSet:
         else:
             steps = range(count)
         finished = False
-        for _ in steps:
+        for step in steps:
             finished = self.step()
             if finished:
                 break
+            if debug and step % report_count == 0:
+                print(
+                    f"Step {step} with {self.get_unit_count()} units in "
+                    f"{len(self.groups)} groups")
 
         return finished
 
@@ -201,6 +206,7 @@ class GroupSet:
         attacking_pairs = self.get_attacking_pairs()
         if not attacking_pairs:
             return True
+        unit_count_before = self.get_unit_count()
         for attacker, defender in attacking_pairs:
             if attacker.size <= 0:
                 continue
@@ -208,6 +214,10 @@ class GroupSet:
             defender.size -= units_killed
 
         self.groups = [group for group in self.groups if group.size > 0]
+
+        unit_count_after = self.get_unit_count()
+        if unit_count_after == unit_count_before:
+            return True
 
         return False
 
@@ -577,6 +587,9 @@ class Group:
             return 2 * self.effective_power
 
         return self.effective_power
+
+
+GroupSet.group_class = Group
 
 
 challenge = Challenge()
