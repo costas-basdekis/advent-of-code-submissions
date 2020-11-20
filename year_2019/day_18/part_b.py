@@ -10,7 +10,7 @@ from year_2019.day_18.part_a import get_all_items_distance_and_blockers,\
 def solve(_input=None):
     """
     >>> solve()
-    42
+    2082
     """
     if _input is None:
         _input = get_current_directory(__file__)\
@@ -423,8 +423,8 @@ def show_map(contents, start_positions):
 
 
 if __name__ == '__main__':
-    # if doctest.testmod().failed:
-    #     print("Tests failed")
-    # else:
-    #     print("Tests passed")
+    if doctest.testmod().failed:
+        print("Tests failed")
+    else:
+        print("Tests passed")
     print("Solution:", solve())
