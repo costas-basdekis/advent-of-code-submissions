@@ -17,10 +17,12 @@ class Challenge(utils.BaseChallenge):
 
 
 class ParticleSet:
+    particle_class = NotImplemented
+
     @classmethod
     def from_particles_text(cls, particles_text):
         lines = particles_text.strip().splitlines()
-        return cls(list(map(Particle.from_particle_text, lines)))
+        return cls(list(map(cls.particle_class.from_particle_text, lines)))
 
     def __init__(self, particles):
         self.particles = particles
@@ -37,10 +39,12 @@ class ParticleSet:
             self.get_particle_closest_to_origin_in_the_long_run())
 
     def get_particle_closest_to_origin_in_the_long_run(self):
-        return min(self.particles, key=Particle.get_distance_in_the_long_run)
+        return min(
+            self.particles,
+            key=self.particle_class.get_distance_in_the_long_run)
 
 
-@dataclass
+@dataclass(eq=True, unsafe_hash=True)
 class Particle:
     position: utils.Point3D
     velocity: utils.Point3D
@@ -141,6 +145,9 @@ class Particle:
         4
         """
         return self.position.manhattan_length()
+
+
+ParticleSet.particle_class = Particle
 
 
 challenge = Challenge()
