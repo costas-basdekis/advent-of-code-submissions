@@ -24,20 +24,38 @@ def solve(_input=None):
     return diagnostic_code
 
 
+OP_HANDLERS = {}
+
+
+def register_op_handler(op_code, override=False):
+    def decorator(func):
+        if not override and op_code in OP_HANDLERS:
+            raise Exception(
+                f"Op code '{op_code}' was already present, and "
+                f"`override=False`")
+        OP_HANDLERS[op_code] = func
+        return func
+
+    return decorator
+
+
+# noinspection PyDefaultArgument
 def get_program_result_and_output(program_text, input_stream,
-                                  substitutions=None):
+                                  substitutions=None, op_handlers=OP_HANDLERS):
     if substitutions:
         program = parse_program(program_text)
         for position, substitution in substitutions.items():
             program[position] = substitution
         program_text = serialise_program(program)
     result_text, output_stream = \
-        run_program_extended(program_text, input_stream)
+        run_program_extended(
+            program_text, input_stream, op_handlers=op_handlers)
     result = parse_program(result_text)
     return result[0], output_stream
 
 
-def run_program_extended(program_text, input_stream):
+# noinspection PyDefaultArgument
+def run_program_extended(program_text, input_stream, op_handlers=OP_HANDLERS):
     """
     >>> run_program_extended("1,9,10,3,2,3,11,0,99,30,40,50", [])
     ('3500,9,10,70,2,3,11,0,99,30,40,50', [])
@@ -72,9 +90,9 @@ def run_program_extended(program_text, input_stream):
         parameter_modes, op_code = break_down_op_code(program[program_counter])
         if op_code == 99:
             break
-        if op_code not in OP_HANDLERS:
+        if op_code not in op_handlers:
             raise Exception(f"Unknown op code {op_code}")
-        handler = OP_HANDLERS[op_code]
+        handler = op_handlers[op_code]
         program_counter, input_stream_counter = handler(
             parameter_modes, program, program_counter, input_stream,
             input_stream_counter, output_stream)
@@ -105,6 +123,7 @@ MODE_POSITION = '0'
 MODE_IMMEDIATE = '1'
 
 
+@register_op_handler(1)
 def handle_addition(parameter_modes, program, program_counter,
                     input_stream, input_stream_counter, output_stream):
     program_counter += 1
@@ -117,6 +136,7 @@ def handle_addition(parameter_modes, program, program_counter,
     return program_counter, input_stream_counter
 
 
+@register_op_handler(2)
 def handle_multiplication(parameter_modes, program, program_counter,
                           input_stream, input_stream_counter, output_stream):
     """
@@ -159,6 +179,7 @@ def handle_multiplication(parameter_modes, program, program_counter,
     return program_counter, input_stream_counter
 
 
+@register_op_handler(3)
 def handle_input(parameter_modes, program, program_counter, input_stream,
                  input_stream_counter, output_stream):
     """
@@ -176,6 +197,7 @@ def handle_input(parameter_modes, program, program_counter, input_stream,
     return program_counter, input_stream_counter
 
 
+@register_op_handler(4)
 def handle_output(parameter_modes, program, program_counter, input_stream,
                   input_stream_counter, output_stream):
     program_counter += 1
@@ -239,14 +261,6 @@ def get_values(count, parameter_modes, program, program_counter,
 
     program_counter += count
     return pointers, values, program_counter
-
-
-OP_HANDLERS = {
-    1: handle_addition,
-    2: handle_multiplication,
-    3: handle_input,
-    4: handle_output,
-}
 
 
 if __name__ == '__main__':
