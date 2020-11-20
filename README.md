@@ -3,3 +3,12 @@
 I'll document my submissions here, and push them after the everyone in my 
 leaderboards have submitted the challenges
 
+## The submissions
+
+* Got it correctly: :white_check_mark:
+* Got it wrong: :x:
+
+
+* [2019](year_2019)
+  * [1](year_2019/day_01) 
+    * [Part A](year_2019/day_01/part_a.py) :white_check_mark:
