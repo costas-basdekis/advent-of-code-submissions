@@ -52,19 +52,23 @@ class ProgramRunner:
         ...     "acc +1\\n"
         ...     "jmp -4\\n"
         ...     "acc +6\\n"
-        ... ).to_runner().run().value
-        5
+        ... ).to_runner().run()
+        (True, 5)
         """
         while True:
             if self.should_exit(prevent_infinite_loop=prevent_infinite_loop):
-                break
+                return self.get_run_return_value()
             self.visited_instruction_indexes.add(self.instruction_counter)
             self.run_instruction()
 
-        return self
+    def get_run_return_value(self):
+        return True, self.value
 
     def should_exit(self, prevent_infinite_loop=True):
-        return prevent_infinite_loop and (
+        return prevent_infinite_loop and self.is_in_infinite_loop()
+
+    def is_in_infinite_loop(self):
+        return (
             self.instruction_counter
             in self.visited_instruction_indexes
         )
@@ -104,8 +108,8 @@ class Program:
     def __repr__(self):
         return f"{type(self).__name__}({self.instructions})"
 
-    def to_runner(self):
-        return ProgramRunner.from_program(self)
+    def to_runner(self, runner_class=ProgramRunner):
+        return runner_class.from_program(self)
 
 
 class Instruction:
