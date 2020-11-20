@@ -46,3 +46,5 @@ leaderboards have submitted the challenges
   * [12](year_2019/day_12)  - [See Challenge](https://adventofcode.com/2019/day/12) :white_check_mark:
     * [Part A](year_2019/day_12/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_12/part_b.py) :white_check_mark:
+  * [13](year_2019/day_13)  - [See Challenge](https://adventofcode.com/2019/day/13)
+    * [Part A](year_2019/day_13/part_a.py) :white_check_mark:
