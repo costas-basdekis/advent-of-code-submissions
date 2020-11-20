@@ -86,6 +86,9 @@ class MessageSet:
 
 
 class RuleSet:
+    rule_class = NotImplemented
+    message_set_class = MessageSet
+
     @classmethod
     def from_rules_and_messages_text(cls, text):
         """
@@ -112,14 +115,14 @@ class RuleSet:
             Ref(references=(5, 5))))),
          3: Rule(id=3, node=Either(branches=(Ref(references=(4, 5)),
             Ref(references=(5, 4))))),
-         4: Rule(id=4, node=Literal(letter='a')),
-         5: Rule(id=5, node=Literal(letter='b'))}
+         4: Rule(id=4, node=Literal(content='a')),
+         5: Rule(id=5, node=Literal(content='b'))}
         >>> message_set_a.messages
         ['ababbb', 'bababa', 'abbbab', 'aaabbb', 'aaaabbb']
         """
         rules_text, messages_text = text.split('\n\n')
-        rule_set = RuleSet.from_rules_text(rules_text)
-        message_set = MessageSet.from_messages_text(messages_text)
+        rule_set = cls.from_rules_text(rules_text)
+        message_set = cls.message_set_class.from_messages_text(messages_text)
         return rule_set, message_set
 
     @classmethod
@@ -133,12 +136,14 @@ class RuleSet:
         ... ).rules_by_id
         {'_cached': {},
          0: Rule(id=0, node=Ref(references=(1, 2))),
-         1: Rule(id=1, node=Literal(letter='a')),
+         1: Rule(id=1, node=Literal(content='a')),
          2: Rule(id=2, node=Either(branches=(Ref(references=(1, 3)),
             Ref(references=(3, 1))))),
-         3: Rule(id=3, node=Literal(letter='b'))}
+         3: Rule(id=3, node=Literal(content='b'))}
         """
-        rules = map(Rule.from_rule_text, rules_text.strip().splitlines())
+        rules = map(
+            cls.rule_class.from_rule_text,
+            rules_text.strip().splitlines())
         return cls({
             rule.id: rule
             for rule in rules
@@ -164,13 +169,14 @@ class RuleSet:
 
 
 class Rule(namedtuple("Rule", ("id", "node"))):
+    node_class = NotImplemented
     re_rule = re.compile(r"^(\d+): (.*)$")
 
     @classmethod
     def from_rule_text(cls, rule_text):
         """
         >>> Rule.from_rule_text('4: "a"')
-        Rule(id=4, node=Literal(letter='a'))
+        Rule(id=4, node=Literal(content='a'))
         >>> Rule.from_rule_text("0: 4 1 5")
         Rule(id=0, node=Ref(references=(4, 1, 5)))
         >>> Rule.from_rule_text("1: 2 3 | 3 2")
@@ -179,7 +185,7 @@ class Rule(namedtuple("Rule", ("id", "node"))):
         """
         id_str, node_text = cls.re_rule.match(rule_text).groups()
         _id = int(id_str)
-        node = Node.parse(node_text)
+        node = cls.node_class.parse(node_text)
 
         return cls(_id, node)
 
@@ -187,18 +193,21 @@ class Rule(namedtuple("Rule", ("id", "node"))):
         return self.node.get_matches(rules_by_id)
 
 
+RuleSet.rule_class = Rule
+
+
 class Node:
     name = NotImplemented
     node_classes = {}
 
     @classmethod
-    def register(cls, node_class):
+    def register(cls, node_class, override=False):
         name = node_class.name
         class_name = node_class.__name__
         if name is NotImplemented:
             raise Exception(f"{class_name} did not define name")
         existing = cls.node_classes.get(name)
-        if existing:
+        if not override and existing:
             existing_class_name = existing.__name__
             raise Exception(
                 f"{class_name} redefined {name} that was defined by "
@@ -211,7 +220,7 @@ class Node:
     def parse(cls, node_text):
         """
         >>> Node.parse('"a"')
-        Literal(letter='a')
+        Literal(content='a')
         >>> Node.parse("4 1 5")
         Ref(references=(4, 1, 5))
         >>> Node.parse("2 3 | 3 2")
@@ -242,8 +251,11 @@ class Node:
         raise NotImplementedError()
 
 
+Rule.node_class = Node
+
+
 @Node.register
-class Literal(Node, namedtuple("Literal", ("letter",))):
+class Literal(Node, namedtuple("Literal", ("content",))):
     name = "literal"
     re_literal = re.compile(r"^\"([ab])\"$")
 
@@ -251,9 +263,9 @@ class Literal(Node, namedtuple("Literal", ("letter",))):
     def try_parse(cls, node_text):
         """
         >>> Literal.try_parse('"a"')
-        Literal(letter='a')
+        Literal(content='a')
         >>> Literal.try_parse('"b"')
-        Literal(letter='b')
+        Literal(content='b')
         >>> Literal.try_parse('"c"')
         >>> Literal.try_parse("4 1 5")
         >>> Literal.try_parse("2 3 | 3 2")
@@ -261,15 +273,15 @@ class Literal(Node, namedtuple("Literal", ("letter",))):
         match = cls.re_literal.match(node_text)
         if not match:
             return None
-        letter, = match.groups()
-        return cls(letter)
+        content, = match.groups()
+        return cls(content)
 
     def generate_matches(self, rules_by_id):
         """
         >>> Literal("a").generate_matches(None)
         ['a']
         """
-        return [self.letter]
+        return [self.content]
 
 
 @Node.register
@@ -331,7 +343,7 @@ class Either(Node, namedtuple("Either", ("branches",))):
         if " | " not in node_text:
             return None
         branches_strs = node_text.split(" | ")
-        branches = tuple(map(Node.parse, branches_strs))
+        branches = tuple(map(cls.parse, branches_strs))
 
         return cls(branches)
 
