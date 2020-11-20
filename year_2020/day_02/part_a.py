@@ -15,13 +15,7 @@ def solve(_input=None):
             .joinpath("part_a_input.txt")\
             .read_text()
     password_entries = parse_password_db(_input)
-    valid_password_count = sum(
-        1
-        for entry in password_entries
-        if is_password_entry_valid(entry)
-    )
-
-    return valid_password_count
+    return get_valid_password_count(password_entries)
 
 
 def is_password_entry_valid(entry):
@@ -35,6 +29,14 @@ def is_password_entry_valid(entry):
     """
     character, min_count, max_count, password = entry
     return min_count <= password.count(character) <= max_count
+
+
+def get_valid_password_count(entries, valid_func=is_password_entry_valid):
+    return sum(
+        1
+        for entry in entries
+        if valid_func(entry)
+    )
 
 
 re_password_entry = re.compile(r"^(\d+)-(\d+) (\w): (.*)$")
