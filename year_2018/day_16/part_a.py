@@ -22,6 +22,8 @@ def solve(_input=None):
 
 
 class SampleSet:
+    sample_class = NotImplemented
+
     @classmethod
     def from_samples_and_program_text(cls, samples_and_program_text):
         """
@@ -61,7 +63,7 @@ Sample(before=(2, 0, 3, 0), instruction=(13, 0, 3, 1), after=(2, 1, 3, 0))]
 Sample(before=(2, 0, 3, 0), instruction=(13, 0, 3, 1), after=(2, 1, 3, 0))]
         """
         sample_texts = filter(None, samples_text.strip().split('\n\n'))
-        return cls(list(map(Sample.from_sample_text, sample_texts)))
+        return cls(list(map(cls.sample_class.from_sample_text, sample_texts)))
 
     def __init__(self, samples):
         self.samples = samples
@@ -145,6 +147,9 @@ class Sample(namedtuple("Sample", ("before", "instruction", "after"))):
             .step(self.before)
             == self.after
         ]
+
+
+SampleSet.sample_class = Sample
 
 
 class InstructionException(Exception):
