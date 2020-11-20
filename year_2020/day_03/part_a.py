@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import doctest
+import functools
 
 from utils import get_current_directory
 
@@ -47,6 +48,54 @@ class TreeMap:
         else:
             self.line_length = None
 
+    def get_product_of_tree_counts_on_slopes(self, slopes):
+        """
+        >>> tree_map_b = TreeMap.from_text(
+        ...     "..##.......\\n"
+        ...     "#...#...#..\\n"
+        ...     ".#....#..#.\\n"
+        ...     "..#.#...#.#\\n"
+        ...     ".#...##..#.\\n"
+        ...     "..#.##.....\\n"
+        ...     ".#.#.#....#\\n"
+        ...     ".#........#\\n"
+        ...     "#.##...#...\\n"
+        ...     "#...##....#\\n"
+        ...     ".#..#...#.#\\n"
+        ... )
+        >>> tree_map_b.get_product_of_tree_counts_on_slopes(
+        ...     [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)])
+        336
+        """
+        return functools.reduce(int.__mul__, (
+            self.get_tree_count_on_slope(slope)
+            for slope in slopes
+        ), 1)
+
+    def get_tree_counts_on_slopes(self, slopes):
+        """
+        >>> tree_map_b = TreeMap.from_text(
+        ...     "..##.......\\n"
+        ...     "#...#...#..\\n"
+        ...     ".#....#..#.\\n"
+        ...     "..#.#...#.#\\n"
+        ...     ".#...##..#.\\n"
+        ...     "..#.##.....\\n"
+        ...     ".#.#.#....#\\n"
+        ...     ".#........#\\n"
+        ...     "#.##...#...\\n"
+        ...     "#...##....#\\n"
+        ...     ".#..#...#.#\\n"
+        ... )
+        >>> tree_map_b.get_tree_counts_on_slopes(
+        ...     [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)])
+        [2, 7, 3, 4, 2]
+        """
+        return [
+            self.get_tree_count_on_slope(slope)
+            for slope in slopes
+        ]
+
     def get_tree_count_on_slope(self, slope):
         """
         >>> TreeMap([[False] * 3] * 3).get_tree_count_on_slope((1, 1))
@@ -79,6 +128,14 @@ class TreeMap:
         ... )
         >>> tree_map_b.get_tree_count_on_slope((3, 1))
         7
+        >>> tree_map_b.get_tree_count_on_slope((1, 1))
+        2
+        >>> tree_map_b.get_tree_count_on_slope((5, 1))
+        3
+        >>> tree_map_b.get_tree_count_on_slope((7, 1))
+        4
+        >>> tree_map_b.get_tree_count_on_slope((1, 2))
+        2
         """
         return self.get_tree_count_on_points(self.get_points_on_slope(slope))
 
