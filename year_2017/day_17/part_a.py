@@ -25,15 +25,18 @@ class Spinlock:
         self.buffer = list(buffer)
         self.position = position
 
-    def step_many(self, count):
+    def step_many(self, count, debug=False, report_count=100000):
         """
         >>> print(Spinlock(3).step_many(9).show())
         0 (9) 5  7  2  4  3  8  6  1
         >>> Spinlock(3).step_many(2017).show()
         '... 1512  1134  151 (2017) 638  1513  851 ...'
         """
-        for _ in range(count):
+        for step in range(count):
             self.step()
+            if debug:
+                if step % report_count == 0:
+                    print(step, f"{1000 * step // count / 10}%")
 
         return self
 
