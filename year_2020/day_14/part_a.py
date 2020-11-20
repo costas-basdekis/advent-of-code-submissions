@@ -15,11 +15,12 @@ def solve(_input=None):
             .joinpath("part_a_input.txt")\
             .read_text()
 
-    memory = Program.from_program_text(_input).run()
-    return sum(memory['values'].values())
+    return Program.from_program_text(_input).run_and_get_memory_checksum()
 
 
 class Program:
+    instruction_class = NotImplemented
+
     @classmethod
     def from_program_text(cls, program_text):
         """
@@ -32,10 +33,23 @@ class Program:
         [Bitmask(66, 64), Write(8, 11), Write(7, 101), Write(8, 0)]
         """
         non_empty_lines = filter(None, program_text.splitlines())
-        return cls(list(map(Instruction.parse, non_empty_lines)))
+        return cls(list(map(cls.instruction_class.parse, non_empty_lines)))
 
     def __init__(self, instructions):
         self.instructions = instructions
+
+    def run_and_get_memory_checksum(self, memory=None):
+        """
+        >>> Program.from_program_text(
+        ...     "mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X\\n"
+        ...     "mem[8] = 11\\n"
+        ...     "mem[7] = 101\\n"
+        ...     "mem[8] = 0\\n"
+        ... ).run_and_get_memory_checksum()
+        165
+        """
+        memory = self.run(memory)
+        return self.get_memory_checksum(memory)
 
     def run(self, memory=None):
         """
@@ -50,12 +64,23 @@ class Program:
         {'bitmask': 66, 'override': 64, 'values': {8: 64, 7: 101}}
         """
         if memory is None:
-            memory = {'bitmask': 0, 'override': 0, 'values': {}}
+            memory = self.get_default_memory()
 
         for instruction in self.instructions:
             instruction.step(memory)
 
         return memory
+
+    def get_default_memory(self):
+        return {'bitmask': 0, 'override': 0, 'values': {}}
+
+    def get_memory_checksum(self, memory):
+        """
+        >>> Program([]).get_memory_checksum(
+        ...     {'bitmask': 66, 'override': 64, 'values': {8: 64, 7: 101}})
+        165
+        """
+        return sum(memory['values'].values())
 
 
 class Instruction:
@@ -94,6 +119,9 @@ class Instruction:
 
     def step(self, memory):
         raise NotImplementedError()
+
+
+Program.instruction_class = Instruction
 
 
 @Instruction.register
