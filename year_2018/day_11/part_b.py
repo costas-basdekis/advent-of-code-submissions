@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import doctest
+import itertools
 
 from utils import get_current_directory
 from year_2018.day_11 import part_a
@@ -8,16 +9,27 @@ from year_2018.day_11 import part_a
 def solve(_input=None):
     """
     >>> solve()
-    42
+    '90,214,15'
     """
     if _input is None:
         _input = get_current_directory(__file__)\
             .joinpath("part_a_input.txt")\
             .read_text()
+    (x, y, size), _ = FuelGridExtended(int(_input))\
+        .get_square_with_highest_power_level_among_all_sizes()
+
+    return f"{x},{y},{size}"
 
 
 class FuelGridExtended(part_a.FuelGrid):
+    def get_column(self, x, y, size):
+        return sum(
+            self.get_memoized_power_level(x, cell_y)
+            for cell_y in range(y, y + size)
+        )
+
     def get_square_with_highest_power_level_among_all_sizes(self):
+        """"""
         """
         >>> FuelGridExtended(18)\\
         ...     .get_square_with_highest_power_level_among_all_sizes()
@@ -29,47 +41,75 @@ class FuelGridExtended(part_a.FuelGrid):
         if self.width != self.height:
             raise Exception("Can only run this on same width and height")
 
-        def square_key(point_and_size):
-            x, y, size = point_and_size
-            return self.get_square_power_level(
-                x, y, width=size, height=size)
+        def square_key(point_size_and_level):
+            _, _, _, level = point_size_and_level
+            return level
 
-        best_x, best_y, best_size = max((
-            (x, y, size)
-            for size in range(1, self.width + 1)
-            for x in range(0, self.width - size + 1)
-            for y in range(0, self.height - size + 1)
+        best_x, best_y, best_size, _ = max((
+            ((x, y) + self.get_size_with_highest_power_level_for_point(
+                x, y))
+            for x in range(self.width)
+            for y in range(self.height)
         ), key=square_key)
         square_power_level = self.get_square_power_level(
             best_x, best_y, width=best_size, height=best_size)
         return (best_x, best_y, best_size), square_power_level
 
-    def get_square_power_level(self, start_x, start_y, width=3, height=3):
+    def get_size_with_highest_power_level_for_point(self, x, y):
         """
-        >>> FuelGridExtended(18).get_square_power_level(33, 45)
-        29
-        >>> FuelGridExtended(18).get_square_power_level(90, 269, 16, 16)
-        113
-        >>> FuelGridExtended(42).get_square_power_level(21, 61)
-        30
-        >>> FuelGridExtended(42).get_square_power_level(232, 251, 12, 12)
-        119
+        >>> FuelGridExtended(18)\\
+        ...     .get_size_with_highest_power_level_for_point(90, 269)[0]
+        16
+        >>> FuelGridExtended(42)\\
+        ...     .get_size_with_highest_power_level_for_point(232, 251)[0]
+        12
         """
-        return sum(
-            self.get_power_level(x, y)
-            for x in range(start_x, start_x + width)
-            for y in range(start_y, start_y + height)
-        )
+        if self.width != self.height:
+            raise Exception("Can only run this on same width and height")
 
-    def get_square_power_level_with_columns(
-            self, start_x, start_y, width, height):
-        if (start_x, start_y) == (0, 0):
-            return sum(
-                self.get_column_power_level(start_x, y, width)
-                for y in range(start_y, start_y + height)
+        def get_power_level(size_and_power_level):
+            _, power_level = size_and_power_level
+
+            return power_level
+
+        return max(
+            self.get_sizes_and_power_levels_for_point(x, y),
+            key=get_power_level)
+
+    def get_sizes_and_power_levels_for_point(self, x, y):
+        if self.width != self.height:
+            raise Exception("Can only run this on same width and height")
+
+        max_size = min(self.width - x, self.height - y)
+        total_power_level = 0
+        for size in range(0, max_size):
+            total_power_level += sum(
+                self.get_memoized_power_level(cell_x, cell_y)
+                for cell_x, cell_y
+                in self.get_points_for_square_border(x, y, size)
             )
+            yield size, total_power_level
 
-        return
+    def get_points_for_square_border(self, x, y, size):
+        """
+        >>> sorted(FuelGridExtended(0).get_points_for_square_border(0, 0, 1))
+        [(0, 0)]
+        >>> sorted(FuelGridExtended(0).get_points_for_square_border(3, 5, 1))
+        [(3, 5)]
+        >>> sorted(FuelGridExtended(0).get_points_for_square_border(0, 0, 2))
+        [(0, 1), (1, 0), (1, 1)]
+        >>> sorted(FuelGridExtended(0).get_points_for_square_border(0, 0, 4))
+        [(0, 3), (1, 3), (2, 3), (3, 0), (3, 1), (3, 2), (3, 3)]
+        >>> sorted(FuelGridExtended(0).get_points_for_square_border(3, 5, 4))
+        [(3, 8), (4, 8), (5, 8), (6, 5), (6, 6), (6, 7), (6, 8)]
+        """
+        return itertools.chain((
+            (x + size - 1, cell_y)
+            for cell_y in range(y, y + size)
+        ), (
+            (cell_x, y + size - 1)
+            for cell_x in range(x, x + size - 1)
+        ))
 
 
 if __name__ == '__main__':
