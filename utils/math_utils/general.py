@@ -1,6 +1,10 @@
-from typing import Any, TypeVar, Iterable, Tuple, List
+import math
+from typing import Any, TypeVar, Iterable, Tuple
 
-__all__ = ['min_and_max', 'min_and_max_tuples']
+__all__ = [
+    'min_and_max',
+    'min_and_max_tuples',
+]
 
 T = TypeVar('T', bound=Any)
 

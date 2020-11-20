@@ -9,16 +9,19 @@ from .point import *
 from .polymorphic import *
 from .typing_utils import *
 
-test_modules = [
-    importlib.import_module('utils.base_challenge'),
-    importlib.import_module('utils.bitpacking'),
-    importlib.import_module('utils.collections_utils'),
-    importlib.import_module('utils.math_utils'),
-    importlib.import_module('utils.helper'),
-    importlib.import_module('utils.point'),
-    importlib.import_module('utils.polymorphic'),
-    importlib.import_module('utils.typing_utils'),
-]
+test_modules = sum((
+    getattr(module, 'test_modules', [module])
+    for module in (
+        importlib.import_module('utils.base_challenge'),
+        importlib.import_module('utils.bitpacking'),
+        importlib.import_module('utils.collections_utils'),
+        importlib.import_module('utils.math_utils'),
+        importlib.import_module('utils.helper'),
+        importlib.import_module('utils.point'),
+        importlib.import_module('utils.polymorphic'),
+        importlib.import_module('utils.typing_utils'),
+    )
+), [])
 
 # noinspection PyUnresolvedReferences
 __all__ = [
