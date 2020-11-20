@@ -67,13 +67,16 @@ class Graph:
         return node_a, node_b, node_a + node_b
 
     def find_longest_path(self, start=0, debug=False):
-        return max(self.get_distances(start, debug=debug).values())
+        distances, _, _ = \
+            self.get_distances_and_longest_path_and_distance(start, debug=debug)
+        return max(distances.values())
 
-    def get_distances(self, start=0, debug=False):
+    def get_distances_and_longest_path_and_distance(self, start=0, debug=False):
         distances = {}
         stack = [(start, 0, dict(self.weights), ())]
         if debug:
             max_distance, max_path = 0, None
+        longest_path_distance, longest_path = 0, ()
         while stack:
             position, distance, remaining_weights, path = stack.pop(0)
             if debug:
@@ -84,6 +87,11 @@ class Graph:
                 for (node_a, node_b), weight in remaining_weights.items()
                 if node_a == position
             }
+            if not next_positions:
+                if len(path) > len(longest_path) \
+                        or (len(path) == len(longest_path)
+                            and distance > longest_path_distance):
+                    longest_path_distance, longest_path = distance, path
             for next_position, next_distance in next_positions.items():
                 distances[next_position] = \
                     max(distances.get(next_position, 0), next_distance)
@@ -99,7 +107,7 @@ class Graph:
         if debug:
             print(max_path, max_distance)
 
-        return distances
+        return distances, longest_path_distance, longest_path
 
 
 challenge = Challenge()
