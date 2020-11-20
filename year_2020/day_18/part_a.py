@@ -12,21 +12,34 @@ class Challenge(utils.BaseChallenge):
         >>> Challenge().default_solve()
         4940631886147
         """
-        expressions = ExpressionSet.from_expressions_text(_input).expressions
-        return sum(map(int, expressions))
+        return int(ExpressionSet.from_expressions_text(_input))
 
 
 class ExpressionSet:
+    expression_class = NotImplemented
+
     @classmethod
     def from_expressions_text(cls, expressions_text):
         return cls(list(map(
-            Expression.from_expression_text, expressions_text.splitlines())))
+            cls.expression_class.from_expression_text,
+            expressions_text.splitlines())))
 
     def __init__(self, expressions):
         self.expressions = expressions
 
+    def __int__(self):
+        """
+        >>> int(ExpressionSet([Number(3), Add((Number(4), Number(5)))]))
+        12
+        """
+        return sum(map(int, self.expressions))
+
 
 class Expression:
+    number_class = NotImplemented
+    add_class = NotImplemented
+    mul_class = NotImplemented
+
     re_expression = re.compile(r'^(\d+|\*|\+|\(|\)|\s+)+$')
     re_number = re.compile(r"\d+")
 
@@ -52,10 +65,21 @@ class Expression:
         """
         if not cls.re_expression.match(expression_text):
             raise Exception(f"Invalid expression {expression_text}")
+        intercepted = cls.intercept_text(expression_text)
+
+        return eval(intercepted, cls.get_eval_globals())
+
+    @classmethod
+    def intercept_text(cls, expression_text):
         intercepted = cls.re_number.sub(cls.replace_number, expression_text)
         intercepted = intercepted.replace("*", "+ '*' +")
+        return intercepted
 
-        return eval(intercepted)
+    @classmethod
+    def get_eval_globals(cls):
+        return {
+            "Number": cls.number_class,
+        }
 
     @classmethod
     def replace_number(cls, match):
@@ -64,13 +88,16 @@ class Expression:
     def __add__(self, other):
         if other == '*':
             return ConvertToMul(self)
-        return Add((self, other))
+        return self.add_class((self, other))
 
     def __mul__(self, other):
-        return Mul((self, other))
+        return self.mul_class((self, other))
 
     def __int__(self):
         raise NotImplementedError()
+
+
+ExpressionSet.expression_class = Expression
 
 
 class ConvertToMul:
@@ -91,6 +118,9 @@ class Number(Expression, int):
         return super(Expression, self).__int__()
 
 
+Expression.number_class = Number
+
+
 class Add(Expression, tuple):
     def __str__(self):
         return " + ".join(
@@ -104,6 +134,9 @@ class Add(Expression, tuple):
         return sum(map(int, self))
 
 
+Expression.add_class = Add
+
+
 class Mul(Expression, tuple):
     def __str__(self):
         return " * ".join(
@@ -115,6 +148,9 @@ class Mul(Expression, tuple):
 
     def __int__(self):
         return functools.reduce(int.__mul__, map(int, self))
+
+
+Expression.mul_class = Mul
 
 
 class ExpressionEx:
