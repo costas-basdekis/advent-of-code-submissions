@@ -19,10 +19,14 @@ class Challenge(utils.BaseChallenge):
 
 
 class Program:
+    instruction_class = NotImplemented
+    registers_class = NotImplemented
+
     @classmethod
     def from_program_text(cls, program_text):
         lines = program_text.strip().splitlines()
-        return cls(list(map(Instruction.from_instruction_text, lines)))
+        return cls(list(map(
+            cls.instruction_class.from_instruction_text, lines)))
 
     def __init__(self, instructions):
         self.instructions = instructions
@@ -51,7 +55,7 @@ class Program:
         else:
             steps = range(count)
         if registers is None:
-            registers = Registers()
+            registers = self.registers_class()
         for _ in steps:
             registers.reset_recovered()
             finished = self.apply(registers)
@@ -155,6 +159,9 @@ class Registers:
         return is_value
 
 
+Program.registers_class = Registers
+
+
 class Instruction:
     name = NotImplemented
 
@@ -193,6 +200,9 @@ class Instruction:
         raise NotImplementedError()
 
 
+Program.instruction_class = Instruction
+
+
 @dataclass(init=False)
 class RValueInstruction(Instruction, ABC):
     rvalue: Union[str, int]
@@ -200,7 +210,7 @@ class RValueInstruction(Instruction, ABC):
 
     @classmethod
     def make_regex(cls, name):
-        return re.compile(rf"^{name} (\w|-?\d+)$")
+        return re.compile(rf"^{name} ([a-z]|-?\d+)$")
 
     @classmethod
     def try_parse(cls, instruction_text):
@@ -234,7 +244,7 @@ class RegisterRValueInstruction(Instruction, ABC):
 
     @classmethod
     def make_regex(cls, name):
-        return re.compile(rf"^{name} (\w) (\w|-?\d+)$")
+        return re.compile(rf"^{name} ([a-z]) ([a-z]|-?\d+)$")
 
     @classmethod
     def try_parse(cls, instruction_text):
@@ -297,7 +307,7 @@ class RegisterInstruction(Instruction, ABC):
 
     @classmethod
     def make_regex(cls, name):
-        return re.compile(rf"^{name} (\w)$")
+        return re.compile(rf"^{name} ([a-z])$")
 
     @classmethod
     def try_parse(cls, instruction_text):
@@ -323,16 +333,44 @@ class Recover(RegisterInstruction):
             registers.recover()
 
 
+@dataclass(init=False)
+class RvalueRValueInstruction(Instruction, ABC):
+    rvalue_a: Union[str, int]
+    rvalue_b: Union[str, int]
+
+    regex = NotImplemented
+
+    @classmethod
+    def make_regex(cls, name):
+        return re.compile(rf"^{name} ([a-z]|-?\d+) ([a-z]|-?\d+)$")
+
+    @classmethod
+    def try_parse(cls, instruction_text):
+        match = cls.regex.match(instruction_text)
+        if not match:
+            return None
+        rvalue_a_str, rvalue_b_str = match.groups()
+
+        return cls(
+            Registers.parse_rvalue(rvalue_a_str),
+            Registers.parse_rvalue(rvalue_b_str),
+        )
+
+    def __init__(self, rvalue_a, rvalue_b):
+        self.rvalue_a = rvalue_a
+        self.rvalue_b = rvalue_b
+
+
 @Instruction.register
-class Jgz(RegisterRValueInstruction):
+class Jgz(RvalueRValueInstruction):
     name = 'jgz'
 
-    regex = RegisterRValueInstruction.make_regex(name)
+    regex = RvalueRValueInstruction.make_regex(name)
 
     def apply(self, registers):
-        if registers[self.register] > 0:
+        if registers.resolve(self.rvalue_a) > 0:
             next_instruction_pointer = \
-                registers.instruction_pointer + registers.resolve(self.rvalue)
+                registers.instruction_pointer + registers.resolve(self.rvalue_b)
         else:
             next_instruction_pointer = None
 
