@@ -32,10 +32,7 @@ class DangerMap:
         >>> DangerMap.from_dangers([Danger(1, 1), Danger(2, 2)]).lines
         [['empty', 'empty', 'empty', 'empty'], ['empty', 0, 'empty', 'empty'], ['empty', 'empty', 1, 'empty'], ['empty', 'empty', 'empty', 'empty']]
         """
-        min_x = min(danger.x for danger in dangers)
-        max_x = max(danger.x for danger in dangers)
-        min_y = min(danger.y for danger in dangers)
-        max_y = max(danger.y for danger in dangers)
+        min_x, max_x, min_y, max_y = cls.get_border(dangers)
 
         return cls(dangers, [
             [
@@ -46,6 +43,14 @@ class DangerMap:
             ]
             for y in range(min_y - 1, max_y + 2)
         ])
+
+    @classmethod
+    def get_border(cls, dangers):
+        min_x = min(danger.x for danger in dangers)
+        max_x = max(danger.x for danger in dangers)
+        min_y = min(danger.y for danger in dangers)
+        max_y = max(danger.y for danger in dangers)
+        return min_x, max_x, min_y, max_y
 
     def __init__(self, dangers, lines):
         self.dangers = dangers
@@ -314,8 +319,8 @@ class Dangers:
     def __init__(self, dangers):
         self.dangers = dangers
 
-    def to_danger_map(self):
-        return DangerMap.from_dangers(self.dangers)
+    def to_danger_map(self, danger_map_class=DangerMap):
+        return danger_map_class.from_dangers(self.dangers)
 
 
 class Danger(namedtuple("Danger", ("x", "y"))):
