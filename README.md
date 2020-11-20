@@ -16,3 +16,5 @@ leaderboards have submitted the challenges
   * [2](year_2019/day_02) :white_check_mark:
     * [Part A](year_2019/day_02/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_02/part_b.py) :white_check_mark:
+  * [3](year_2019/day_03)
+    * [Part A](year_2019/day_03/part_a.py) :white_check_mark:
