@@ -16,6 +16,8 @@ class Challenge(utils.BaseChallenge):
 
 
 class GeneratorPair:
+    generator_class = NotImplemented
+
     FACTORS = {
         'A': 16807,
         'B': 48271,
@@ -34,7 +36,7 @@ class GeneratorPair:
         return cls({
             generator.name: generator
             for generator in (
-                Generator.from_generator_text(line, cls.FACTORS)
+                cls.generator_class.from_generator_text(line, cls.FACTORS)
                 for line in generators_text.strip().splitlines()
             )
         })
@@ -118,11 +120,17 @@ class Generator:
         ...     'Generator A starts with 65', {'A': 1})
         Generator(name='A', value=65, factor=1)
         """
-        name, value_str = cls.re_generator.match(generator_text).groups()
-        value = int(value_str)
+        name, value = cls.parse_generator(generator_text)
         factor = factors[name]
 
         return cls(name, value, factor)
+
+    @classmethod
+    def parse_generator(cls, generator_text):
+        name, value_str = cls.re_generator.match(generator_text).groups()
+        value = int(value_str)
+
+        return name, value
 
     MODULO = 2147483647
 
@@ -138,6 +146,9 @@ class Generator:
         self.value = (self.value * self.factor) % self.MODULO
 
         return self.value
+
+
+GeneratorPair.generator_class = Generator
 
 
 challenge = Challenge()
