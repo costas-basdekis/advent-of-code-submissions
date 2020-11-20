@@ -215,9 +215,7 @@ class Instruction:
                 f"{len(registers)} exist")
         if not isinstance(value, int):
             raise Exception(f"Only integers are allowed, not '{value}'")
-        new_registers = list(registers)
-        new_registers[target] = value
-        return tuple(new_registers)
+        return registers[:target] + (value,) + registers[target + 1:]
 
 
 class ThreeOperandsInstruction(Instruction, ABC):

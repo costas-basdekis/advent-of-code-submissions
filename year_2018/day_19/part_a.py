@@ -64,7 +64,8 @@ class Program:
         self.instruction_pointer_register = instruction_pointer_register
         self.instruction_pointer = instruction_pointer
 
-    def run(self, registers=(0,) * 6, debug=False):
+    def run(self, registers=(0,) * 6, instruction_pointer=None, debug=False,
+            report_count=1000000, report_only_changes=None):
         """
         >>> Program.from_program_text(
         ...     "#ip 0\\n"
@@ -78,17 +79,28 @@ class Program:
         ... ).run()
         (6, 5, 6, 0, 0, 9)
         """
+        if instruction_pointer is not None:
+            self.instruction_pointer = instruction_pointer
         final_registers = registers
         for step in itertools.count():
+            previous_registers = final_registers
             finished, final_registers = self.step(final_registers)
             if finished:
                 break
-            if step % 1000000 == 0:
-                print(step, final_registers)
+            if debug:
+                if report_only_changes is not None:
+                    should_report = any(
+                        previous_registers[index] != final_registers[index]
+                        for index in report_only_changes
+                    )
+                else:
+                    should_report = step % report_count == 0
+                if should_report:
+                    print(step, previous_registers, final_registers)
 
         return final_registers
 
-    def step(self, registers):
+    def step(self, registers, instruction_pointer=None):
         """
         >>> Program.from_program_text(
         ...     "#ip 0\\n"
@@ -124,6 +136,8 @@ class Program:
         ... ), 7).step((6, 5, 6, 0, 0, 9))
         (True, (6, 5, 6, 0, 0, 9))
         """
+        if instruction_pointer is not None:
+            self.instruction_pointer = instruction_pointer
         if self.instruction_pointer >= len(self.instructions):
             return True, registers
         instruction = self.instructions[self.instruction_pointer]
@@ -165,9 +179,7 @@ class Program:
         >>> Program([], 0).write_to_register((1, 2, 3, 4, 5, 6), 3, 0)
         (1, 2, 3, 0, 5, 6)
         """
-        registers = list(registers)
-        registers[pointer] = value
-        return tuple(registers)
+        return registers[:pointer] + (value,) + registers[pointer + 1:]
 
 
 class InstructionExtended(part_a.Instruction, ABC):
