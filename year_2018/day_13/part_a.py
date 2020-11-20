@@ -336,16 +336,12 @@ class TrackMap:
         >>> track_map_a.get_first_crash_position()
         (7, 3)
         """
-        carts_by_position = self.get_carts_by_position()
-        crashed_positions = sorted(
-            position
-            for position, carts in carts_by_position.items()
-            if len(carts) > 1
-        )
+        crashed_positions = self.get_crashed_positions()
 
         return min(crashed_positions, default=None)
 
-    def tick_until_crash(self, limit=None):
+    def tick_until_crash(self, limit=None, return_start_position=False,
+                         min_start_position=None):
         """
         >>> track_map_a = TrackMap.from_map_text(
         ...     "/->-?\\n"
@@ -397,18 +393,26 @@ class TrackMap:
           ?------/
         """
         crash_position = self.get_first_crash_position()
+        if return_start_position:
+            crash_position_or_positions = crash_position, None
+        else:
+            crash_position_or_positions = crash_position
+        if crash_position:
+            return crash_position_or_positions
         if limit is None:
             steps = itertools.count()
         else:
             steps = range(limit)
         for _ in steps:
-            crash_position = self.tick()
-            if crash_position:
+            crash_position_or_positions = self.tick(
+                return_start_position=return_start_position,
+                min_start_position=min_start_position)
+            if crash_position_or_positions:
                 break
 
-        return crash_position
+        return crash_position_or_positions
 
-    def tick(self):
+    def tick(self, return_start_position=False, min_start_position=None):
         """
         >>> track_map_a = TrackMap.from_map_text(
         ...     "/->-?\\n"
@@ -430,8 +434,14 @@ class TrackMap:
         carts_by_position = self.get_carts_by_position()
         crash_position = self.get_first_crash_position()
         if crash_position:
-            return crash_position
+            if return_start_position:
+                return crash_position, None
+            else:
+                return crash_position
         for cart_index, cart in enumerate(sorted(self.carts)):
+            if min_start_position is not None:
+                if cart.position <= min_start_position:
+                    continue
             next_cart = cart.tick(self.track_offsets)
 
             del carts_by_position[cart.position]
@@ -440,9 +450,15 @@ class TrackMap:
             carts.append(next_cart)
             self.carts[cart_index] = next_cart
             if len(carts) > 1:
-                return next_cart.position
+                if return_start_position:
+                    return next_cart.position, cart.position
+                else:
+                    return next_cart.position
 
-        return None
+        if return_start_position:
+            return None, None
+        else:
+            return None
 
     SHOW_MAP = {
         offsets: content
@@ -519,6 +535,14 @@ class TrackMap:
                 for x in x_range
             ).rstrip()
             for y in y_range
+        )
+
+    def get_crashed_positions(self):
+        carts_by_position = self.get_carts_by_position()
+        return (
+            position
+            for position, carts in carts_by_position.items()
+            if len(carts) > 1
         )
 
     def get_carts_by_position(self):
