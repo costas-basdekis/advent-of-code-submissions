@@ -1,6 +1,4 @@
-from typing import Dict, Type, Optional
-
-from utils.typing_utils import Cls, Self
+from typing import Dict, Type
 
 __all__ = ['CouldNotParseException', 'PolymorphicParser']
 
@@ -102,8 +100,7 @@ class PolymorphicParser:
         return cls.register(sub_class, override=True)
 
     @classmethod
-    def parse(cls: Cls['PolymorphicParser'], text: str
-              ) -> Self['PolymorphicParser']:
+    def parse(cls, text: str):
         """
         >>> from abc import ABC
         >>> class A(PolymorphicParser, ABC, root=True):
@@ -150,6 +147,5 @@ class PolymorphicParser:
         raise CouldNotParseException(f"Could not parse '{text}'")
 
     @classmethod
-    def try_parse(cls: Cls['PolymorphicParser'], text: str
-                  ) -> Optional[Self['PolymorphicParser']]:
+    def try_parse(cls, text: str):
         raise NotImplementedError()
