@@ -2,11 +2,12 @@
 import re
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Generic
+from typing import List, Optional, Dict, Generic, Type
 
 from aox.utils import Timer
 
-from utils import BaseChallenge, PolymorphicParser, Self, Cls, TV
+from utils import BaseChallenge, PolymorphicParser, Self, Cls, TV, \
+    get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -60,6 +61,9 @@ class Value(PolymorphicParser, ABC, root=True):
     def get_value(self, state: State) -> int:
         raise NotImplementedError()
 
+    def to_text(self) -> str:
+        raise NotImplementedError()
+
 
 class LValue(Value, ABC):
     pass
@@ -99,6 +103,13 @@ class Register(LValue, RValue):
     def set_value(self, state: State, value: int):
         state[self.target] = value
 
+    def to_text(self):
+        """
+        >>> Register.try_parse('a').to_text()
+        'a'
+        """
+        return self.target
+
 
 @Value.register
 @dataclass
@@ -127,6 +138,15 @@ class Constant(LValue):
     def get_value(self, state: State) -> int:
         return self.value
 
+    def to_text(self) -> str:
+        """
+        >>> Constant.try_parse('1').to_text()
+        '1'
+        >>> Constant.try_parse('-1').to_text()
+        '-1'
+        """
+        return str(self.value)
+
 
 InstructionT = TV['Instruction']
 
@@ -134,6 +154,10 @@ InstructionT = TV['Instruction']
 @dataclass
 class InstructionSet(Generic[InstructionT]):
     instructions: List[InstructionT]
+
+    @classmethod
+    def get_instruction_class(cls) -> Type[InstructionT]:
+        return get_type_argument_class(cls, InstructionT)
 
     @classmethod
     def from_instructions_text(
@@ -157,7 +181,9 @@ class InstructionSet(Generic[InstructionT]):
             offset=Constant(value=2)),
             Dec(register=Register(target='a'))])
         """
-        return cls(list(map(Instruction.parse, instructions_text.splitlines())))
+        instruction_class = cls.get_instruction_class()
+        return cls(list(map(
+            instruction_class.parse, instructions_text.splitlines())))
 
     def apply(self, state: Optional[State] = None, debug: bool = False) -> State:
         """
@@ -213,23 +239,23 @@ class Instruction(PolymorphicParser, ABC, root=True):
     >>> Instruction.parse("cpy 1 2")
     Traceback (most recent call last):
     ...
-    Exception: Could not parse '...'
+    utils...CouldNotParseException: Could not parse '...'
     >>> Instruction.parse("cpy a 2")
     Traceback (most recent call last):
     ...
-    Exception: Could not parse '...'
+    utils...CouldNotParseException: Could not parse '...'
     >>> Instruction.parse("inc a")
     Inc(register=Register(target='a'))
     >>> Instruction.parse("inc 1")
     Traceback (most recent call last):
     ...
-    Exception: Could not parse '...'
+    utils...CouldNotParseException: Could not parse '...'
     >>> Instruction.parse("dec a")
     Dec(register=Register(target='a'))
     >>> Instruction.parse("dec 1")
     Traceback (most recent call last):
     ...
-    Exception: Could not parse '...'
+    utils...CouldNotParseException: Could not parse '...'
     >>> Instruction.parse("jnz 1 1")
     Jnz(check=Constant(value=1), offset=Constant(value=1))
     >>> Instruction.parse("jnz 1 b")
@@ -267,11 +293,11 @@ class Cpy(Instruction):
         >>> Cpy.try_parse("cpy 1 2")
         Traceback (most recent call last):
         ...
-        Exception: Could not parse '...'
+        utils...CouldNotParseException: Could not parse '...'
         >>> Cpy.try_parse("cpy a 2")
         Traceback (most recent call last):
         ...
-        Exception: Could not parse '...'
+        utils...CouldNotParseException: Could not parse '...'
         >>> Cpy.try_parse("inc a")
         >>> Cpy.try_parse("inc 1")
         >>> Cpy.try_parse("inc a")
@@ -336,7 +362,7 @@ class Inc(Instruction):
         >>> Inc.try_parse("inc 1")
         Traceback (most recent call last):
         ...
-        Exception: Could not parse '...'
+        utils...CouldNotParseException: Could not parse '...'
         >>> Inc.try_parse("dec a")
         >>> Inc.try_parse("dec 1")
         >>> Inc.try_parse("jnz 1 1")
@@ -397,7 +423,7 @@ class Dec(Instruction):
         >>> Dec.try_parse("dec 1")
         Traceback (most recent call last):
         ...
-        Exception: Could not parse '...'
+        utils...CouldNotParseException: Could not parse '...'
         >>> Dec.try_parse("jnz 1 1")
         >>> Dec.try_parse("jnz 1 b")
         >>> Dec.try_parse("jnz a 1")
@@ -477,7 +503,7 @@ class Jnz(Instruction):
         ...         .apply(State(state_values or {}, program_counter))\\
         ...         .program_counter
         >>> check('a', 'b')
-        0
+        1
         >>> check('a', 'b', {'a': 1})
         0
         >>> check('a', 'b', {'a': 1, 'b': 1})
@@ -489,7 +515,7 @@ class Jnz(Instruction):
         >>> check('a', 'b', {'a': 1, 'b': 7}, 5)
         12
         >>> check('a', 'b', {'b': 7}, 5)
-        5
+        6
         >>> check(1, 'b')
         0
         >>> check(1, 'b', {'b': 1})
@@ -501,9 +527,9 @@ class Jnz(Instruction):
         >>> check(1, 'b', {'b': 7}, 5)
         12
         >>> check(0, 'b', {'b': 7}, 5)
-        5
+        6
         >>> check('a', 0)
-        0
+        1
         >>> check('a', 0, {'a': 1})
         0
         >>> check('a', 1, {'a': 1})
@@ -515,9 +541,9 @@ class Jnz(Instruction):
         >>> check('a', 7, {'a': 1}, 5)
         12
         >>> check('a', 7, {}, 5)
-        5
+        6
         >>> check(0, 0)
-        0
+        1
         >>> check(1, 0)
         0
         >>> check(1, 1)

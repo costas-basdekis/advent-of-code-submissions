@@ -2,7 +2,11 @@ from typing import Dict, Type, Optional
 
 from utils.typing_utils import Cls, Self
 
-__all__ = ['PolymorphicParser']
+__all__ = ['CouldNotParseException', 'PolymorphicParser']
+
+
+class CouldNotParseException(Exception):
+    pass
 
 
 class PolymorphicParser:
@@ -34,7 +38,10 @@ class PolymorphicParser:
         True
         """
         if kwargs.get('root', False):
-            cls.sub_classes = {}
+            if not hasattr(cls, 'sub_classes'):
+                cls.sub_classes = {}
+            else:
+                cls.sub_classes = dict(cls.sub_classes)
 
     @classmethod
     def register(cls, sub_class: Type['PolymorphicParser'],
@@ -124,7 +131,7 @@ class PolymorphicParser:
             if instruction:
                 return instruction
 
-        raise Exception(f"Could not parse '{text}'")
+        raise CouldNotParseException(f"Could not parse '{text}'")
 
     @classmethod
     def try_parse(cls: Cls['PolymorphicParser'], text: str
