@@ -7,15 +7,17 @@ import utils
 
 
 class Challenge(utils.BaseChallenge):
+    DEFAULT_GROUP = string.ascii_lowercase[:16]
+
     def solve(self, _input, debug=False):
         """
-        >>> string.ascii_lowercase[:16]
+        >>> Challenge.DEFAULT_GROUP
         'abc...p'
         >>> Challenge().default_solve()
         'cknmidebghlajpfo'
         """
         return Program.from_program_text(_input)\
-            .apply(string.ascii_lowercase[:16])
+            .apply(self.DEFAULT_GROUP)
 
 
 class Program:
