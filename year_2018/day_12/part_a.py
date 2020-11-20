@@ -215,7 +215,7 @@ class PotRuleSet:
         min_index, max_index = pot_state.get_indexes_range()
         min_update_index = min_index - self.max_neighbour_distance
         max_update_index = max_index + self.max_neighbour_distance
-        return PotState.from_pot_state(tuple(
+        return PotState.from_pot_state_tuple(tuple(
             self.get_next_pot_at_position(pot_state, position)
             for position in range(min_update_index, max_update_index + 1)
         ), min_update_index)
@@ -284,20 +284,20 @@ class PotState(namedtuple("PotState", ("active_pot_indexes",))):
         >>> PotState.from_pot_state_text("#..#.#..##......###...###")
         PotState(active_pot_indexes=(0, 3, 5, 8, 9, 16, 17, 18, 22, 23, 24))
         """
-        return cls.from_pot_state(tuple(
+        return cls.from_pot_state_tuple(tuple(
             pot == "#"
             for pot in pot_state_text.strip()
         ), start_index=start_index)
 
     @classmethod
-    def from_pot_state(cls, pot_state, start_index=0):
+    def from_pot_state_tuple(cls, pot_state, start_index=0):
         """
-        >>> PotState.from_pot_state((
+        >>> PotState.from_pot_state_tuple((
         ...     True, False, False, True, False, True, False, False, True,
         ...     True, False, False, False, False, False, False, True, True,
         ...     True, False, False, False, True, True, True))
         PotState(active_pot_indexes=(0, 3, 5, 8, 9, 16, 17, 18, 22, 23, 24))
-        >>> PotState.from_pot_state((
+        >>> PotState.from_pot_state_tuple((
         ...     True, False, False, True, False, True, False, False, True,
         ...     True, False, False, False, False, False, False, True, True,
         ...     True, False, False, False, True, True, True), 3)
@@ -313,6 +313,29 @@ class PotState(namedtuple("PotState", ("active_pot_indexes",))):
         False: ".",
         True: "#",
     }
+
+    def to_tuple(self, start, length):
+        """
+        >>> PotState.from_pot_state_tuple((
+        ...     True, False, False, True, False)).to_tuple(0, 5)
+        (True, False, False, True, False)
+        >>> PotState.from_pot_state_tuple((
+        ...     True, False, False, True, False), 3).to_tuple(0, 5)
+        (False, False, False, True, False)
+        >>> PotState.from_pot_state_tuple((
+        ...     True, False, False, True, False)).to_tuple(-3, 5)
+        (False, False, False, True, False)
+        >>> PotState.from_pot_state_tuple((
+        ...     True, False, False, True, False), -3).to_tuple(0, 5)
+        (True, False, False, False, False)
+        >>> PotState.from_pot_state_tuple((
+        ...     True, False, False, True, False)).to_tuple(3, 5)
+        (True, False, False, False, False)
+        """
+        return tuple(
+            index in self.active_pot_indexes
+            for index in range(start, start + length)
+        )
 
     def show(self, _range=None):
         """
