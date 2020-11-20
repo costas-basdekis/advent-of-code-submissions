@@ -62,7 +62,7 @@ class RobotSet:
         return max(self.robots, key=lambda robot: robot.radius, default=None)
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Robot:
     position: Point3D
     radius: int

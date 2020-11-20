@@ -1,4 +1,5 @@
 import doctest
+import math
 import os
 import sys
 from collections import namedtuple
@@ -129,10 +130,71 @@ class Helper:
         return sum(1 for _ in iterable)
 
 
-class Point3D(namedtuple("Point3D", ("x", "y", "z"))):
+class BasePoint:
+    _fields = NotImplemented
+    coordinates_names = NotImplemented
+
     @classmethod
-    def from_int_texts(cls, x_str, y_str, z_str):
-        return cls(int(x_str), int(y_str), int(z_str))
+    def from_int_texts(cls, *coordinate_strs, **named_coordinate_strs):
+        """
+        >>> Point3D.from_int_texts("1", "2", "3")
+        Point3D(x=1, y=2, z=3)
+        >>> Point3D.from_int_texts(x="1", y="2", z="3")
+        Point3D(x=1, y=2, z=3)
+        >>> Point3D.from_int_texts("1", y="2", z="3")
+        Point3D(x=1, y=2, z=3)
+        >>> Point3D.from_int_texts("1", z="3", y="2")
+        Point3D(x=1, y=2, z=3)
+        """
+        coordinate_strs = coordinate_strs + tuple(
+            named_coordinate_strs.pop(name)
+            for name in cls.coordinates_names[len(coordinate_strs):]
+        )
+        if named_coordinate_strs:
+            raise Exception(
+                f"Too many arguments: {sorted(named_coordinate_strs)}")
+        if len(coordinate_strs) != len(cls.coordinates_names):
+            raise Exception(
+                f"Expected {len(cls.coordinates_names)} coordinates but got "
+                f"{len(coordinate_strs)}")
+        # noinspection PyArgumentList
+        return cls(*map(int, coordinate_strs))
+
+    @property
+    def coordinates(self):
+        """
+        >>> Point3D(1, 2, 3).coordinates
+        Point3D(x=1, y=2, z=3)
+        >>> tuple(zip(
+        ...     Point3D(1, 2, 3).coordinates, Point3D(4, 5, 6).coordinates))
+        ((1, 4), (2, 5), (3, 6))
+        """
+        if self.coordinates_names is NotImplemented:
+            raise Exception(
+                f"{type(self).__name__} did not specify 'coordinates_names'")
+        # noinspection PyUnresolvedReferences
+        if self.coordinates_names == self._fields:
+            return self
+        # noinspection PyTypeChecker
+        return tuple(
+            getattr(self, coordinate_name)
+            for coordinate_name in self.coordinates_names
+        )
+
+    def distance(self, other):
+        """
+        >>> Point3D(0, 0, 0).distance(Point3D(0, 0, 0))
+        0.0
+        >>> Point3D(0, 0, 0).distance(Point3D(2, 3, -4))
+        5.385164807134504
+        >>> Point3D(0, 0, 0).distance(Point3D(0, 3, -4))
+        5.0
+        """
+        return math.sqrt(sum(
+            (my_coordinate - other_coordinate) ** 2
+            for my_coordinate, other_coordinate
+            in zip(self.coordinates, other.coordinates)
+        ))
 
     def manhattan_distance(self, other):
         """
@@ -141,11 +203,26 @@ class Point3D(namedtuple("Point3D", ("x", "y", "z"))):
         >>> Point3D(0, 0, 0).manhattan_distance(Point3D(2, 3, -4))
         9
         """
-        return (
-            abs(self.x - other.x)
-            + abs(self.y - other.y)
-            + abs(self.z - other.z)
+        return sum(
+            abs(my_coordinate - other_coordinate)
+            for my_coordinate, other_coordinate
+            in zip(self.coordinates, other.coordinates)
         )
 
 
+class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
+    coordinates_names = ("x", "y")
+
+
+class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
+    coordinates_names = ("x", "y", "z")
+
+
 helper = Helper()
+
+
+if __name__ == "__main__":
+    if doctest.testmod(optionflags=BaseChallenge.optionflags).failed:
+        print("Tests failed")
+    else:
+        print("Tests passed")
