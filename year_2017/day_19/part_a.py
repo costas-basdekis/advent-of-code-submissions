@@ -9,7 +9,7 @@ class Challenge(utils.BaseChallenge):
     def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
-        42
+        'AYRPVMEGQ'
         """
         return Diagram.from_diagram_text(_input).get_collected_word()
 
@@ -175,6 +175,22 @@ class Diagram:
         packet.step_many()
         return "".join(packet.collected_letters)
 
+    def get_step_count(self):
+        """
+        >>> Diagram.from_diagram_text(
+        ...     "     |          \\n"
+        ...     "     |  +--+    \\n"
+        ...     "     A  |  C    \\n"
+        ...     " F---|----E|--+ \\n"
+        ...     "     |  |  |  D \\n"
+        ...     "     +B-+  +--+ \\n"
+        ... ).get_step_count()
+        38
+        """
+        packet = Packet(self)
+        packet.step_many()
+        return packet.step_count
+
 
 class Packet:
     @classmethod
@@ -194,7 +210,7 @@ class Packet:
         return cls(diagram)
 
     def __init__(self, diagram, position=None, previous_position=None,
-                 collected_letters=()):
+                 collected_letters=(), step_count=1):
         if position is None:
             if previous_position is not None:
                 raise Exception(
@@ -215,6 +231,7 @@ class Packet:
         self.position = position
         self.previous_position = previous_position
         self.collected_letters = list(collected_letters)
+        self.step_count = step_count
 
     def __repr__(self):
         return (
@@ -275,6 +292,8 @@ class Packet:
         letter = self.diagram.letters.get(self.position)
         if letter:
             self.collected_letters += letter
+
+        self.step_count += 1
 
         return False
 
