@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from typing import Set, Tuple
+from typing import Set, Tuple, Dict
 
 import utils
 
@@ -21,7 +21,11 @@ class Grid:
     DIRECTION_LEFT = (-1, 0)
     DIRECTION_RIGHT = (1, 0)
 
-    infected_nodes: Set[utils.Point2D]
+    STATE_CLEAN = 'clean'
+    STATE_INFECTED = 'infected'
+    STATES = [STATE_CLEAN, STATE_INFECTED]
+
+    nodes: Dict[utils.Point2D, str]
     position: utils.Point2D = utils.Point2D.ZERO_POINT
     direction: Tuple[int, int] = DIRECTION_UP
     infection_count: int = 0
@@ -33,20 +37,26 @@ class Grid:
         DIRECTION_LEFT,
     ]
 
+    PARSE_MAP = {
+        '.': STATE_CLEAN,
+        '#': STATE_INFECTED,
+    }
+
     @classmethod
     def from_grid_text(cls, grid_text, offset=None,
                        position=utils.Point2D.ZERO_POINT,
                        direction=DIRECTION_UP, infection_count=0):
         """
         >>> Grid.from_grid_text('..#\\n#..\\n...')
-        Grid(position=Point2D(x=0, y=0), direction=(0, -1), infection_count=0,
-            infected_nodes={Point2D(x=-1, y=0), Point2D(x=1, y=-1)})
+        Grid(nodes={Point2D(x=1, y=-1): 'infected',
+            Point2D(x=-1, y=0): 'infected'}, position=Point2D(x=0, y=0),
+            direction=(0, -1), infection_count=0)
         """
         lines = list(grid_text.strip().splitlines())
-        extra_characters = set("".join(lines)) - {'.', '#'}
+        extra_characters = set("".join(lines)) - set(cls.PARSE_MAP)
         if extra_characters:
             raise Exception(
-                f"Expected only '.' or '#', but also got "
+                f"Expected only {sorted(cls.PARSE_MAP)}, but also got "
                 f"'{sorted(extra_characters)}'")
         x_sizes = set(map(len, lines))
         if len(x_sizes) != 1:
@@ -63,22 +73,27 @@ class Grid:
         else:
             offset_x, offset_y = offset
         return cls({
-            utils.Point2D(x + offset_x, y + offset_y)
+            utils.Point2D(x + offset_x, y + offset_y): cls.PARSE_MAP[content]
             for y, line in enumerate(lines)
             for x, content in enumerate(line)
-            if content == '#'
+            if cls.PARSE_MAP[content] != cls.STATE_CLEAN
         }, position, direction, infection_count)
 
-    def __repr__(self):
-        return (
-            f"{type(self).__name__}("
-            f"position={repr(self.position)}, "
-            f"direction={repr(self.direction)}, "
-            f"infection_count={repr(self.infection_count)}, "
-            f"infected_nodes="
-            f"{{{', '.join(map(repr, sorted(self.infected_nodes)))}}}"
-            f")"
-        )
+    def __getitem__(self, item):
+        if not isinstance(item, utils.Point2D):
+            raise ValueError(f"Expected Point2D not {type(item).__name__}")
+        return self.nodes.get(item, self.STATE_CLEAN)
+
+    def __setitem__(self, key, value):
+        if not isinstance(key, utils.Point2D):
+            raise ValueError(f"Expected Point2D not {type(key).__name__}")
+        if value not in self.STATES:
+            raise ValueError(f"Unknown state '{value}'")
+        if value == self.STATE_CLEAN:
+            if key in self.nodes:
+                del self.nodes[key]
+        else:
+            self.nodes[key] = value
 
     def step_many(self, count):
         """
@@ -131,18 +146,36 @@ class Grid:
         >>> grid.infection_count
         1
         """
-        if self.position in self.infected_nodes:
-            self.direction = self.rotate_direction_right(self.direction)
-        else:
-            self.direction = self.rotate_direction_left(self.direction)
-        if self.position in self.infected_nodes:
-            self.infected_nodes.remove(self.position)
-        else:
-            self.infected_nodes.add(self.position)
+        self.direction = self.get_new_direction()
+        new_state = self.get_new_state()
+        self[self.position] = new_state
+        if new_state == self.STATE_INFECTED:
             self.infection_count += 1
         self.position = self.position.offset(self.direction)
 
         return self
+
+    def get_new_direction(self):
+        return self.get_new_direction_for_state(self[self.position])
+
+    def get_new_direction_for_state(self, state):
+        if state == self.STATE_INFECTED:
+            return self.rotate_direction_right(self.direction)
+        elif state == self.STATE_CLEAN:
+            return self.rotate_direction_left(self.direction)
+        else:
+            raise Exception(f"Unknown state '{state}'")
+
+    def get_new_state(self):
+        return self.get_new_state_for_state(self[self.position])
+
+    def get_new_state_for_state(self, state):
+        if state == self.STATE_INFECTED:
+            return self.STATE_CLEAN
+        elif state == self.STATE_CLEAN:
+            return self.STATE_INFECTED
+        else:
+            raise Exception(f"Unknown state '{state}'")
 
     def rotate_direction_left(self, direction):
         return self.DIRECTIONS_CLOCKWISE[
@@ -155,8 +188,8 @@ class Grid:
             % len(self.DIRECTIONS_CLOCKWISE)]
 
     SHOW_MAP = {
-        True: '#',
-        False: '.',
+        content: state
+        for state, content in PARSE_MAP.items()
     }
 
     DIRECTION_SHOW_MAP = {
@@ -199,7 +232,7 @@ class Grid:
                     "{} "
                     if x + 1 in x_range else
                     "{}"
-                ).format(self.SHOW_MAP[(x, y) in self.infected_nodes])
+                ).format(self.SHOW_MAP[self[utils.Point2D(x, y)]])
                 for x in x_range
             )
             for y in y_range
@@ -208,9 +241,9 @@ class Grid:
     def get_axis_range(self, range_or_depth, index, name):
         if range_or_depth is None:
             _min = min(self.position[index], min(
-                (point[index] for point in self.infected_nodes), default=0))
+                (point[index] for point in self.nodes), default=0))
             _max = max(self.position[index], max(
-                (point[index] for point in self.infected_nodes), default=0))
+                (point[index] for point in self.nodes), default=0))
             depth = max(abs(_min), abs(_max))
             _range = range(-depth, depth + 1)
         elif isinstance(range_or_depth, int):
