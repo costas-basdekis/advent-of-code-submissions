@@ -21,6 +21,8 @@ def solve(_input=None):
 
 
 class Seating(namedtuple("Seating", ("seats", "sitting"))):
+    MAX_OCCUPIED_NEIGHBOURS_FOR_OCCUPIED = 4
+
     @classmethod
     def from_seating_text(cls, seating_text):
         """
@@ -234,7 +236,7 @@ sitting=((False, False, False), (False, True, True), (True, False, False)))
             return False
 
         if sitting:
-            return neighbour_count < 4
+            return neighbour_count < self.MAX_OCCUPIED_NEIGHBOURS_FOR_OCCUPIED
         else:
             return neighbour_count == 0
 
@@ -277,8 +279,33 @@ sitting=((False, False, False), (False, True, True), (True, False, False)))
                 (x + d_x, y + d_y)
                 for d_x, d_y in self.NEIGHBOUR_OFFSETS
             )
-            if 0 <= neighbour_x < len(self.seats[0])
-            and 0 <= neighbour_y < len(self.seats)
+            if self.is_within_grid(neighbour_x, neighbour_y)
+        )
+
+    def is_within_grid(self, x, y):
+        """
+        >>> Seating(((True,) * 6,) * 6, ((False,) * 6,) * 6)\\
+        ...     .is_within_grid(0, 0)
+        True
+        >>> Seating(((True,) * 6,) * 6, ((False,) * 6,) * 6)\\
+        ...     .is_within_grid(-1, 0)
+        False
+        >>> Seating(((True,) * 6,) * 6, ((False,) * 6,) * 6)\\
+        ...     .is_within_grid(3, -5)
+        False
+        >>> Seating(((True,) * 6,) * 6, ((False,) * 6,) * 6)\\
+        ...     .is_within_grid(3, 6)
+        False
+        >>> Seating(((True,) * 6,) * 6, ((False,) * 6,) * 6)\\
+        ...     .is_within_grid(6, 0)
+        False
+        >>> Seating(((True,) * 6,) * 6, ((False,) * 6,) * 6)\\
+        ...     .is_within_grid(4, 3)
+        True
+        """
+        return (
+            0 <= x < len(self.seats[0])
+            and 0 <= y < len(self.seats)
         )
 
     def show(self):
