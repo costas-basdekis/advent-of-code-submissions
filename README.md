@@ -5,7 +5,7 @@ leaderboards have submitted the challenges
 
 ## The submissions
 
-* Got it correctly: 44 :white_check_mark:
+* Got it correctly: 45 :white_check_mark:
 * Got it wrong: 3 :x:
 * Can't attempt: 1
 
@@ -83,3 +83,5 @@ leaderboards have submitted the challenges
   * [24](year_2019/day_24)  - [See Challenge](https://adventofcode.com/2019/day/24) :white_check_mark:
     * [Part A](year_2019/day_24/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_24/part_b.py) :white_check_mark:
+  * [25](year_2019/day_25)  - [See Challenge](https://adventofcode.com/2019/day/25)
+    * [Part A](year_2019/day_25/part_a.py) :white_check_mark:
