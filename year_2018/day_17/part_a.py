@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import functools
 import itertools
 import re
 
@@ -10,8 +9,14 @@ class Challenge(utils.BaseChallenge):
     def solve(self, _input):
         """
         >>> Challenge().default_solve()
-        42
+        26910
         """
+        ground = Ground.from_ground_text(_input)
+        ground.step_many()
+        from pathlib import Path
+        Path(__file__).parent.joinpath("./part_a_watered_output.txt")\
+            .write_text(ground.show())
+        return ground.get_water_reach()
 
 
 class Ground:
@@ -209,7 +214,7 @@ class Ground:
         running_water = {
             (x + offset_x, y + offset_y)
             for (x, y), spot in non_sand.items()
-            if spot == "|"
+            if spot in ("|", "v")
         }
         settled_water = {
             (x + offset_x, y + offset_y)
@@ -232,7 +237,9 @@ class Ground:
         self.walls = walls
         self.min_x = min(x for x, _ in self.walls)
         self.max_x = max(x for x, _ in self.walls)
+        self.min_y = 1
         self.max_y = max(y for _, y in self.walls)
+        self.min_wall_y = min(y for _, y in self.walls)
         if running_water is None:
             running_water = set()
         self.running_water = running_water
@@ -265,6 +272,8 @@ class Ground:
     def __setitem__(self, key, value):
         content = self[key]
         if content == value:
+            if content == self.RUNNING_WATER and key in self.water_points:
+                self.water_points.remove(key)
             return
 
         if content == self.RUNNING_WATER:
@@ -305,8 +314,29 @@ class Ground:
         ...     "..|#######|.\\n"
         ... , spring_water_points=False).get_water_reach()
         57
+        >>> Ground.from_visual(
+        ...     ".....+......\\n"
+        ...     ".....|......\\n"
+        ...     "#..#||||...#\\n"
+        ...     "#..#~~#|....\\n"
+        ...     "#..#~~#|....\\n"
+        ...     "#~~~~~#|....\\n"
+        ...     "#~~~~~#|....\\n"
+        ...     "#######|....\\n"
+        ...     ".......|....\\n"
+        ...     "..|||||||||.\\n"
+        ...     "..|#~~~~~#|.\\n"
+        ...     "..|#~~~~~#|.\\n"
+        ...     "..|#~~~~~#|.\\n"
+        ...     "..|#######|.\\n"
+        ... , spring_water_points=False).get_water_reach()
+        56
         """
-        return len(self.running_water) + len(self.settled_water)
+        return sum(
+            1
+            for _, y in self.running_water | self.settled_water
+            if y >= self.min_wall_y
+        )
 
     def step_many(self, count=None):
         """
@@ -434,11 +464,30 @@ class Ground:
         #~~~~~#|....
         #######|....
         .......|....
+        ..||||||||v.
+        ..|#~~~~~#..
+        ..|#~~~~~#..
+        ..|#~~~~~#..
+        ..v#######..
+        >>> ground_a.step_many(5)
+        False
+        >>> ground_a.step_many(1)
+        True
+        >>> print("!" + ground_a.show()[1:])
+        !....+......
+        .....|.....#
+        #..#||||...#
+        #..#~~#|....
+        #..#~~#|....
+        #~~~~~#|....
+        #~~~~~#|....
+        #######|....
+        .......|....
         ..|||||||||.
         ..|#~~~~~#|.
         ..|#~~~~~#|.
         ..|#~~~~~#|.
-        ..v#######v.
+        ..|#######|.
         >>> ground_a.step_many(1)
         True
         >>> ground_a.step_many(1)
@@ -510,7 +559,7 @@ class Ground:
         ...     "#.....#\\n"
         ...     "#.....#\\n"
         ...     "#######\\n"
-        ... , spring_water_points=True)
+        ... , spring_water_points=False)
         >>> ground_a.step()
         False
         >>> print("!" + ground_a.show()[1:])
@@ -524,29 +573,91 @@ class Ground:
         {False}
         >>> print("!" + ground_a.show()[1:])
         !..+..#
-        .|||||.
-        .|###|.
-        #|...|#
-        #v...v#
+        .||||v.
+        .|###..
+        #|....#
+        #v....#
         #######
         >>> ground_a.step()
         False
         >>> print("!" + ground_a.show()[1:])
         !..+..#
-        .|||||.
-        .|###|.
-        #v...|#
+        .||||v.
+        .|###..
+        #v....#
+        #~~~~~#
+        #######
+        >>> ground_a.step()
+        False
+        >>> print("!" + ground_a.show()[1:])
+        !..+..#
+        .||||v.
+        .v###..
+        #~~~~~#
+        #~~~~~#
+        #######
+        >>> ground_a.step()
+        False
+        >>> print("!" + ground_a.show()[1:])
+        !#..+..#
+        ..||||v.
+        v||###..
+        .#~~~~~#
+        .#~~~~~#
+        .#######
+        >>> {ground_a.step() for _ in range(4)}
+        {False}
+        >>> print("!" + ground_a.show()[1:])
+        !#..+..#
+        ..||||v.
+        |||###..
+        |#~~~~~#
+        |#~~~~~#
+        |#######
+        >>> ground_a.step()
+        False
+        >>> print("!" + ground_a.show()[1:])
+        !#..+..#
+        ..|||||.
+        |||###v.
+        |#~~~~~#
+        |#~~~~~#
+        |#######
+        >>> {ground_a.step() for _ in range(4)}
+        {False}
+        >>> ground_a.step()
+        True
+        >>> print("!" + ground_a.show()[1:])
+        !#..+..#.
+        ..|||||..
+        |||###|||
+        |#~~~~~#|
+        |#~~~~~#|
+        |#######|
+        >>> ground_a = Ground.from_visual(
+        ...     "#..+..#\\n"
+        ...     "#..|...\\n"
+        ...     "#v|||v#\\n"
+        ...     "#~###.#\\n"
+        ...     "#~~~~~#\\n"
+        ...     "#######\\n"
+        ... , spring_water_points=False)
+        >>> ground_a.step()
+        False
+        >>> print("!" + ground_a.show()[1:])
+        !..+..#
+        #..|...
+        #||||v#
+        #~###.#
         #~~~~~#
         #######
         """
         if not self.water_points:
             return False
 
-        return functools.reduce(bool.__or__, (
-            self.step_water_point(water_point)
-            for water_point in sorted(self.water_points)
-            if water_point in self.water_points
-        ))
+        water_point = min(self.water_points)
+        self.step_water_point(water_point)
+        return not bool(self.water_points)
 
     def step_water_point(self, water_point):
         """
@@ -597,14 +708,14 @@ class Ground:
                     new_water_points.append((right_x, water_y))
                 for x in range(left_x, right_x + 1):
                     self[(x, water_y)] = self.RUNNING_WATER
-                self.water_points.remove(water_point)
                 self.water_points.update(new_water_points)
                 return False
             else:
                 self.water_points.remove(water_point)
                 return False
         elif new_content == self.RUNNING_WATER:
-            raise Exception("Ok")
+            self.water_points.remove(water_point)
+            return False
         elif new_content != self.EMPTY:
             raise Exception(
                 f"Unexpected content beneath {water_point}: {new_content}")
@@ -616,15 +727,76 @@ class Ground:
             return False
 
     def find_left_boundary(self, start):
+        """
+        >>> Ground.from_visual(
+        ...     "#..+..#\\n"
+        ...     ".||||v.\\n"
+        ...     ".v###..\\n"
+        ...     "#~~~~~#\\n"
+        ...     "#~~~~~#\\n"
+        ...     "#######\\n"
+        ... , spring_water_points=False).find_left_boundary((498, 2))
+        ((496, 2), False, True)
+        >>> Ground.from_visual(
+        ...     "#..+..#\\n"
+        ...     "#..|...\\n"
+        ...     "#v|||v#\\n"
+        ...     "#~###.#\\n"
+        ...     "#~~~~~#\\n"
+        ...     "#######\\n"
+        ... , spring_water_points=False).find_left_boundary((498, 2))
+        ((498, 2), True, False)
+        >>> Ground.from_visual(
+        ...     "#..+..#\\n"
+        ...     ".|||||.\\n"
+        ...     ".|###|.\\n"
+        ...     "#|...|#\\n"
+        ...     "#v...v#\\n"
+        ...     "#######\\n"
+        ... , spring_water_points=False).find_left_boundary((498, 4))
+        ((498, 4), True, False)
+        """
         return self.find_boundary(start, -1, "left")
 
     def find_right_boundary(self, start):
+        """
+        >>> Ground.from_visual(
+        ...     "#..+..#\\n"
+        ...     ".||||v.\\n"
+        ...     ".v###..\\n"
+        ...     "#~~~~~#\\n"
+        ...     "#~~~~~#\\n"
+        ...     "#######\\n"
+        ... , spring_water_points=False).find_right_boundary((498, 2))
+        ((498, 2), True, False)
+        >>> Ground.from_visual(
+        ...     "#..+..#\\n"
+        ...     "#..|...\\n"
+        ...     "#v|||v#\\n"
+        ...     "#~###.#\\n"
+        ...     "#~~~~~#\\n"
+        ...     "#######\\n"
+        ... , spring_water_points=False).find_right_boundary((498, 2))
+        ((502, 2), False, True)
+        >>> Ground.from_visual(
+        ...     "#..+..#\\n"
+        ...     ".|||||.\\n"
+        ...     ".|###|.\\n"
+        ...     "#|...|#\\n"
+        ...     "#v...v#\\n"
+        ...     "#######\\n"
+        ... , spring_water_points=False).find_right_boundary((498, 4))
+        ((502, 4), True, False)
+        """
         return self.find_boundary(start, 1, "right")
 
     def find_boundary(self, start, delta, name):
         start_x, start_y = start
-        if not (self.min_x <= start_x <= self.max_x) or start_y > self.max_y:
-            raise Exception(f"{start} is not within boundary")
+        if not (self.min_x <= start_x <= self.max_x) \
+                or not (self.min_y <= start_y <= self.max_y):
+            raise Exception(
+                f"{start} is not within x ({self.min_x}, {self.max_x}) "
+                f"or y ({self.min_y}, {self.max_x}) boundary")
         start_content = self[start]
         if start_content not in (self.EMPTY, self.RUNNING_WATER):
             raise Exception(
@@ -654,12 +826,12 @@ class Ground:
                 settled = True
                 run_down = False
                 return point, settled, run_down
-            elif content == self.RUNNING_WATER:
-                point = (x - delta, start_y)
-                settled = False
-                run_down = False
-                return point, settled, run_down
-            elif content != self.EMPTY:
+            # elif content == self.RUNNING_WATER:
+            #     point = (x - delta, start_y)
+            #     settled = False
+            #     run_down = False
+            #     return point, settled, run_down
+            elif content not in (self.EMPTY, self.RUNNING_WATER):
                 raise Exception(
                     f"Unexpected content found at {(x, start_y)}: {content}")
             if content_beneath in self.RUNNING_WATER:
@@ -733,10 +905,16 @@ class Ground:
         ...#######..
         """
         spring_x, spring_y = self.spring_location
-        min_x = min(spring_x, min(x for x, _ in self.walls))
-        max_x = max(spring_x, max(x for x, _ in self.walls))
-        min_y = min(spring_y, min(y for _, y in self.walls))
-        max_y = max(spring_y, max(y for _, y in self.walls))
+        points = (
+            self.walls
+            | self.running_water
+            | self.water_points
+            | {self.spring_location}
+        )
+        min_x = min(x for x, _ in points)
+        max_x = max(x for x, _ in points)
+        min_y = min(y for _, y in points)
+        max_y = max(y for _, y in points)
 
         return "\n".join(
             "".join(
