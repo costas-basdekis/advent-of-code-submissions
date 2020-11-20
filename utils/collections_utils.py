@@ -7,6 +7,7 @@ __all__ = [
     'get_fixed_length_substrings',
     'all_possible_combinations',
     'all_possible_permutations',
+    'all_possible_quantity_splits',
     'get_windows',
 ]
 
@@ -124,6 +125,32 @@ def all_possible_permutations(items: List[T]) -> Iterable[Tuple[T, ...]]:
         for combination in all_possible_combinations(items)
         for permutation in itertools.permutations(combination)
     )
+
+
+def all_possible_quantity_splits(total: int, count: int,
+                                 ) -> Iterable[Tuple[int, ...]]:
+    """
+    >>> sorted(all_possible_quantity_splits(5, 1))
+    [(5,)]
+    >>> sorted(all_possible_quantity_splits(5, 2))
+    [(0, 5), (1, 4), (2, 3), (3, 2), (4, 1), (5, 0)]
+    >>> sorted(all_possible_quantity_splits(2, 3))
+    [(0, 0, 2), (0, 1, 1), (0, 2, 0), (1, 0, 1), (1, 1, 0), (2, 0, 0)]
+    """
+    if count < 1:
+        raise Exception(f"Expected count more than, got {count}")
+    if total < 0:
+        raise Exception(f"Expected total more or equal to 0, got {total}")
+    if total == 0:
+        yield (0,) * count
+        return
+    if count == 1:
+        yield total,
+        return
+
+    for first in range(total + 1):
+        for rest in all_possible_quantity_splits(total - first, count - 1):
+            yield (first,) + rest
 
 
 def get_windows(items: Iterable[T], size: int) -> Iterable[Tuple[T, ...]]:

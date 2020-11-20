@@ -1,9 +1,9 @@
-import math
 from typing import Any, TypeVar, Iterable, Tuple
 
 __all__ = [
     'min_and_max',
     'min_and_max_tuples',
+    'product',
 ]
 
 T = TypeVar('T', bound=Any)
@@ -106,3 +106,24 @@ def min_and_max_tuples(tuples: Iterable[TupleT],
         )
 
     return tuple(min_values), tuple(max_values)
+
+
+def product(values: Iterable[T], default=1) -> T:
+    """
+    >>> product([])
+    1
+    >>> product([], 5)
+    5
+    >>> product([1, 2, 3], 5)
+    6
+    >>> product([1, 2, 3])
+    6
+    >>> product((2.5, 3.5, 7))
+    61.25
+    """
+    values = iter(values)
+    result = next(values, default)
+    for value in values:
+        result *= value
+
+    return result
