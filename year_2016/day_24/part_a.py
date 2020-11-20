@@ -30,6 +30,7 @@ class Graph:
     edges: Dict[Tuple[int, int], int]
 
     def get_minimum_step_count(self, start: int = 0,
+                               return_to_start: bool = False,
                                debugger: Debugger = Debugger(enabled=False),
                                ) -> int:
         """
@@ -46,8 +47,13 @@ class Graph:
         if start not in nodes:
             raise Exception(f"Start {start} is not in nodes {nodes}")
         other_nodes = set(nodes) - {start}
+        prefix = (start,)
+        if return_to_start:
+            suffix = prefix
+        else:
+            suffix = ()
         visit_orders = (
-            (start,) + permutation
+            prefix + permutation + suffix
             for permutation in itertools.permutations(other_nodes)
         )
         min_distance = None
