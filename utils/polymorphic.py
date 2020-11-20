@@ -118,6 +118,8 @@ class PolymorphicParser:
         <B1>
         """
         for instruction_class in cls.sub_classes.values():
+            if not issubclass(instruction_class, cls):
+                continue
             instruction = instruction_class.try_parse(text)
             if instruction:
                 return instruction
