@@ -4,9 +4,11 @@ from .base_challenge import *
 from .helper import *
 from .point import *
 from .typing_utils import *
+from .collections_utils import *
 
 test_modules = [
     importlib.import_module('utils.base_challenge'),
+    importlib.import_module('utils.collections_utils'),
     importlib.import_module('utils.helper'),
     importlib.import_module('utils.point'),
     importlib.import_module('utils.typing_utils'),

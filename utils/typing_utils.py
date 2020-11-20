@@ -1,13 +1,61 @@
 import sys
 from typing import TypeVar, Type, ForwardRef, get_args, Generic, Union, \
     Optional, Dict, Any
+# noinspection PyUnresolvedReferences,PyProtectedMember
+from typing import _type_check
+
+from utils.collections_utils import KeyedDefaultDict
 
 __all__ = [
+    'Cls', 'Self',
     'get_type_argument_class',
     'resolve_type_argument',
     'get_type_argument',
     'get_type_argument_index',
 ]
+
+
+def create_named_self(bound):
+    """
+    >>> create_named_self('SomeClass')
+    ~Self
+    >>> class SomeClass: pass
+    >>> create_named_self(SomeClass)
+    ~Self
+    >>> create_named_self(SomeClass) != create_named_self(SomeClass)
+    True
+    >>> Self['SomeClass']
+    ~Self
+    >>> Self[SomeClass]
+    ~Self
+    >>> Self[SomeClass] is Self[SomeClass]
+    True
+    """
+    # noinspection PyTypeHints
+    return TypeVar('Self', bound=bound)
+
+
+def create_named_cls(bound):
+    """
+    >>> create_named_cls('SomeClass')
+    typing.Type[~Self]
+    >>> class SomeClass: pass
+    >>> create_named_cls(SomeClass)
+    typing.Type[~Self]
+    >>> create_named_cls(SomeClass) != create_named_self(SomeClass)
+    True
+    >>> Cls['SomeClass']
+    typing.Type[~Self]
+    >>> Cls[SomeClass]
+    typing.Type[~Self]
+    >>> Cls[SomeClass] is Cls[SomeClass]
+    True
+    """
+    return Type[Self[bound]]
+
+
+Self = KeyedDefaultDict(create_named_self)
+Cls = KeyedDefaultDict(create_named_cls)
 
 
 TypeArgument = Union[TypeVar, ForwardRef, Type]
