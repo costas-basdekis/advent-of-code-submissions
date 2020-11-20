@@ -58,7 +58,7 @@ class KeyGenerator:
                     break
 
             if debug:
-                if index % 100000 == 0:
+                if index % 1000 == 0:
                     print(
                         f"Count: {index}, time: "
                         f"{timer.get_pretty_current_duration()}, key count: "
@@ -138,7 +138,18 @@ class KeyGenerator:
         >>> KeyGenerator("abc").get_hash(816)
         '...eeeee...'
         """
-        return md5(f"{self.salt}{index}".encode()).digest().hex()
+        return self.hash_text(f"{self.salt}{index}")
+
+    def hash_text(self, text: str) -> str:
+        """
+        >>> KeyGenerator("").hash_text("abc18")
+        '...cc38887a5...'
+        >>> KeyGenerator("").hash_text("abc39")
+        '...eee...'
+        >>> KeyGenerator("").hash_text("abc816")
+        '...eeeee...'
+        """
+        return md5(text.encode()).digest().hex()
 
 
 Challenge.main()
