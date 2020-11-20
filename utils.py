@@ -1,6 +1,7 @@
 import doctest
 import os
 import sys
+from collections import namedtuple
 from pathlib import Path
 
 
@@ -123,6 +124,28 @@ class Helper:
         r_x, r_y = rhs
 
         return l_x + r_x, l_y + r_y
+
+    def iterable_length(self, iterable):
+        return sum(1 for _ in iterable)
+
+
+class Point3D(namedtuple("Point3D", ("x", "y", "z"))):
+    @classmethod
+    def from_int_texts(cls, x_str, y_str, z_str):
+        return cls(int(x_str), int(y_str), int(z_str))
+
+    def manhattan_distance(self, other):
+        """
+        >>> Point3D(0, 0, 0).manhattan_distance(Point3D(0, 0, 0))
+        0
+        >>> Point3D(0, 0, 0).manhattan_distance(Point3D(2, 3, -4))
+        9
+        """
+        return (
+            abs(self.x - other.x)
+            + abs(self.y - other.y)
+            + abs(self.z - other.z)
+        )
 
 
 helper = Helper()
