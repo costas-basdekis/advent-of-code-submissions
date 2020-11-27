@@ -5,8 +5,9 @@ leaderboards have submitted the challenges
 
 ## The submissions
 
-* Got it correctly: :white_check_mark:
-* Got it wrong: :x:
+* Got it correctly: 40 :white_check_mark:
+* Got it wrong: 3 :x:
+* Can't attempt: 1
 
 
 * [2019](year_2019) - [See Challenges](https://adventofcode.com/2019)
@@ -55,15 +56,15 @@ leaderboards have submitted the challenges
   * [15](year_2019/day_15)  - [See Challenge](https://adventofcode.com/2019/day/15) :white_check_mark:
     * [Part A](year_2019/day_15/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_15/part_b.py) :white_check_mark:
-  * [16](year_2019/day_16)  - [See Challenge](https://adventofcode.com/2019/day/16)
+  * [16](year_2019/day_16)  - [See Challenge](https://adventofcode.com/2019/day/16) :white_check_mark: :x:
     * [Part A](year_2019/day_16/part_a.py) :white_check_mark:
-    * [Part B](year_2019/day_16/part_b.py)
-  * [17](year_2019/day_17)  - [See Challenge](https://adventofcode.com/2019/day/17)
+    * [Part B](year_2019/day_16/part_b.py) :x:
+  * [17](year_2019/day_17)  - [See Challenge](https://adventofcode.com/2019/day/17) :white_check_mark:
     * [Part A](year_2019/day_17/part_a.py) :white_check_mark:
-    * [Part B](year_2019/day_17/part_b.py)
-  * [18](year_2019/day_18)  - [See Challenge](https://adventofcode.com/2019/day/18)
+    * [Part B](year_2019/day_17/part_b.py) :white_check_mark:
+  * [18](year_2019/day_18)  - [See Challenge](https://adventofcode.com/2019/day/18) :white_check_mark: :x:
     * [Part A](year_2019/day_18/part_a.py) :white_check_mark:
-    * [Part B](year_2019/day_18/part_b.py)
+    * [Part B](year_2019/day_18/part_b.py) :x:
   * [19](year_2019/day_19)  - [See Challenge](https://adventofcode.com/2019/day/19) :white_check_mark:
     * [Part A](year_2019/day_19/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_19/part_b.py) :white_check_mark:
@@ -73,6 +74,6 @@ leaderboards have submitted the challenges
   * [21](year_2019/day_21)  - [See Challenge](https://adventofcode.com/2019/day/21) :white_check_mark:
     * [Part A](year_2019/day_21/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_21/part_b.py) :white_check_mark:
-  * [22](year_2019/day_22)  - [See Challenge](https://adventofcode.com/2019/day/22)
-    * [Part A](year_2019/day_22/part_a.py)
+  * [22](year_2019/day_22)  - [See Challenge](https://adventofcode.com/2019/day/22) :x:
+    * [Part A](year_2019/day_22/part_a.py) :x:
     * [Part B](year_2019/day_22/part_b.py)
