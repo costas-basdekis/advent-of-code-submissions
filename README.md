@@ -3,14 +3,19 @@
 I'll document my submissions here, and push them after the everyone in my 
 leaderboards have submitted the challenges
 
+## The results
+
+* 2020 Working on it
+* [2019](year_2019) 45/50 :star: - [See Challenges](https://adventofcode.com/2019)
+
 ## The submissions
 
-* Got it correctly: 45 :white_check_mark:
-* Got it wrong: 3 :x:
-* Can't attempt: 2
+* Got it correctly: :white_check_mark:
+* Got it wrong: :x:
+* Can't attempt: :grey_exclamation:
 
-
-* [2019](year_2019) - [See Challenges](https://adventofcode.com/2019)
+* 2020 - [See Challenges](https://adventofcode.com/2020)
+* [2019](year_2019) 45 :white_check_mark:  / 3 :x: /  2 :grey_exclamation: - [See Challenges](https://adventofcode.com/2019)
   * [1](year_2019/day_01)  - [See Challenge](https://adventofcode.com/2019/day/1) :white_check_mark:
     * [Part A](year_2019/day_01/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_01/part_b.py) :white_check_mark:
@@ -74,15 +79,15 @@ leaderboards have submitted the challenges
   * [21](year_2019/day_21)  - [See Challenge](https://adventofcode.com/2019/day/21) :white_check_mark:
     * [Part A](year_2019/day_21/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_21/part_b.py) :white_check_mark:
-  * [22](year_2019/day_22)  - [See Challenge](https://adventofcode.com/2019/day/22) :x:
+  * [22](year_2019/day_22)  - [See Challenge](https://adventofcode.com/2019/day/22) :x: :grey_exclamation:
     * [Part A](year_2019/day_22/part_a.py) :x:
-    * [Part B](year_2019/day_22/part_b.py)
+    * [Part B](year_2019/day_22/part_b.py) :grey_exclamation:
   * [23](year_2019/day_23)  - [See Challenge](https://adventofcode.com/2019/day/23) :white_check_mark:
     * [Part A](year_2019/day_23/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_23/part_b.py) :white_check_mark:
   * [24](year_2019/day_24)  - [See Challenge](https://adventofcode.com/2019/day/24) :white_check_mark:
     * [Part A](year_2019/day_24/part_a.py) :white_check_mark:
     * [Part B](year_2019/day_24/part_b.py) :white_check_mark:
-  * [25](year_2019/day_25)  - [See Challenge](https://adventofcode.com/2019/day/25)
+  * [25](year_2019/day_25)  - [See Challenge](https://adventofcode.com/2019/day/25) :white_check_mark: :grey_exclamation:
     * [Part A](year_2019/day_25/part_a.py) :white_check_mark:
-    * [Part B](year_2019/day_25/part_b.py)
+    * [Part B](year_2019/day_25/part_b.py) :grey_exclamation:
