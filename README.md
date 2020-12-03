@@ -12,7 +12,7 @@ leaderboards have submitted the challenges
 | Day | 2020 | [2019](year_2019) | [2018](year_2018) |
 |:---:| --- | --- | --- |
 | | [Challenges](https://adventofcode.com/2020) | [Challenges](https://adventofcode.com/2019) | [Challenges](https://adventofcode.com/2018)|
-| | 26 :white_check_mark: / 0 :x: / 0 :grey_exclamation: | 45 :white_check_mark: / 3 :x: / 2 :grey_exclamation: | 28 :white_check_mark: / 3 :x: / 1 :grey_exclamation: |
+| | 28 :white_check_mark: / 0 :x: / 0 :grey_exclamation: | 45 :white_check_mark: / 3 :x: / 2 :grey_exclamation: | 28 :white_check_mark: / 3 :x: / 1 :grey_exclamation: |
 |  1 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/1) | [Code](year_2019/day_01) :star: :star: [Challenge](https://adventofcode.com/2019/day/1) | [Code](year_2018/day_01) :star: :star: [Challenge](https://adventofcode.com/2018/day/1) |
 |  2 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/2) | [Code](year_2019/day_02) :star: :star: [Challenge](https://adventofcode.com/2019/day/2) | [Code](year_2018/day_02) :star: :star: [Challenge](https://adventofcode.com/2018/day/2) |
 |  3 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/3) | [Code](year_2019/day_03) :star: :star: [Challenge](https://adventofcode.com/2019/day/3) | [Code](year_2018/day_03) :star: :star: [Challenge](https://adventofcode.com/2018/day/3) |
@@ -26,7 +26,7 @@ leaderboards have submitted the challenges
 | 11 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/11) | [Code](year_2019/day_11) :star: :star: [Challenge](https://adventofcode.com/2019/day/11) | [Code](year_2018/day_11) :star: :star: [Challenge](https://adventofcode.com/2018/day/11) |
 | 12 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/12) | [Code](year_2019/day_12) :star: :star: [Challenge](https://adventofcode.com/2019/day/12) | [Code](year_2018/day_12) :star: :star: [Challenge](https://adventofcode.com/2018/day/12) |
 | 13 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/13) | [Code](year_2019/day_13) :star: :star: [Challenge](https://adventofcode.com/2019/day/13) | [Code](year_2018/day_13) :star: :star: [Challenge](https://adventofcode.com/2018/day/13) |
-| 14 | | [Code](year_2019/day_14) :star: :star: [Challenge](https://adventofcode.com/2019/day/14) | [Code](year_2018/day_14) :star: :x: [Challenge](https://adventofcode.com/2018/day/14) |
+| 14 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/14) | [Code](year_2019/day_14) :star: :star: [Challenge](https://adventofcode.com/2019/day/14) | [Code](year_2018/day_14) :star: :x: [Challenge](https://adventofcode.com/2018/day/14) |
 | 15 | | [Code](year_2019/day_15) :star: :star: [Challenge](https://adventofcode.com/2019/day/15) | [Code](year_2018/day_15) :x: :grey_exclamation: [Challenge](https://adventofcode.com/2018/day/15) |
 | 16 | | [Code](year_2019/day_16) :star: :x: [Challenge](https://adventofcode.com/2019/day/16) | [Code](year_2018/day_16) :star: :star: [Challenge](https://adventofcode.com/2018/day/16) |
 | 17 | | [Code](year_2019/day_17) :star: :star: [Challenge](https://adventofcode.com/2019/day/17) | |
