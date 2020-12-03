@@ -5,7 +5,7 @@ leaderboards have submitted the challenges
 
 ## The results
 
-* 2020 12/12 :star: - [See Challenges](https://adventofcode.com/2020)
+* 2020 14/14 :star: - [See Challenges](https://adventofcode.com/2020)
 * [2019](year_2019) 45/50 :star: - [See Challenges](https://adventofcode.com/2019)
 * [2018](year_2018) 20/22 :star: - [See Challenges](https://adventofcode.com/2018)
 
@@ -15,7 +15,7 @@ leaderboards have submitted the challenges
 * Got it wrong: :x:
 * Can't attempt: :grey_exclamation:
 
-* 2020 12 :white_check_mark:  / 0 :x: /  0 :grey_exclamation: - [See Challenges](https://adventofcode.com/2020)
+* 2020 14 :white_check_mark:  / 0 :x: /  0 :grey_exclamation: - [See Challenges](https://adventofcode.com/2020)
   * To be merged after my leaderboards have finished
 * [2019](year_2019) 45 :white_check_mark:  / 3 :x: /  2 :grey_exclamation: - [See Challenges](https://adventofcode.com/2019)
   * [1](year_2019/day_01)  - [See Challenge](https://adventofcode.com/2019/day/1) :white_check_mark:
