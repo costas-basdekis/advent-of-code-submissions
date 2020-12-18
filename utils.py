@@ -71,7 +71,7 @@ class BaseChallenge:
         failed = doctest.testmod(optionflags=self.optionflags).failed
         if self.part_a_for_testing:
             failed |= doctest.testmod(
-                self.part_a_for_testing, optionflags=self.optionflags)
+                self.part_a_for_testing, optionflags=self.optionflags).failed
         if failed:
             print("Tests failed")
         else:
