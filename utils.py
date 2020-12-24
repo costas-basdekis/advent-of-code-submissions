@@ -25,19 +25,21 @@ class BaseChallenge:
     def get_input(self):
         return get_input(self.module.__file__)
 
-    def main(self):
+    def main(self, sys_args=None):
         main_module = sys.modules.get('__main__')
         if self.module != main_module:
             return
-        arguments = self.get_main_arguments()
+        arguments = self.get_main_arguments(sys_args=sys_args)
         self.run_main_arguments(arguments)
 
-    def get_main_arguments(self):
-        if len(sys.argv) > 2:
+    def get_main_arguments(self, sys_args=None):
+        if sys_args is None:
+            sys_args = sys.argv
+        if len(sys_args) > 2:
             raise Exception(
                 "Only 1 optional argument is acceptable: run, test, play")
-        if len(sys.argv) == 2:
-            argument = sys.argv[1]
+        if len(sys_args) == 2:
+            argument = sys_args[1]
             if argument not in ('run', 'test', 'play'):
                 raise Exception(
                     f"Only 1 optional argument is acceptable: run, test, play "
