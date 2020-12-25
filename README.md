@@ -5,7 +5,7 @@ leaderboards have submitted the challenges
 
 ## The submissions
 
-* Got it correctly: : :star::
+* Got it correctly: :star:
 * Got it wrong/couldn't get answer: :x:
 * Can't attempt: :grey_exclamation:
 
