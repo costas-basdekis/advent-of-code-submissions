@@ -5,14 +5,14 @@ leaderboards have submitted the challenges
 
 ## The submissions
 
-* Got it correctly: :white_check_mark:
+* Got it correctly: : :star::
 * Got it wrong/couldn't get answer: :x:
 * Can't attempt: :grey_exclamation:
 
 | Day | 2020 | [2019](year_2019) | [2018](year_2018) |
 |:---:| --- | --- | --- |
 | | [Challenges](https://adventofcode.com/2020) | [Challenges](https://adventofcode.com/2019) | [Challenges](https://adventofcode.com/2018)|
-| | 50 :white_check_mark: | 45 :white_check_mark: / 3 :x: / 2 :grey_exclamation: | 29 :white_check_mark: / 2 :x: / 1 :grey_exclamation: |
+| | 50 :star: :star: | 45 :star: / 3 :x: / 2 :grey_exclamation: | 29 :star: / 2 :x: / 1 :grey_exclamation: |
 |  1 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/1) | [Code](year_2019/day_01) :star: :star: [Challenge](https://adventofcode.com/2019/day/1) | [Code](year_2018/day_01) :star: :star: [Challenge](https://adventofcode.com/2018/day/1) |
 |  2 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/2) | [Code](year_2019/day_02) :star: :star: [Challenge](https://adventofcode.com/2019/day/2) | [Code](year_2018/day_02) :star: :star: [Challenge](https://adventofcode.com/2018/day/2) |
 |  3 | Code :star: :star: [Challenge](https://adventofcode.com/2020/day/3) | [Code](year_2019/day_03) :star: :star: [Challenge](https://adventofcode.com/2019/day/3) | [Code](year_2018/day_03) :star: :star: [Challenge](https://adventofcode.com/2018/day/3) |
