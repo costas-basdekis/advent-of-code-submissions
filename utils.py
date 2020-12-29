@@ -2,8 +2,12 @@ import doctest
 import math
 import os
 import sys
+import timeit
 from collections import namedtuple
+from contextlib import contextmanager
 from pathlib import Path
+
+import click
 
 
 def get_current_directory(file_path):
@@ -72,14 +76,37 @@ class BaseChallenge:
         raise Exception(f"Challenge has not implemented play")
 
     def test(self):
-        failed = sum(
-            doctest.testmod(module, optionflags=self.optionflags).failed
-            for module in self.get_test_modules()
-        )
-        if failed:
-            print("Tests failed")
+        test_modules = self.get_test_modules()
+        with helper.time_it() as stats:
+            results = [
+                (module,
+                 doctest.testmod(module, optionflags=self.optionflags))
+                for module in test_modules
+            ]
+        total_attempted = sum(result.attempted for _, result in results)
+        total_failed = sum(result.failed for _, result in results)
+        failed_modules = [
+            module.__name__
+            if module else
+            'main'
+            for module, result in results
+            if result.failed
+        ]
+        if failed_modules:
+            styled_test_counts = click.style(
+                f'{total_failed}/{total_attempted} tests', fg='red')
+            print(
+                f"{styled_test_counts} "
+                f"in {len(failed_modules)}/{len(test_modules)} modules "
+                f"{click.style('failed', fg='red')} "
+                f"in {round(stats['duration'], 2)}s"
+                f": {click.style(', '.join(failed_modules), fg='red')}")
         else:
-            print("Tests passed")
+            print(
+                f"{total_attempted} tests "
+                f"in {len(test_modules)} modules "
+                f"{click.style('passed', fg='green')} "
+                f"in {round(stats['duration'], 2)}s")
 
     def get_test_modules(self):
         modules = [
@@ -91,7 +118,15 @@ class BaseChallenge:
         return modules
 
     def run(self):
-        print("Solution:", self.default_solve())
+        with helper.time_it() as stats:
+            solution = self.default_solve()
+        if solution is None:
+            styled_solution = click.style(str(solution), fg='red')
+        else:
+            styled_solution = click.style(str(solution), fg='green')
+        click.echo(
+            f"Solution: {styled_solution}"
+            f" (in {round(stats['duration'], 2)}s)")
 
 
 class Helper:
@@ -128,6 +163,14 @@ class Helper:
 
     def iterable_length(self, iterable):
         return sum(1 for _ in iterable)
+
+    @contextmanager
+    def time_it(self):
+        start = timeit.default_timer()
+        stats = {'start': start, 'end': None, 'duration': None}
+        yield stats
+        end = timeit.default_timer()
+        stats.update({'end': end, 'duration': end - start})
 
 
 class BasePoint:
