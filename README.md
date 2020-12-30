@@ -3,6 +3,12 @@
 I'll document my submissions here, and push them after everyone in my 
 leaderboards have submitted the challenges
 
+## Summary
+
+| Total | 2020 | 2019 | 2018 |
+| --- | --- | --- | --- |
+| 139 :star: | 50 :star: :star: | 46 :star: | 43 :star: |
+
 ## The submissions
 
 * Got it correctly: :star:
