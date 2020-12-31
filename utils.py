@@ -454,9 +454,9 @@ class BaseChallenge:
             return
         self.run_main_arguments()
 
-    def run_main_arguments(self):
+    def run_main_arguments(self, args=None, prog_name=None):
         cli = self.create_cli()
-        cli()
+        cli(args=args, prog_name=prog_name)
 
     def create_cli(self):
         @click.group(invoke_without_command=True)
