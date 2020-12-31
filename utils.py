@@ -1,5 +1,6 @@
 import copy
 import doctest
+import importlib
 import math
 import os
 import re
@@ -549,8 +550,8 @@ class BaseChallenge:
 
     def get_test_modules(self):
         modules = [
-            __import__(__name__),
-            None,
+            importlib.import_module(__name__),
+            importlib.import_module(type(self).__module__),
         ]
         if self.part_a_for_testing:
             modules.append(self.part_a_for_testing)
