@@ -1,5 +1,4 @@
 import doctest
-import itertools
 import math
 import os
 import sys
@@ -33,38 +32,46 @@ class BaseChallenge:
     def get_input(self):
         return get_input(self.module.__file__)
 
-    def main(self, sys_args=None):
+    def main(self):
         main_module = sys.modules.get('__main__')
         if self.module != main_module:
             return
-        arguments = self.get_main_arguments(sys_args=sys_args)
-        self.run_main_arguments(arguments)
+        self.run_main_arguments()
 
-    def get_main_arguments(self, sys_args=None):
-        if sys_args is None:
-            sys_args = sys.argv
-        if len(sys_args) > 2:
-            raise Exception(
-                "Only 1 optional argument is acceptable: run, test, play")
-        if len(sys_args) == 2:
-            argument = sys_args[1]
-            if argument not in ('run', 'test', 'play'):
-                raise Exception(
-                    f"Only 1 optional argument is acceptable: run, test, play "
-                    f"- not {argument}")
-        else:
-            argument = None
+    def run_main_arguments(self):
+        cli = self.create_cli()
+        cli()
 
-        return [argument]
+    def create_cli(self):
+        @click.group(invoke_without_command=True)
+        @click.pass_context
+        def cli(*args, **kwargs):
+            self.default_command(*args, **kwargs)
 
-    def run_main_arguments(self, arguments):
-        argument, = arguments
-        if argument in (None, 'test'):
-            self.test()
-        if argument in (None, 'run'):
-            self.run()
-        if argument == 'play':
-            self.play()
+        @cli.command(name="all")
+        def run_all(*args, **kwargs):
+            self.run_all(*args, **kwargs)
+
+        @cli.command(name="test")
+        def test(*args, **kwargs):
+            self.test(*args, **kwargs)
+
+        @cli.command(name="run")
+        def run(*args, **kwargs):
+            self.run(*args, **kwargs)
+
+        @cli.command(name="play")
+        def play(*args, **kwargs):
+            self.play(*args, **kwargs)
+
+        return cli
+
+    def decorate_value(self, decorators, value):
+        decorated = value
+        for decorator in reversed(decorators):
+            decorated = decorator(decorated)
+
+        return decorated
 
     def default_solve(self, _input=None):
         if _input is None:
