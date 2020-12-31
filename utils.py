@@ -1,6 +1,8 @@
+import copy
 import doctest
 import math
 import os
+import re
 import sys
 import timeit
 from collections import namedtuple
@@ -19,6 +21,416 @@ def get_input(module_file):
     return get_current_directory(module_file)\
         .joinpath("part_a_input.txt")\
         .read_text()
+
+
+def custom_testmod_with_filter(
+        m=None, name=None, globs=None, verbose=None, report=True, optionflags=0,
+        extraglobs=None, raise_on_error=False, exclude_empty=False,
+        finder=None, filters_text=""):
+    if finder is None:
+        finder = FilteringDocTestFinder
+    return custom_testmod_with_finder(
+        m, name, globs, verbose, report, optionflags, extraglobs,
+        raise_on_error, exclude_empty,
+        finder=finder(
+            exclude_empty=exclude_empty, filters_text=filters_text))
+
+
+def custom_testmod_with_finder(
+        m=None, name=None, globs=None, verbose=None, report=True, optionflags=0,
+        extraglobs=None, raise_on_error=False, exclude_empty=False,
+        finder=None):
+    # If no module was given, then use __main__.
+    if m is None:
+        # DWA - m will still be None if this wasn't invoked from the command
+        # line, in which case the following TypeError is about as good an error
+        # as we should expect
+        m = sys.modules.get('__main__')
+
+    # Check that we were actually given a module.
+    import inspect
+    if not inspect.ismodule(m):
+        raise TypeError("testmod: module required; %r" % (m,))
+
+    # If no name was given, then use the module's name.
+    if name is None:
+        name = m.__name__
+
+    # Find, parse, and run all tests in the given module.
+    if finder is None:
+        finder = doctest.DocTestFinder(exclude_empty=exclude_empty)
+
+    if raise_on_error:
+        runner = doctest.DebugRunner(verbose=verbose, optionflags=optionflags)
+    else:
+        runner = doctest.DocTestRunner(verbose=verbose, optionflags=optionflags)
+
+    for test in finder.find(m, name, globs=globs, extraglobs=extraglobs):
+        runner.run(test)
+
+    if report:
+        runner.summarize()
+
+    if doctest.master is None:
+        doctest.master = runner
+    else:
+        doctest.master.merge(runner)
+
+    return doctest.TestResults(runner.failures, runner.tries)
+
+
+# If testmod has changed so that it can accept `finder`, use the original
+# testmod. Otherwise, use the custom one
+if 'filters_text' in doctest.testmod.__code__.co_varnames[
+        :doctest.testmod.__code__.co_argcount]:
+    testmod_with_filter = doctest.testmod
+else:
+    testmod_with_filter = custom_testmod_with_filter
+
+
+class InvalidTestFilterException(Exception):
+    pass
+
+
+class FilteringDocTestFinder(doctest.DocTestFinder):
+    def __init__(self, verbose=False, parser=doctest.DocTestParser(),
+                 recurse=True, exclude_empty=True, filters_text=""):
+        super().__init__(verbose=verbose, parser=parser, recurse=recurse,
+                         exclude_empty=exclude_empty)
+        self.filters = DocTestFilterParser().parse_filters(filters_text)
+
+    def find(self, obj, name=None, module=None, globs=None, extraglobs=None):
+        tests = super().find(obj, name, module, globs, extraglobs)
+
+        if self.filters:
+            tests = list(filter(None, map(self.filter_test, tests)))
+
+        return tests
+
+    def filter_test(self, test: doctest.DocTest):
+        matching_filters = [
+            _filter
+            for _filter in self.filters
+            if _filter.matches_test(test)
+        ]
+        if not matching_filters:
+            return None
+        examples = [
+            example
+            for index, example in enumerate(test.examples)
+            if any(
+                _filter.matches_example(test, example, index)
+                for _filter in matching_filters
+            )
+        ]
+        if not examples:
+            return None
+
+        if examples != test.examples:
+            test = copy.copy(test)
+            test.examples = examples
+
+        return test
+
+
+class DocTestFilter:
+    def __init__(self, name_regex, number_ranges):
+        self.name_regex = name_regex
+        self.number_ranges = number_ranges
+
+    def matches_test(self, test):
+        return self.name_regex.match(test.name)
+
+    def matches_example(self, test, example, index):
+        return self.matches_example_by_example_index(test, example, index)
+
+    def matches_example_by_example_index(self, test, example, index):
+        return any(
+            index
+            in number_range
+            for number_range in self.number_ranges
+        )
+
+    def matches_example_by_line_number(self, test, example, index):
+        if any(line_number is None for line_number in self.number_ranges):
+            return True
+        if test.lineno is None or example.lineno is None:
+            return True
+        lineno = test.lineno + example.lineno + 1
+        return any(
+            lineno
+            in number_range
+            for number_range in self.number_ranges
+        )
+
+
+class DocTestFilterParser:
+    def parse_filters(self, filters_text):
+        return [
+            self.parse_filter(filter_text)
+            for filter_text in self.split_filter_texts(filters_text)
+        ]
+
+    def split_filter_texts(self, filters_text):
+        """
+        >>> DocTestFilterParser().split_filter_texts("")
+        []
+        >>> DocTestFilterParser().split_filter_texts(" " * 20)
+        []
+        >>> DocTestFilterParser().split_filter_texts("     abc def      ghi   ")
+        ['abc', 'def', 'ghi']
+        """
+        filters_text = filters_text.strip()
+        if not filters_text:
+            return []
+        return re.split(r"\s+", filters_text)
+
+    def parse_filter(self, filter_text):
+        test_name_text, line_numbers_text = self.get_filter_parts(filter_text)
+        return DocTestFilter(
+            self.parse_test_name(test_name_text),
+            self.parse_number_ranges(line_numbers_text),
+        )
+
+    def get_filter_parts(self, filter_text):
+        """
+        >>> DocTestFilterParser().get_filter_parts("method")
+        ('method', '')
+        >>> DocTestFilterParser().get_filter_parts("method:512,3,-7")
+        ('method', '512,3,-7')
+        >>> DocTestFilterParser().get_filter_parts(":512,3,-7")
+        ('', '512,3,-7')
+        >>> DocTestFilterParser().get_filter_parts(":")
+        ('', '')
+        >>> DocTestFilterParser().get_filter_parts("method:512,3,-7:")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        """
+        filter_text = filter_text.strip()
+        parts = filter_text.split(':')
+        if len(parts) > 2:
+            raise InvalidTestFilterException(
+                f"A filter should have at most two parts, name and ranges, "
+                f"not {len(parts)}: '{filter_text}'")
+
+        if len(parts) == 1:
+            test_name_text, = parts
+            numbers_text = ''
+        else:
+            test_name_text, numbers_text = parts
+
+        return test_name_text, numbers_text
+
+    def parse_test_name(self, test_name_text):
+        """
+        >>> def test(pattern):
+        ...     regex = DocTestFilterParser().parse_test_name(pattern)
+        ...     return [
+        ...         name
+        ...         for name in [
+        ...             f'{part}.{_type}.{prefix}{method}{suffix}'
+        ...             for part in ['part_a', 'part_b']
+        ...             for _type in ['TypeA', 'TypeB']
+        ...             for method in ['method', 'function']
+        ...             for suffix in ['', '_plus']
+        ...             for prefix in ['', 'plus_']
+        ...         ]
+        ...         if regex.match(name)
+        ...     ]
+        >>> test("method")
+        ['part_a.TypeA.method', 'part_a.TypeA.plus_method',
+            'part_a.TypeB.method', 'part_a.TypeB.plus_method',
+            'part_b.TypeA.method', 'part_b.TypeA.plus_method',
+            'part_b.TypeB.method', 'part_b.TypeB.plus_method']
+        >>> test("method*")
+        ['part_a.TypeA.method', 'part_a.TypeA.plus_method',
+            'part_a.TypeA.method_plus', 'part_a.TypeA.plus_method_plus',
+            'part_a.TypeB.method', 'part_a.TypeB.plus_method',
+            'part_a.TypeB.method_plus', 'part_a.TypeB.plus_method_plus',
+            'part_b.TypeA.method', 'part_b.TypeA.plus_method',
+            'part_b.TypeA.method_plus', 'part_b.TypeA.plus_method_plus',
+            'part_b.TypeB.method', 'part_b.TypeB.plus_method',
+            'part_b.TypeB.method_plus', 'part_b.TypeB.plus_method_plus']
+        >>> test("part_a.*method")
+        ['part_a.TypeA.method', 'part_a.TypeA.plus_method',
+            'part_a.TypeB.method', 'part_a.TypeB.plus_method']
+        >>> test("part_a.*method*")
+        ['part_a.TypeA.method', 'part_a.TypeA.plus_method',
+            'part_a.TypeA.method_plus', 'part_a.TypeA.plus_method_plus',
+            'part_a.TypeB.method', 'part_a.TypeB.plus_method',
+            'part_a.TypeB.method_plus', 'part_a.TypeB.plus_method_plus']
+        >>> test("")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        """
+        test_name_text = test_name_text.strip()
+        if not test_name_text.replace("*", ""):
+            raise InvalidTestFilterException(
+                f"You need to specify at least some part of the test name")
+        parts = re.split(r'\*+', '*' + test_name_text)
+        escaped_parts = map(re.escape, parts)
+        return re.compile(f"{'.*'.join(escaped_parts)}$")
+
+    def parse_number_ranges(self, number_ranges_text):
+        """
+        >>> def test(pattern):
+        ...     result = DocTestFilterParser().parse_number_ranges(pattern)
+        ...     return sorted(set(sum(map(list, result), [])))[:1010]
+        >>> test("")
+        [0, 1, 2, ..., 1000, 1001, ...]
+        >>> test("-")
+        [0, 1, 2, ..., 1000, 1001, ...]
+        >>> test("512")
+        [512]
+        >>> test("-512")
+        [0, 1, 2, ..., 510, 511, 512]
+        >>> test("512-")
+        [512, 513, 514, ..., 1000, 1001, ...]
+        >>> test("256-512")
+        [256, 257, 258, ..., 510, 511, 512]
+        >>> test("512-256")
+        []
+        >>> test("256-512-768")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> test("0xf")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> test("5-abc")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> test("1,5,7")
+        [1, 5, 7]
+        >>> test("1,10-20,7")
+        [1, 7, 10, 11, 12, ..., 18, 19, 20]
+        >>> test("1,20-10,7")
+        [1, 7]
+        >>> test("1,20-10,7,10,11")
+        [1, 7, 10, 11]
+        >>> test("1,10-20,-5")
+        [0, 1, 2, 3, 4, 5, 10, 11, 12, ..., 18, 19, 20]
+        >>> test("600-,10-20,-5")
+        [0, 1, 2, 3, 4, 5, 10, 11, 12, ..., 18, 19, 20, 600, 601, 602,
+            ..., 1000, 1001, ...]
+        >>> test("600-,10-20,,-5")
+        [0, 1, 2, ..., 1000, 1001, ...]
+        >>> test("600-,10-20-40,,-5")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> test("600-,10-0xf,,-5")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> test("600-,10-abc,,-5")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        """
+        return [
+            self.parse_number_range(number_range_text)
+            for number_range_text in number_ranges_text.split(',')
+        ]
+
+    def parse_number_range(self, number_range_text):
+        """
+        >>> def test(pattern):
+        ...     result = DocTestFilterParser().parse_number_range(pattern)
+        ...     return sorted(result)[:1010]
+        >>> test("")
+        [0, 1, 2, ..., 1000, 1001, ...]
+        >>> test("-")
+        [0, 1, 2, ..., 1000, 1001, ...]
+        >>> test("512")
+        [512]
+        >>> test("-512")
+        [0, 1, 2, ..., 510, 511, 512]
+        >>> test("512-")
+        [512, 513, 514, ..., 1000, 1001, ...]
+        >>> test("256-512")
+        [256, 257, 258, ..., 510, 511, 512]
+        >>> test("512-256")
+        []
+        >>> test("256-512-768")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> test("0xf")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> test("5-abc")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        """
+        number_range_text = number_range_text.strip()
+        parts = number_range_text.split('-')
+        if len(parts) > 2:
+            raise InvalidTestFilterException(
+                f"Number ranges must be either a single number "
+                f"(eg '512'), or a range either without start (eg '-512'), "
+                f"without end (eg '512-') or with just start and end "
+                f"(eg '256-512), not with more parts: "
+                f"'{number_range_text}'")
+
+        if len(parts) == 1:
+            number_text, = parts
+            if not number_text:
+                start = 0
+                end = 10000
+            else:
+                start = end = self.parse_number(number_text)
+        else:
+            start_number_text, end_number_text = parts
+            if not start_number_text and not end_number_text:
+                start = 0
+                end = 10000
+            elif not start_number_text:
+                start = 0
+                end = self.parse_number(end_number_text)
+            elif not end_number_text:
+                start = self.parse_number(start_number_text)
+                end = 10000
+            else:
+                start = self.parse_number(start_number_text)
+                end = self.parse_number(end_number_text)
+
+        return range(start, end + 1)
+
+    def parse_number(self, number_text):
+        """
+        >>> DocTestFilterParser().parse_number("0")
+        0
+        >>> DocTestFilterParser().parse_number("512")
+        512
+        >>> DocTestFilterParser().parse_number("-4")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        >>> DocTestFilterParser().parse_number("0xf")
+        Traceback (most recent call last):
+        ...
+        InvalidTestFilterException: ...
+        """
+        try:
+            number = int(number_text)
+        except ValueError:
+            number = None
+        if number is not None and number < 0:
+            number = None
+
+        if number is None:
+            raise InvalidTestFilterException(
+                f"Line numbers must be positive integers, not "
+                f"'{number_text}'")
+
+        return number
 
 
 class BaseChallenge:
@@ -44,15 +456,18 @@ class BaseChallenge:
 
     def create_cli(self):
         @click.group(invoke_without_command=True)
+        @click.option('--test', '-t', 'filters_texts', multiple=True)
         @click.pass_context
         def cli(*args, **kwargs):
             self.default_command(*args, **kwargs)
 
         @cli.command(name="all")
+        @click.option('--test', '-t', 'filters_texts', multiple=True)
         def run_all(*args, **kwargs):
             self.run_all(*args, **kwargs)
 
         @cli.command(name="test")
+        @click.option('--test', '-t', 'filters_texts', multiple=True)
         def test(*args, **kwargs):
             self.test(*args, **kwargs)
 
@@ -81,15 +496,27 @@ class BaseChallenge:
     def solve(self, _input):
         raise NotImplementedError()
 
+    def default_command(self, ctx, filters_texts=()):
+        if ctx.invoked_subcommand:
+            return
+        self.run_all(filters_texts=filters_texts)
+
+    def run_all(self, filters_texts=()):
+        self.test(filters_texts=filters_texts)
+        self.run()
+
     def play(self):
         raise Exception(f"Challenge has not implemented play")
 
-    def test(self):
+    def test(self, filters_texts=()):
+        filters_text = " ".join(filters_texts)
         test_modules = self.get_test_modules()
         with helper.time_it() as stats:
             results = [
                 (module,
-                 doctest.testmod(module, optionflags=self.optionflags))
+                 testmod_with_filter(
+                     module, optionflags=self.optionflags,
+                     filters_text=filters_text))
                 for module in test_modules
             ]
         total_attempted = sum(result.attempted for _, result in results)
