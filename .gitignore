@@ -130,3 +130,7 @@ dmypy.json
 .pyre/
 #IDE
 .idea
+
+settings.py
+cached_pages
+site_data.json
