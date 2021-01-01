@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
-import doctest
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    37262
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return Node.from_nodes_text(_input).metadata_sum()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        37262
+        """
+        return Node.from_nodes_text(_input).metadata_sum()
 
 
 class Node(namedtuple("Node", ("children", "metadata"))):
@@ -70,9 +66,5 @@ class Node(namedtuple("Node", ("children", "metadata"))):
         )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

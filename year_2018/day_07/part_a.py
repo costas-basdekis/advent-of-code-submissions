@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 import re
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    'GKCNPTVHIRYDUJMSXFBQLOAEWZ'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    order = Resolver.from_requirements_text(_input).get_resolution_order()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        'GKCNPTVHIRYDUJMSXFBQLOAEWZ'
+        """
+        order = Resolver.from_requirements_text(_input).get_resolution_order()
 
-    return "".join(order)
+        return "".join(order)
 
 
 class Resolver:
@@ -125,9 +121,5 @@ class Requirement(namedtuple("Step", ("step", "prerequisite"))):
         return cls(step, prerequisite)
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

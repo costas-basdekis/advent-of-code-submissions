@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
-import doctest
 from string import ascii_letters, ascii_lowercase
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_18.part_a import get_all_items_distance_and_blockers,\
     parse_map
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    2082
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        2082
+        """
+        contents, start_positions = parse_map(_input)
+        contents, start_positions = replace_single_vault_with_four(
+            contents, start_positions)
+        minimum_distance, _ = get_minimum_collection_multiple(
+            contents, start_positions)
 
-    contents, start_positions = parse_map(_input)
-    contents, start_positions = replace_single_vault_with_four(
-        contents, start_positions)
-    minimum_distance, _ = get_minimum_collection_multiple(
-        contents, start_positions)
-
-    return minimum_distance
+        return minimum_distance
 
 
 def get_minimum_collection_multiple(contents, start_positions):
@@ -422,9 +418,5 @@ def show_map(contents, start_positions):
     )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

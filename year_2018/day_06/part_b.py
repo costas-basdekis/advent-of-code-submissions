@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 
-from utils import get_current_directory
+import utils
+
 from year_2018.day_06 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    39560
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return ExtendedDangerMap.from_dangers_text(_input)\
-        .get_point_count_with_maximum_total_distance(10000)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        39560
+        """
+        return ExtendedDangerMap.from_dangers_text(_input)\
+            .get_point_count_with_maximum_total_distance(10000)
 
 
 class ExtendedDangerMap(part_a.DangerMap):
@@ -197,9 +194,5 @@ class ExtendedDangerMap(part_a.DangerMap):
         )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

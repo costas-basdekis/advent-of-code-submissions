@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2018.day_03.part_a import Claims
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    '701'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    non_overlapping_claims = ClaimsExtended.from_lines(_input)\
-        .get_non_overlapping_claims()
-    if not non_overlapping_claims:
-        raise Exception("No claims are overlap-free")
-    if len(non_overlapping_claims) > 1:
-        raise Exception(
-            f"Found {len(non_overlapping_claims)} overlap-free claims")
-    non_overlapping_claim, = non_overlapping_claims
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        '701'
+        """
+        non_overlapping_claims = ClaimsExtended.from_lines(_input)\
+            .get_non_overlapping_claims()
+        if not non_overlapping_claims:
+            raise Exception("No claims are overlap-free")
+        if len(non_overlapping_claims) > 1:
+            raise Exception(
+                f"Found {len(non_overlapping_claims)} overlap-free claims")
+        non_overlapping_claim, = non_overlapping_claims
 
-    return non_overlapping_claim.id
+        return non_overlapping_claim.id
 
 
 class ClaimsExtended(Claims):
@@ -63,9 +59,5 @@ class ClaimsExtended(Claims):
         return non_overlapping_claims
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

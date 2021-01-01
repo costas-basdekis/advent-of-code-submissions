@@ -1,31 +1,27 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    1340
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    layers = split_text_into_layers(_input, 25, 6)
-    layer_digit_counts = [
-        {
-            digit: len(list(digits))
-            for digit, digits in itertools.groupby(sorted(layer))
-        }
-        for layer in layers
-    ]
-    min_layer_on_0_digit_count = \
-        min(layer_digit_counts, key=lambda digit_counts: digit_counts['0'])
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        1340
+        """
+        layers = split_text_into_layers(_input, 25, 6)
+        layer_digit_counts = [
+            {
+                digit: len(list(digits))
+                for digit, digits in itertools.groupby(sorted(layer))
+            }
+            for layer in layers
+        ]
+        min_layer_on_0_digit_count = \
+            min(layer_digit_counts, key=lambda digit_counts: digit_counts['0'])
 
-    return min_layer_on_0_digit_count['1'] * min_layer_on_0_digit_count['2']
+        return min_layer_on_0_digit_count['1'] * min_layer_on_0_digit_count['2']
 
 
 def split_text_into_layers(text, width, height):
@@ -57,9 +53,5 @@ def split_text_into_layers(text, width, height):
     ]
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

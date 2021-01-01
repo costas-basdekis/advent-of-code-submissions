@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2018.day_13 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    '67,74'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
 
-    track_map = TrackMapExtended.from_map_text(_input)
-    x, y = track_map.tick_until_single_cart_left()
-    # print(track_map.show(range(50, 60), range(100, 110)))
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        '67,74'
+        """
 
-    return f'{x},{y}'
+        track_map = TrackMapExtended.from_map_text(_input)
+        x, y = track_map.tick_until_single_cart_left()
+        # print(track_map.show(range(50, 60), range(100, 110)))
+
+        return f'{x},{y}'
 
 
 class TrackMapExtended(part_a.TrackMap):
@@ -102,9 +100,5 @@ class TrackMapExtended(part_a.TrackMap):
         ]
 
 
-if __name__ == '__main__':
-    if doctest.testmod(part_a).failed | doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

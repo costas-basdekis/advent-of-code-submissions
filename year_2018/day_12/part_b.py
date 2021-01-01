@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2018.day_12 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    2600000001872
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    pot_state, rule_set = PotRuleSetExtended.read_state_and_rule_set(_input)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        2600000001872
+        """
+        pot_state, rule_set = PotRuleSetExtended.read_state_and_rule_set(_input)
 
-    return rule_set\
-        .predict_state_after_generations(pot_state, 50000000000)\
-        .get_pot_sum()
+        return rule_set\
+            .predict_state_after_generations(pot_state, 50000000000)\
+            .get_pot_sum()
 
 
 class PotRuleSetExtended(part_a.PotRuleSet):
@@ -41,9 +37,5 @@ class PotRuleSetExtended(part_a.PotRuleSet):
         return target_pot_state
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

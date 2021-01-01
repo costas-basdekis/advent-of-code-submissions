@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2019.day_06.part_a import create_orbit_mapping, parse_orbits,\
     get_orbit_path
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    562
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_transfer_count(
-        'YOU', 'SAN', create_orbit_mapping(parse_orbits(_input))) - 2
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        562
+        """
+        return get_transfer_count(
+            'YOU', 'SAN', create_orbit_mapping(parse_orbits(_input))) - 2
 
 
 def get_transfer_count(source, target, mapping):
@@ -78,9 +74,5 @@ def get_common_ancestor(path_a, path_b):
     raise Exception("Could not find common ancestor")
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

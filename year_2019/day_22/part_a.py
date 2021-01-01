@@ -1,25 +1,21 @@
 #!/usr/bin/env python3
-import doctest
 import re
 from abc import ABC
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    2496
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    shuffles = Shuffles.parse(_input)
-    deck = tuple(range(10007))
-    shuffled = shuffles.shuffle_deck(deck)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        2496
+        """
+        shuffles = Shuffles.parse(_input)
+        deck = tuple(range(10007))
+        shuffled = shuffles.shuffle_deck(deck)
 
-    return shuffled.index(2019)
+        return shuffled.index(2019)
 
 
 class Shuffles:
@@ -257,9 +253,5 @@ class DealIntoNewStackShuffle(RegexParsingShuffle):
         return f"deal into new stack"
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

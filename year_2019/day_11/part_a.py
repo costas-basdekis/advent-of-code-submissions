@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import doctest
 from collections import defaultdict
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_05.part_a import InsufficientInputError
 from year_2019.day_05.part_b import get_program_result_and_output_extended
 
@@ -41,19 +41,15 @@ COMMAND_TURN_LEFT = 0
 COMMAND_TURN_RIGHT = 1
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    1785
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    program_text = _input
-    paint_map = paint_panels(program_text)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        1785
+        """
+        paint_map = paint_panels(_input)
 
-    return len(paint_map)
+        return len(paint_map)
 
 
 def paint_panels(program_text, initial_paint=None):
@@ -135,10 +131,5 @@ def move(position, direction):
     return x + offset_x, y + offset_y
 
 
-
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-import doctest
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    7861362411
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        7861362411
+        """
 
-    return RecipeBoard().tick_and_get_score(int(_input))
+        return RecipeBoard().tick_and_get_score(int(_input))
 
 
 class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
@@ -171,9 +167,5 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
         )
 
 
-if __name__ == '__main__':
-    # if doctest.testmod().failed:
-    #     print("Tests failed")
-    # else:
-    #     print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

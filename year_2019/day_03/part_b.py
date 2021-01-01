@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2019.day_03.part_a import get_points_for_lines, get_cross_points
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    3454
-    >>> solve(\
-        "R75,D30,R83,U83,L12,D49,R71,U7,L72"\
-        "\\nU62,R66,U55,R34,D71,R55,D58,R83")
-    610
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_smallest_cross_point_total_steps(_input)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        3454
+        >>> Challenge().solve(\
+            "R75,D30,R83,U83,L12,D49,R71,U7,L72"\
+            "\\nU62,R66,U55,R34,D71,R55,D58,R83")
+        610
+        """
+        return get_smallest_cross_point_total_steps(_input)
 
 
 def get_smallest_cross_point_total_steps(_input):
@@ -65,9 +61,5 @@ def get_steps_for_point_in_line(points, point):
     return points.index(point) + 1
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

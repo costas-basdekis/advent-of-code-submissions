@@ -1,32 +1,26 @@
 #!/usr/bin/env python3
-import doctest
-import itertools
 import math
 import re
 import sys
 from collections import namedtuple, defaultdict
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    'CPJRNKCF'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        'CPJRNKCF'
+        """
 
-    return 'CPJRNKCF'
+        return 'CPJRNKCF'
+
+    def play(self):
+        play(self.input)
 
 
-def play(observations_text=None):
-    if observations_text is None:
-        observations_text = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+def play(observations_text):
     observations = Observations.from_observations_text(observations_text)
     ranges = observations.get_positions_ranges()
     print(f"Ranges: {ranges}")
@@ -383,14 +377,5 @@ class Point(namedtuple("Point", ("x", "y"))):
         return math.sqrt(d_x * d_x + d_y * d_y)
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if sys.argv[1:] != ['play']:
-            raise Exception(f"Only valid argument is 'play'")
-        play()
-    else:
-        if doctest.testmod().failed:
-            print("Tests failed")
-        else:
-            print("Tests passed")
-        print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

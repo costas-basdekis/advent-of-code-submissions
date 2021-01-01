@@ -1,25 +1,21 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 import string
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    4398
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return Dangers.from_dangers_text(_input)\
-        .to_danger_map()\
-        .fill_closest()\
-        .get_largest_finite_area()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        4398
+        """
+        return Dangers.from_dangers_text(_input)\
+            .to_danger_map()\
+            .fill_closest()\
+            .get_largest_finite_area()
 
 
 class DangerMap:
@@ -359,9 +355,5 @@ class Danger(namedtuple("Danger", ("x", "y"))):
         return abs(x - self.x) + abs(y - self.y)
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

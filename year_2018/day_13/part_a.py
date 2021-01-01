@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    '57,104'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        '57,104'
+        """
 
-    track_map = TrackMap.from_map_text(_input)
-    x, y = track_map.tick_until_crash()
-    # print(track_map.show(range(50, 60), range(100, 110)))
+        track_map = TrackMap.from_map_text(_input)
+        x, y = track_map.tick_until_crash()
+        # print(track_map.show(range(50, 60), range(100, 110)))
 
-    return f'{x},{y}'
+        return f'{x},{y}'
 
 
 class Cart(namedtuple(
@@ -558,9 +554,5 @@ class TrackMap:
         return cart.position
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

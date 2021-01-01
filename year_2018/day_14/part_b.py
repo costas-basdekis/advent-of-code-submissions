@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2018.day_14 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    42
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        42
+        """
 
-    return RecipeBoardExtended().tick_and_find_position(_input)
+        return RecipeBoardExtended().tick_and_find_position(_input)
 
 
 class RecipeBoardExtended(part_a.RecipeBoard):
@@ -72,9 +68,5 @@ class RecipeBoardExtended(part_a.RecipeBoard):
         return "".join(map(str, suffix))
 
 
-if __name__ == '__main__':
-    # if doctest.testmod().failed:
-    #     print("Tests failed")
-    # else:
-    #     print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 
-from utils import get_current_directory
+import utils
+
 from year_2018.day_11 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    '90,214,15'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    (x, y, size), _ = FuelGridExtended(int(_input))\
-        .get_square_with_highest_power_level_among_all_sizes()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        '90,214,15'
+        """
+        (x, y, size), _ = FuelGridExtended(int(_input))\
+            .get_square_with_highest_power_level_among_all_sizes()
 
-    return f"{x},{y},{size}"
+        return f"{x},{y},{size}"
 
 
 class FuelGridExtended(part_a.FuelGrid):
@@ -112,9 +109,5 @@ class FuelGridExtended(part_a.FuelGrid):
         ))
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

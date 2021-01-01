@@ -1,36 +1,32 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 import string
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None, verbose=False):
-    """
-    >>> solve() < 224200
-    True
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve() < 224200
+        True
+        """
 
-    cave = Cave.from_cave_text(_input)
-    if verbose:
-        while not cave.has_finished():
+        cave = Cave.from_cave_text(_input)
+        if debug:
+            while not cave.has_finished():
+                print(cave.step_count, cave.get_total_health())
+                print(cave.show(show_health=True))
+                cave.tick()
+        else:
+            cave.tick_many()
+
+        if debug:
             print(cave.step_count, cave.get_total_health())
             print(cave.show(show_health=True))
-            cave.tick()
-    else:
-        cave.tick_many()
+            print(cave.step_count, cave.get_total_health())
 
-    if verbose:
-        print(cave.step_count, cave.get_total_health())
-        print(cave.show(show_health=True))
-        print(cave.step_count, cave.get_total_health())
-
-    return cave.get_outcome()
+        return cave.get_outcome()
 
 
 class Cave:
@@ -1234,9 +1230,5 @@ class Elf(Unit):
     show_symbol = "E"
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve(verbose=True))
+challenge = Challenge()
+challenge.main()

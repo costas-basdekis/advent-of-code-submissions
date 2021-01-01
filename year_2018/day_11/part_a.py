@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-import doctest
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    '243,34'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    (best_x, best_y), _ = FuelGrid(int(_input))\
-        .get_square_with_highest_power_level()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        '243,34'
+        """
+        (best_x, best_y), _ = FuelGrid(int(_input))\
+            .get_square_with_highest_power_level()
 
-    return f"{best_x},{best_y}"
+        return f"{best_x},{best_y}"
 
 
 class FuelGrid(namedtuple("FuelGrid", ("serial_number", "width", "height"))):
@@ -100,9 +96,5 @@ class FuelCell(namedtuple("FuelCell", ("x", "y", "grid_serial_number"))):
         return power_level
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

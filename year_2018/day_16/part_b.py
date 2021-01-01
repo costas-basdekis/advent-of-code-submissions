@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
-import doctest
 import functools
 import itertools
 
-from utils import get_current_directory
+import utils
+
 from year_2018.day_16 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    674
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
 
-    result = Program.from_samples_and_program_text(_input)\
-        .run((0, 0, 0, 0))
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        674
+        """
 
-    return result[0]
+        result = Program.from_samples_and_program_text(_input)\
+            .run((0, 0, 0, 0))
+
+        return result[0]
 
 
 class Program:
@@ -115,9 +114,5 @@ class SampleExtended(part_a.Sample):
 SampleSetExtended.sample_class = SampleExtended
 
 
-if __name__ == '__main__':
-    if doctest.testmod(part_a).failed | doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

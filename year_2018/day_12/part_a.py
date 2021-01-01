@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 import re
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    3221
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    pot_state, rule_set = PotRuleSet.read_state_and_rule_set(_input)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        3221
+        """
+        pot_state, rule_set = PotRuleSet.read_state_and_rule_set(_input)
 
-    return rule_set\
-        .advance_state_many_times(pot_state, 20)\
-        .get_pot_sum()
+        return rule_set\
+            .advance_state_many_times(pot_state, 20)\
+            .get_pot_sum()
 
 
 class PotRuleSet:
@@ -368,9 +364,5 @@ class PotState(namedtuple("PotState", ("active_pot_indexes",))):
         return sum(self.active_pot_indexes)
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

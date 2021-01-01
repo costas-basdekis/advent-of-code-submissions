@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
 import datetime
-import doctest
 import re
 from collections import namedtuple, defaultdict
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    143415
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    sleepiest_profile = Observations.from_lines(_input).attach_guard_ids()\
-        .get_sleep_schedule()\
-        .get_guards_sleep_profiles()\
-        .get_sleepiest_profile_by_strategy_1()
-    if not sleepiest_profile:
-        raise Exception("No sleepiest profile")
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        143415
+        """
+        sleepiest_profile = Observations.from_lines(_input).attach_guard_ids()\
+            .get_sleep_schedule()\
+            .get_guards_sleep_profiles()\
+            .get_sleepiest_profile_by_strategy_1()
+        if not sleepiest_profile:
+            raise Exception("No sleepiest profile")
 
-    return sleepiest_profile.get_signature()
+        return sleepiest_profile.get_signature()
 
 
 class GuardSleepProfiles:
@@ -516,9 +512,5 @@ class Observation(namedtuple(
             hour=self.hour, minute=self.minute)
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-import doctest
 import re
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    436720
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return MarbleGame.from_marble_game_text(_input).get_high_score()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        436720
+        """
+        return MarbleGame.from_marble_game_text(_input).get_high_score()
 
 
 class MarbleGame(namedtuple("MarbleGame", ("player_count", "marble_count"))):
@@ -164,9 +160,5 @@ class MarbleGame(namedtuple("MarbleGame", ("player_count", "marble_count"))):
         return circle, position
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

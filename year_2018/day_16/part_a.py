@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
-import doctest
 import re
 from abc import ABC
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    636
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        636
+        """
 
-    return SampleSet.from_samples_and_program_text(_input)\
-        .get_sample_count_with_3_or_more_candidates()
+        return SampleSet.from_samples_and_program_text(_input)\
+            .get_sample_count_with_3_or_more_candidates()
 
 
 class SampleSet:
@@ -506,9 +502,5 @@ class EqRR(EqualToInstruction):
     op_type_b = Instruction.OP_TYPE_REGISTER
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

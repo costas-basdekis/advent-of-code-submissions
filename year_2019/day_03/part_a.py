@@ -1,23 +1,18 @@
 #!/usr/bin/env python3
-import doctest
-
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    217
-    >>> solve(\
-        "R75,D30,R83,U83,L12,D49,R71,U7,L72"\
-        "\\nU62,R66,U55,R34,D71,R55,D58,R83")
-    159
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_smallest_cross_point_distance(_input)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        217
+        >>> Challenge().solve(\
+            "R75,D30,R83,U83,L12,D49,R71,U7,L72"\
+            "\\nU62,R66,U55,R34,D71,R55,D58,R83")
+        159
+        """
+        return get_smallest_cross_point_distance(_input)
 
 
 def get_smallest_cross_point_distance(_input):
@@ -142,9 +137,5 @@ def move_and_add_points(position, move_text, points):
     return position, points
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

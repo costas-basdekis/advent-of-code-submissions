@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-import doctest
-
 from year_2019.day_01.part_a import get_weights, get_fuel
 
+import utils
 
-def solve(_input=None):
-    """
-    >>> solve()
-    4985145
-    """
-    weights = get_weights(_input)
-    fuels = list(map(get_fuel_recursive, weights))
-    return sum(fuels)
+
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        4985145
+        """
+        weights = get_weights(_input)
+        fuels = list(map(get_fuel_recursive, weights))
+        return sum(fuels)
 
 
 def get_fuel_recursive(weight):
@@ -33,9 +34,5 @@ def get_fuel_recursive(weight):
     return total
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

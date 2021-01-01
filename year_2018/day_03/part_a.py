@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-import doctest
 import re
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    104439
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return Claims.from_lines(_input).get_overlapping_square_count()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        104439
+        """
+        return Claims.from_lines(_input).get_overlapping_square_count()
 
 
 class Claims:
@@ -114,9 +110,5 @@ class Claim(namedtuple("Claim", ("id", "left", "top", "width", "height"))):
         )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

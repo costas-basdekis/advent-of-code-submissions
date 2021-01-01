@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_04.part_a import is_password_valid, count_valid_passwords
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    1390
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    _range = _input.strip().split("-")
-    return count_valid_passwords(_range, is_password_valid_complete)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        1390
+        """
+        _range = _input.strip().split("-")
+        return count_valid_passwords(_range, is_password_valid_complete)
 
 
 def is_password_valid_complete(password, _range=None):
@@ -67,9 +64,5 @@ def is_password_valid_complete(password, _range=None):
     return True
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

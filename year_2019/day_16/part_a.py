@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
-import doctest
 import math
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_12.part_a import repeat
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    '30550349'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_nth_phase_message(_input.strip())
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        '30550349'
+        """
+        return get_nth_phase_message(_input.strip())
 
 
 def get_nth_phase_message(initial, count=100, message_offset=0):
@@ -113,9 +110,5 @@ def get_phase_base_pattern(position):
     )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

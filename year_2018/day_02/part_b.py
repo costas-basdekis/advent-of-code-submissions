@@ -1,27 +1,24 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 
-from utils import get_current_directory
+import utils
+
 from year_2018.day_02.part_a import parse_boxes
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    'evsialkqyiurohzpwucngttmf'
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    replaced_and_pair = find_one_letter_difference_pair(parse_boxes(_input))
-    if not replaced_and_pair:
-        raise Exception("Could not find 1-letter difference pair")
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input):
+        """
+        >>> Challenge().default_solve()
+        'evsialkqyiurohzpwucngttmf'
+        """
+        replaced_and_pair = find_one_letter_difference_pair(parse_boxes(_input))
+        if not replaced_and_pair:
+            raise Exception("Could not find 1-letter difference pair")
 
-    replaced, _ = replaced_and_pair
+        replaced, _ = replaced_and_pair
 
-    return replaced.replace('!', '')
+        return replaced.replace('!', '')
 
 
 def find_one_letter_difference_pair(box_ids):
@@ -65,9 +62,5 @@ def find_one_letter_difference_pair(box_ids):
     return replaced, group
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()
