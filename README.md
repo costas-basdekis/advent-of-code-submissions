@@ -5,15 +5,21 @@ leaderboards have submitted the challenges
 
 ## Summary
 
+[//]: # (summary-start)
+
 | Total | 2020 | 2019 | 2018 |
 | --- | --- | --- | --- |
 | 139 :star: | 50 :star: :star: | 46 :star: | 43 :star: |
+
+[//]: # (summary-end)
 
 ## The submissions
 
 * Got it correctly: :star:
 * Got it wrong/couldn't get answer: :x:
 * Can't attempt: :grey_exclamation:
+
+[//]: # (submissions-start)
 
 |     | 2020                                     | 2019                                                             | 2018                                                             |
 | ---:| :---:                                    | :---:                                                            | :---:                                                            |
@@ -203,3 +209,5 @@ leaderboards have submitted the challenges
 [co-18-24]: year_2018/day_24
 [ch-18-25]: https://adventofcode.com/2018/day/25
 [co-18-25]: year_2018/day_25
+
+[//]: # (submissions-end)
