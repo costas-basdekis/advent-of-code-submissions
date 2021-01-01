@@ -388,5 +388,370 @@ def parse_star_count(stars_nodes, default=None):
     return int(stars_text)
 
 
+@aoc.command()
+@click.pass_context
+def update_readme(ctx):
+    site_data = ctx.obj['site_data']
+    if site_data is None:
+        click.echo(
+            f"Since {click.style('local site data', fg='red')} are missing the "
+            f"README {click.style('cannot be updated', fg='red')}")
+        return
+
+    readme_path = Path('./README.md')
+    readme_text = readme_path.read_text()
+
+    updated_readme_text = update_readme_text(site_data, readme_text)
+    if updated_readme_text == readme_text:
+        click.echo(f"No need to update {click.style('README', fg='green')}")
+        return
+
+    readme_path.write_text(updated_readme_text)
+    click.echo(f"Updated {click.style('README', fg='green')} with site data")
+
+
+def update_readme_text(site_data, readme_text):
+    updated_readme_text = update_summary_in_readme_text(site_data, readme_text)
+    updated_readme_text = update_submissions_in_readme_text(
+        site_data, updated_readme_text)
+
+    return updated_readme_text
+
+
+def update_submissions_in_readme_text(site_data, readme_text):
+    submissions_indexes = get_readme_submissions_indexes(readme_text)
+    if not submissions_indexes:
+        return readme_text
+
+    years_and_days = get_years_and_days()
+    submissions_text = get_submissions_text(site_data, years_and_days)
+
+    return replace_text(readme_text, submissions_indexes, submissions_text)
+
+
+def get_submissions_text(site_data, years_and_days):
+    years_with_stars = set(site_data['years'])
+    years_with_stars_or_code = sorted((
+        set(str(year) for year, _, _ in years_and_days)
+        | years_with_stars
+    ), reverse=True)
+    headers = ('',) + tuple(years_with_stars_or_code)
+    dividers = (' ---:',) + (':---:',) * len(years_with_stars_or_code)
+    year_stars = ('',) + tuple(
+        get_submission_year_stars_text(site_data, year)
+        for year in years_with_stars_or_code
+    )
+    year_links_tuples = [
+        (
+            (
+                f"[Code][co-{str(year)[-2:]}]"
+                if Path(f"year_{year}/__init__.py").exists() else
+                'Code'
+            ),
+            (
+                '&'
+                if year in site_data['years'] else
+                ''
+            ),
+            '',
+            (
+                f"[Challenges][ch-{year[-2:]}]"
+                if year in site_data['years'] else
+                ''
+            ),
+        )
+        for year in years_with_stars_or_code
+    ]
+    day_links_tuples_list = [
+        [
+            get_submission_year_day_stars_tuple(site_data, year, str(day))
+            for year in years_with_stars_or_code
+        ]
+        for day in range(1, 26)
+    ]
+
+    list_of_tuples_to_align = [
+        list(column)
+        for column
+        in zip(*([year_links_tuples] + day_links_tuples_list))
+    ]
+    list_of_aligned_tuples = [
+        align_rows(column)
+        for column in list_of_tuples_to_align
+    ]
+
+    aligned_year_links_tuples = [
+        _tuple[0]
+        for _tuple in list_of_aligned_tuples
+    ]
+    aligned_day_links_tuples_list = list(zip(*(
+        _tuple[1:]
+        for _tuple in list_of_aligned_tuples
+    )))
+
+    year_links = ('',) + tuple(map(' '.join, aligned_year_links_tuples))
+    day_links_list = [
+        ('{: >2}'.format(day),) + tuple(map(' '.join, day_links_tuples))
+        for day, day_links_tuples
+        in zip(range(1, 26), aligned_day_links_tuples_list)
+    ]
+
+    table_rows = [
+        headers,
+        dividers,
+        year_links,
+        year_stars,
+    ] + day_links_list
+
+    aligned_table_rows = align_rows(table_rows)
+
+    table = "\n".join(
+        '| {} |'.format(' | '.join(row))
+        for row in aligned_table_rows
+    )
+
+    link_definitions = "\n\n".join(
+        "\n".join([
+            "[ch-{}]: https://adventofcode.com/{}".format(year[-2:], year),
+            "[co-{}]: year_{}".format(year[-2:], year),
+        ] + sum((
+            [
+                "[ch-{}-{:0>2}]: https://adventofcode.com/{}/day/{}".format(
+                    year[-2:],
+                    day,
+                    year,
+                    day,
+                ),
+                "[co-{}-{:0>2}]: year_{}/day_{:0>2}".format(
+                    year[-2:],
+                    day,
+                    year,
+                    day,
+                ),
+            ]
+            for day in range(1, 26)
+        ), []))
+        for year in years_with_stars_or_code
+    )
+
+    return "\n\n{}\n\n{}\n\n".format(
+        table,
+        link_definitions,
+    )
+
+
+def align_rows(rows):
+    row_sizes = set(map(len, rows))
+    if len(row_sizes) != 1:
+        raise Exception(
+            f"Expected rows of equal size but got multiple sizes: "
+            f"{', '.join(map(str, sorted(row_sizes)))}")
+    column_lengths = tuple(
+        max(map(len, column))
+        for column in zip(*rows)
+    )
+    column_formats = tuple(
+        f"{{: <{column_length}}}"
+        for column_length in column_lengths
+    )
+
+    return [
+        tuple(
+            _format.format(cell)
+            for _format, cell in zip(column_formats, row)
+        )
+        for row in rows
+    ]
+
+
+def get_submission_year_day_stars_tuple(site_data, year, day):
+    if year in site_data['years']:
+        stars = site_data['years'][year]['days'].get(day, 0)
+    else:
+        stars = 0
+    has_part_a = Path("year_{}/day_{:0>2}/part_a.py".format(year, day)).exists()
+    has_part_b = Path("year_{}/day_{:0>2}/part_b.py".format(year, day)).exists()
+
+    return (
+        (
+            "[Code][co-{}-{:0>2}]".format(str(year)[-2:], day)
+            if has_part_a else
+            'Code'
+        ),
+        (
+            ':star:'
+            if stars >= 1 else
+            (
+                ':x:'
+                if has_part_a else
+                ''
+            )
+        ),
+        (
+            ':star:'
+            if stars == 2 else
+            (
+                (
+                    (
+                        ':grey_exclamation:'
+                        if day == "25" and stars <= 49 else
+                        ':x:'
+                    )
+                    if has_part_b else
+                    (
+                        ''
+                        if day == "25" and stars == 49 else
+                        ':grey_exclamation:'
+                    )
+                )
+                if stars == 1 else
+                ':grey_exclamation:'
+            )
+            if has_part_a else
+            ''
+        ),
+        (
+            "[Challenge][ch-{}-{:0>2}]".format(str(year)[-2:], day)
+            if year in site_data['years'] else
+            ''
+        ),
+    )
+
+
+def get_submission_year_stars_text(site_data, year):
+    part_a_count = sum(
+        1
+        for day in range(1, 26)
+        if Path("year_{}/day_{:0>2}/part_a.py".format(year, day)).exists()
+    )
+    part_b_count = sum(
+        1
+        for day in range(1, 26)
+        if Path("year_{}/day_{:0>2}/part_b.py".format(year, day)).exists()
+    )
+
+    stars = site_data['years'][year]['stars']
+
+    if stars == 50:
+        return f"50 :star: :star:"
+
+    return "{} :star: / {} :x: / {} :grey_exclamation:".format(
+        stars,
+        part_a_count + part_b_count - stars,
+        part_a_count - part_b_count,
+    )
+
+
+def update_summary_in_readme_text(site_data, readme_text):
+    summary_indexes = get_readme_summary_indexes(readme_text)
+    if not summary_indexes:
+        return readme_text
+
+    years_and_days = get_years_and_days()
+    summary_text = get_summary_text(site_data, years_and_days)
+
+    return replace_text(readme_text, summary_indexes, summary_text)
+
+
+def get_summary_text(site_data, years_and_days):
+    years_with_stars = set(site_data['years'])
+    total_stars = site_data['total_stars']
+    years_with_stars_or_code = sorted((
+        set(str(year) for year, _, _ in years_and_days)
+        | years_with_stars
+    ), reverse=True)
+    headers = ['Total'] + years_with_stars_or_code
+    return "\n\n{}\n{}\n{}\n\n".format(
+        '| {} |'.format(' | '.join(headers)),
+        '| {} |'.format(' | '.join(['---'] * len(headers))),
+        '| {} |'.format(' | '.join(
+            "{} :star:{}".format(
+                stars,
+                ' :star:' if header != 'Total' and stars == 50 else '',
+            )
+            for header in headers
+            for stars in ((
+                total_stars
+                if header == 'Total' else
+                site_data['years'][header]['stars']
+                if header in site_data['years'] else
+                0
+            ),)
+        )),
+    )
+
+
+def replace_text(original, indexes, replacement):
+    start_index, end_index = indexes
+
+    return "".join([
+        original[:start_index],
+        replacement,
+        original[end_index:],
+    ])
+
+
+def get_readme_summary_indexes(readme_text):
+    summary_start_marker = "[//]: # (summary-start)"
+    summary_end_marker = "[//]: # (summary-end)"
+
+    return get_readme_marker_indexes(
+        readme_text, summary_start_marker, summary_end_marker, "summary")
+
+
+def get_readme_submissions_indexes(readme_text):
+    submissions_start_marker = "[//]: # (submissions-start)"
+    submissions_end_marker = "[//]: # (submissions-end)"
+
+    return get_readme_marker_indexes(
+        readme_text, submissions_start_marker, submissions_end_marker,
+        "submissions")
+
+
+def get_readme_marker_indexes(readme_text, start_marker, end_marker,
+                              marker_name):
+    if start_marker in readme_text:
+        start_index = (
+            readme_text.index(start_marker)
+            + len(start_marker)
+        )
+    else:
+        start_index = None
+    if end_marker in readme_text:
+        end_index = readme_text.index(end_marker)
+    else:
+        end_index = None
+
+    missing_markers = [
+        marker
+        for marker, index in [
+            (start_marker, start_index),
+            (end_marker, end_index),
+        ]
+        if index is None
+    ]
+    if missing_markers:
+        missing_markers_text = ', '.join(
+            click.style(marker, fg='red')
+            for marker in sorted(missing_markers)
+        )
+        click.echo(
+            f"There were some {click.style('missing markers', fg='red')} in "
+            f"the README: {missing_markers_text} - did you "
+            f"accidentally remove or change them?")
+        return None
+
+    if end_index < start_index:
+        click.echo(
+            f"Markers for {marker_name} where in the "
+            f"{click.style('opposite order', fg='red')}: "
+            f"{click.style(start_marker, fg='red')} should be before "
+            f"{click.style(end_marker, fg='red')}, not the other way "
+            f"around")
+        return None
+
+    return start_index, end_index
+
+
 if __name__ == '__main__':
     aoc()
