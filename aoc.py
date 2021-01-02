@@ -266,12 +266,26 @@ def list_days(combined_data, year: str):
     days_string = ', '.join(
         (
             click.style(day, fg='green')
-            + click.style('*' * day_data["stars"], fg='yellow')
+            + get_styled_part_status_icon(day_data["parts"]["a"]["status"])
+            + get_styled_part_status_icon(day_data["parts"]["b"]["status"])
         )
         for day, day_data in reversed(year_data["days"].items())
         if day_data["has_code"]
     )
     click.echo(f"  * {days_string}")
+
+
+def get_styled_part_status_icon(status):
+    if status == PART_STATUS_COMPLETE:
+        return click.style('*', fg='yellow')
+    elif status == PART_STATUS_FAILED:
+        return click.style('x', fg='red')
+    elif status == PART_STATUS_DID_NOT_ATTEMPT:
+        return ''
+    elif status == PART_STATUS_COULD_NOT_ATTEMPT:
+        return click.style('!', fg='white')
+    else:
+        raise Exception(f"Unknown part status '{status}'")
 
 
 PART_STATUS_COMPLETE = 'complete'
