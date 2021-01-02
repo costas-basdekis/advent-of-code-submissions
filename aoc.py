@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import copy
+import distutils.dir_util
 import glob
 import importlib
 import itertools
 import json
 import re
+import shutil
 import string
 from pathlib import Path
 from typing import List, Tuple
@@ -63,6 +65,44 @@ def challenge(ctx, year: int, day: int, part: str, rest):
     combined_data = ctx.obj['combined_data']
     challenge_instance = get_challenge_instance(combined_data, year, day, part)
     challenge_instance.run_main_arguments(args=rest)
+
+
+@aoc.command()
+@click.argument('year', type=int)
+@click.argument('day', type=int)
+@click.argument('part', type=click.Choice(['a', 'b']))
+def add(year: int, day: int, part: str):
+    year_path = Path("year_{}/__init__.py".format(year))
+    day_path = Path("year_{}/day_{:0>2}/__init__.py".format(year, day, part))
+    part_path = Path("year_{}/day_{:0>2}/part_{}.py".format(year, day, part))
+
+    if part_path.exists():
+        click.echo(
+            f"Challenge "
+            f"{click.style(f'{year} {day} {part.upper()}', fg='yellow')} "
+            f"already exists at {click.style(str(part_path), fg='yellow')}")
+        return
+
+    if not year_path.exists():
+        Path(year_path.parent).mkdir(exist_ok=True)
+        year_path.touch()
+    if not day_path.exists():
+        distutils.dir_util.copy_tree(
+            "example_year/example_day", "year_{}/day_{:0>2}".format(
+                year, day))
+        part_a_path = Path(
+            "year_{}/day_{:0>2}/part_{}.py".format(year, day, "a"))
+        Path("year_{}/day_{:0>2}/example_part.py".format(year, day)) \
+            .rename(part_a_path)
+    if not part_path.exists():
+        shutil.copy(
+            Path("example_year/example_day/example_part.py"),
+            part_path)
+
+    click.echo(
+        f"Added challenge "
+        f"{click.style(f'{year} {day} {part.upper()}', fg='green')} at "
+        f"{click.style(str(part_path), fg='green')}")
 
 
 def get_challenge_instance(combined_data, year: int, day: int, part: str):
