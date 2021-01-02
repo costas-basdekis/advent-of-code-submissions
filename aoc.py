@@ -25,7 +25,13 @@ YearsAndDays = List[Tuple[int, List[int], List[int]]]
 @click.group(invoke_without_command=True)
 @click.pass_context
 def aoc(ctx):
-    ctx.obj = {'site_data': get_cached_site_data()}
+    site_data = get_cached_site_data()
+    years_and_days = get_years_and_days()
+    ctx.obj = {
+        'site_data': site_data,
+        'years_and_days': years_and_days,
+        'combined_data': combine_data(site_data, years_and_days),
+    }
     if ctx.invoked_subcommand:
         return
     ctx.invoke(list_years_and_days)
@@ -44,9 +50,7 @@ def get_cached_site_data():
 @aoc.command()
 @click.pass_context
 def dump_data(ctx):
-    site_data = ctx.obj['site_data']
-    years_and_days = get_years_and_days()
-    print(json.dumps(combine_data(site_data, years_and_days), indent=2))
+    print(json.dumps(ctx.obj["combined_data"], indent=2))
 
 
 @aoc.command(context_settings={'ignore_unknown_options': True})
@@ -54,13 +58,33 @@ def dump_data(ctx):
 @click.argument('day', type=int)
 @click.argument('part', type=click.Choice(['a', 'b']))
 @click.argument('rest', nargs=-1, type=click.UNPROCESSED)
-def challenge(year: int, day: int, part: str, rest):
-    challenge_instance = get_challenge_instance(year, day, part)
+@click.pass_context
+def challenge(ctx, year: int, day: int, part: str, rest):
+    combined_data = ctx.obj['combined_data']
+    challenge_instance = get_challenge_instance(combined_data, year, day, part)
     challenge_instance.run_main_arguments(args=rest)
 
 
-def get_challenge_instance(year: int, day: int, part: str):
-    module_name = "year_{}.day_{:0>2}.part_{}".format(year, day, part, )
+def get_challenge_instance(combined_data, year: int, day: int, part: str):
+    year_data = combined_data["years"].get(str(year))
+    if not year_data:
+        click.echo(
+            f"It looks like there is no code for "
+            f"{click.style(str(year), fg='red')}")
+        return
+    day_data = year_data["days"].get(str(day))
+    if not day_data:
+        click.echo(
+            f"It looks like there is no code for "
+            f"{click.style(f'{year} day {day}', fg='red')}")
+        return
+    part_data = day_data["parts"].get(part)
+    if not part_data:
+        click.echo(
+            f"It looks like there is no code for "
+            f"{click.style(f'{year} day {day} part {part}', fg='red')}")
+        return
+    module_name = part_data["module_name"]
     try:
         module = importlib.import_module(module_name)
     except ImportError:
@@ -93,98 +117,54 @@ def get_challenge_instance(year: int, day: int, part: str):
 @click.option('-y', '--year', type=int)
 @click.pass_context
 def list_years_and_days(ctx, year: int):
-    years_and_days = get_years_and_days()
+    combined_data = ctx.obj['combined_data']
     if year is None:
-        list_years(ctx.obj['site_data'], years_and_days)
+        list_years(combined_data)
     else:
-        list_days(ctx.obj['site_data'], years_and_days, year=year)
+        list_days(combined_data, year=str(year))
 
 
-def list_years(site_data, years_and_days: YearsAndDays):
-    if site_data is not None:
-        years_with_stars = set(site_data['years'])
-        total_stars = site_data['total_stars']
-    else:
-        years_with_stars = set()
-        total_stars = 0
-    years_with_stars_or_code = (
-        set(str(year) for year, _, _ in years_and_days)
-        | years_with_stars
-    )
+def list_years(combined_data):
     year_count_text = click.style(
-        str(len(years_with_stars_or_code)), fg='green')
-    click.echo(
-        f"Found {year_count_text} years "
-        f"with {click.style(str(total_stars) + ' stars', fg='yellow')}:")
-    days_by_year = {
-        str(year): days
-        for year, days, _ in years_and_days
-    }
-    for year in sorted(years_with_stars_or_code, reverse=True):
-        days_with_code = days_by_year.get(year, [])
-        if site_data is not None:
-            if str(year) in site_data['years']:
-                year_stars = site_data['years'][str(year)]['stars']
-            else:
-                year_stars = 0
-        else:
-            year_stars = 0
+        str(len(combined_data["years"])), fg='green')
+    total_stars_text = click.style(str(
+        combined_data["total_stars"]) + ' stars', fg='yellow')
+    click.echo(f"Found {year_count_text} years with {total_stars_text}:")
+    for year, year_data in sorted(combined_data["years"].items(), reverse=True):
+        days_with_code = year_data["days_with_code"]
+        year_stars = year_data["stars"]
         click.echo(
-            f"  * {click.style(str(year), fg='green')} "
-            f"{click.style(str(len(days_with_code)), fg='green')} days with "
+            f"  * {click.style(year, fg='green')} "
+            f"{click.style(str(days_with_code), fg='green')} days with "
             f"code and {click.style(str(year_stars) + ' stars', fg='yellow')}")
 
 
-def list_days(site_data, years_and_days: YearsAndDays, year: int):
-    days_with_code, days_without_code = next((
-        (days, missing_days)
-        for _year, days, missing_days
-        in years_and_days
-        if _year == year
-    ), (None, None))
-    if site_data is not None:
-        if str(year) in site_data['years']:
-            year_stars = site_data['years'][str(year)]['stars']
-            days_stars = site_data['years'][str(year)]['days']
-        else:
-            year_stars = 0
-            days_stars = {}
-    else:
-        year_stars = 0
-        days_stars = {}
-    if days_with_code is None:
-        if year_stars:
-            click.echo(
-                f"Could not find {click.style(str(year), fg='red')} in code, "
-                f"but found "
-                f"{click.style(str(year_stars) + ' stars', fg='yellow')}")
-        else:
-            click.echo(
-                f"Could not find {click.style(str(year), fg='red')} in code "
-                f"nor any stars")
+def list_days(combined_data, year: str):
+    if year not in combined_data["years"]:
+        click.echo(
+            f"Could not find {click.style(year, fg='red')} in code "
+            f"nor any stars")
+        return
+    year_data = combined_data["years"][year]
+    if not year_data["days_with_code"]:
+        click.echo(
+            f"Could not find {click.style(year, fg='red')} in code, "
+            f"but found "
+            f"{click.style(str(year_data['stars']) + ' stars', fg='yellow')}")
         return
     click.echo(
-        f"Found {click.style(str(len(days_with_code)), fg='green')} days with "
-        f"code in {click.style(str(year), fg='green')} with "
-        f"{click.style(str(year_stars) + ' stars', fg='yellow')}:")
-    if days_with_code:
-        days_string = ', '.join(
-            (
-                click.style(str(day), fg='green')
-                + click.style('*' * days_stars.get(str(day), 1), fg='yellow')
-            )
-            for day in reversed(days_with_code)
+        f"Found {click.style(str(year_data['days_with_code']), fg='green')} "
+        f"days with code in {click.style(year, fg='green')} with "
+        f"{click.style(str(year_data['stars']) + ' stars', fg='yellow')}:")
+    days_string = ', '.join(
+        (
+            click.style(day, fg='green')
+            + click.style('*' * day_data["stars"], fg='yellow')
         )
-        click.echo(f"  * {days_string}")
-    if days_without_code:
-        missing_days_string = ', '.join(
-            (
-                click.style(str(day), fg='white')
-                + click.style('*' * days_stars.get(str(day), 1), fg='yellow')
-            )
-            for day in reversed(days_without_code)
-        )
-        click.echo(f"  * Missing code {missing_days_string}")
+        for day, day_data in reversed(year_data["days"].items())
+        if day_data["has_code"]
+    )
+    click.echo(f"  * {days_string}")
 
 
 PART_STATUS_COMPLETE = 'complete'
@@ -506,17 +486,18 @@ def parse_star_count(stars_nodes, default=None):
 @aoc.command()
 @click.pass_context
 def update_readme(ctx):
-    site_data = ctx.obj['site_data']
-    if site_data is None:
+    combined_data = ctx.obj["combined_data"]
+    if not combined_data["has_site_data"]:
         click.echo(
             f"Since {click.style('local site data', fg='red')} are missing the "
-            f"README {click.style('cannot be updated', fg='red')}")
+            f"README {click.style('cannot be updated', fg='red')}: run "
+            f"`aoc fetch` first")
         return
 
     readme_path = Path('./README.md')
     readme_text = readme_path.read_text()
 
-    updated_readme_text = update_readme_text(site_data, readme_text)
+    updated_readme_text = update_readme_text(combined_data, readme_text)
     if updated_readme_text == readme_text:
         click.echo(f"No need to update {click.style('README', fg='green')}")
         return
@@ -525,62 +506,52 @@ def update_readme(ctx):
     click.echo(f"Updated {click.style('README', fg='green')} with site data")
 
 
-def update_readme_text(site_data, readme_text):
-    updated_readme_text = update_summary_in_readme_text(site_data, readme_text)
+def update_readme_text(combined_data, readme_text):
+    updated_readme_text = update_summary_in_readme_text(
+        combined_data, readme_text)
     updated_readme_text = update_submissions_in_readme_text(
-        site_data, updated_readme_text)
+        combined_data, updated_readme_text)
 
     return updated_readme_text
 
 
-def update_submissions_in_readme_text(site_data, readme_text):
+def update_submissions_in_readme_text(combined_data, readme_text):
     submissions_indexes = get_readme_submissions_indexes(readme_text)
     if not submissions_indexes:
         return readme_text
 
-    years_and_days = get_years_and_days()
-    submissions_text = get_submissions_text(site_data, years_and_days)
+    submissions_text = get_submissions_text(combined_data)
 
     return replace_text(readme_text, submissions_indexes, submissions_text)
 
 
-def get_submissions_text(site_data, years_and_days):
-    years_with_stars = set(site_data['years'])
-    years_with_stars_or_code = sorted((
-        set(str(year) for year, _, _ in years_and_days)
-        | years_with_stars
-    ), reverse=True)
-    headers = ('',) + tuple(years_with_stars_or_code)
-    dividers = (' ---:',) + (':---:',) * len(years_with_stars_or_code)
+def get_submissions_text(combined_data):
+    years = sorted(combined_data["years"], reverse=True)
+    headers = ('',) + tuple(years)
+    dividers = (' ---:',) + (':---:',) * len(years)
     year_stars = ('',) + tuple(
-        get_submission_year_stars_text(site_data, year)
-        for year in years_with_stars_or_code
+        get_submission_year_stars_text(combined_data["years"][year])
+        for year in years
     )
     year_links_tuples = [
         (
             (
                 f"[Code][co-{str(year)[-2:]}]"
-                if Path(f"year_{year}/__init__.py").exists() else
+                if year_data["has_code"] else
                 'Code'
             ),
-            (
-                '&'
-                if year in site_data['years'] else
-                ''
-            ),
+            '&',
             '',
-            (
-                f"[Challenges][ch-{year[-2:]}]"
-                if year in site_data['years'] else
-                ''
-            ),
+            f"[Challenges][ch-{year[-2:]}]",
         )
-        for year in years_with_stars_or_code
+        for year in years
+        for year_data in (combined_data["years"][year],)
     ]
     day_links_tuples_list = [
         [
-            get_submission_year_day_stars_tuple(site_data, year, str(day))
-            for year in years_with_stars_or_code
+            get_submission_year_day_stars_tuple(
+                combined_data["years"][year]["days"][str(day)])
+            for year in years
         ]
         for day in range(1, 26)
     ]
@@ -646,7 +617,7 @@ def get_submissions_text(site_data, years_and_days):
             ]
             for day in range(1, 26)
         ), []))
-        for year in years_with_stars_or_code
+        for year in years
     )
 
     return "\n\n{}\n\n{}\n\n".format(
@@ -679,17 +650,15 @@ def align_rows(rows):
     ]
 
 
-def get_submission_year_day_stars_tuple(site_data, year, day):
-    if year in site_data['years']:
-        stars = site_data['years'][year]['days'].get(day, 0)
-    else:
-        stars = 0
-    has_part_a = Path("year_{}/day_{:0>2}/part_a.py".format(year, day)).exists()
-    has_part_b = Path("year_{}/day_{:0>2}/part_b.py".format(year, day)).exists()
-
+def get_submission_year_day_stars_tuple(day_data):
+    year = day_data["year"]
+    day = day_data["day"]
+    stars = day_data["stars"]
+    has_part_a = day_data["parts"]["a"]["has_code"]
+    has_part_b = day_data["parts"]["b"]["has_code"]
     return (
         (
-            "[Code][co-{}-{:0>2}]".format(str(year)[-2:], day)
+            "[Code][co-{}-{}]".format(year[-2:], day)
             if has_part_a else
             'Code'
         ),
@@ -709,14 +678,14 @@ def get_submission_year_day_stars_tuple(site_data, year, day):
                 (
                     (
                         ':grey_exclamation:'
-                        if day == "25" and stars <= 49 else
+                        if day == "25" and stars < 49 else
                         ':x:'
                     )
                     if has_part_b else
                     (
-                        ''
-                        if day == "25" and stars == 49 else
                         ':grey_exclamation:'
+                        if day == "25" and stars < 49 else
+                        ''
                     )
                 )
                 if stars == 1 else
@@ -725,57 +694,33 @@ def get_submission_year_day_stars_tuple(site_data, year, day):
             if has_part_a else
             ''
         ),
-        (
-            "[Challenge][ch-{}-{:0>2}]".format(str(year)[-2:], day)
-            if year in site_data['years'] else
-            ''
-        ),
+        "[Challenge][ch-{}-{}]".format(year[-2:], day),
     )
 
 
-def get_submission_year_stars_text(site_data, year):
-    part_a_count = sum(
-        1
-        for day in range(1, 26)
-        if Path("year_{}/day_{:0>2}/part_a.py".format(year, day)).exists()
-    )
-    part_b_count = sum(
-        1
-        for day in range(1, 26)
-        if Path("year_{}/day_{:0>2}/part_b.py".format(year, day)).exists()
-    )
-
-    stars = site_data['years'][year]['stars']
-
-    if stars == 50:
+def get_submission_year_stars_text(year_data):
+    if year_data["stars"] == 50:
         return f"50 :star: :star:"
 
     return "{} :star: / {} :x: / {} :grey_exclamation:".format(
-        stars,
-        part_a_count + part_b_count - stars,
-        part_a_count - part_b_count,
+        year_data["stars"],
+        year_data["by_part_status"][PART_STATUS_FAILED],
+        year_data["by_part_status"][PART_STATUS_COULD_NOT_ATTEMPT],
     )
 
 
-def update_summary_in_readme_text(site_data, readme_text):
+def update_summary_in_readme_text(combined_data, readme_text):
     summary_indexes = get_readme_summary_indexes(readme_text)
     if not summary_indexes:
         return readme_text
 
-    years_and_days = get_years_and_days()
-    summary_text = get_summary_text(site_data, years_and_days)
+    summary_text = get_summary_text(combined_data)
 
     return replace_text(readme_text, summary_indexes, summary_text)
 
 
-def get_summary_text(site_data, years_and_days):
-    years_with_stars = set(site_data['years'])
-    total_stars = site_data['total_stars']
-    years_with_stars_or_code = sorted((
-        set(str(year) for year, _, _ in years_and_days)
-        | years_with_stars
-    ), reverse=True)
-    headers = ['Total'] + years_with_stars_or_code
+def get_summary_text(combined_data):
+    headers = ['Total'] + sorted(combined_data["years"], reverse=True)
     return "\n\n{}\n{}\n{}\n\n".format(
         '| {} |'.format(' | '.join(headers)),
         '| {} |'.format(' | '.join(['---'] * len(headers))),
@@ -786,11 +731,9 @@ def get_summary_text(site_data, years_and_days):
             )
             for header in headers
             for stars in ((
-                total_stars
+                combined_data["total_stars"]
                 if header == 'Total' else
-                site_data['years'][header]['stars']
-                if header in site_data['years'] else
-                0
+                combined_data["years"][header]["stars"]
             ),)
         )),
     )
