@@ -71,7 +71,8 @@ def challenge(ctx, year: int, day: int, part: str, rest):
 @click.argument('year', type=int)
 @click.argument('day', type=int)
 @click.argument('part', type=click.Choice(['a', 'b']))
-def add(year: int, day: int, part: str):
+@click.pass_context
+def add(ctx, year: int, day: int, part: str):
     year_path = Path("year_{}/__init__.py".format(year))
     day_path = Path("year_{}/day_{:0>2}/__init__.py".format(year, day, part))
     part_path = Path("year_{}/day_{:0>2}/part_{}.py".format(year, day, part))
@@ -94,6 +95,7 @@ def add(year: int, day: int, part: str):
             "year_{}/day_{:0>2}/part_{}.py".format(year, day, "a"))
         Path("year_{}/day_{:0>2}/example_part.py".format(year, day)) \
             .rename(part_a_path)
+        ctx.invoke(refresh_challenge_input, year=year, day=day)
     if not part_path.exists():
         shutil.copy(
             Path("example_year/example_day/example_part.py"),
@@ -103,6 +105,63 @@ def add(year: int, day: int, part: str):
         f"Added challenge "
         f"{click.style(f'{year} {day} {part.upper()}', fg='green')} at "
         f"{click.style(str(part_path), fg='green')}")
+
+
+@aoc.command()
+@click.argument('year', type=int)
+@click.argument('day', type=int)
+def refresh_challenge_input(year, day):
+    input_path = Path("year_{}/day_{:0>2}/part_a_input.txt".format(year, day))
+    _input = get_input_from_site(year, day)
+    if not _input:
+        click.echo(
+            f"Could not update input for "
+            f"{click.style(f'{year} {day}', fg='red')}")
+        return
+
+    if input_path.exists() and _input == input_path.read_text():
+        click.echo(
+            f"Input did not change for "
+            f"{click.style(f'{year} {day}', fg='yellow')} "
+            f"({click.style(f'{len(_input)} bytes', fg='yellow')})")
+        return
+
+    input_path.write_text(_input)
+
+    click.echo(
+        f"Updated input for {click.style(f'{year} {day}', fg='green')} at "
+        f"{click.style(str(input_path), fg='green')} "
+        f"({click.style(f'{len(_input)} bytes', fg='green')})")
+
+
+def get_input_from_site(year, day):
+    session_id = getattr(settings, 'AOC_SESSION_ID')
+    if not session_id:
+        click.echo(
+            f"You haven't set {click.style('AOC_SESSION_ID', fg='red')} in "
+            f"{click.style('settings.py', fg='red')}")
+        return None
+
+    response = requests.get(
+        f'https://adventofcode.com/{year}/day/{day}/input',
+        cookies={"session": session_id},
+        headers={"User-Agent": "advent-of-code-submissions"},
+    )
+    if not response.ok:
+        if response.status_code == 404:
+            click.echo(
+                f"AOC did not know about challenge's "
+                f"{click.style(f'{year} {day}', fg='red')} input: did you "
+                f"enter the wrong year/day, is the URL wrong, or are you "
+                f"banned?")
+        else:
+            click.echo(
+                f"Could not get {click.style('the input', fg='red')} from "
+                f"AOC site - is the internet down, AOC down, the URL is wrong, "
+                f"or are you banned?")
+        return None
+
+    return response.text
 
 
 def get_challenge_instance(combined_data, year: int, day: int, part: str):
