@@ -11,7 +11,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Tuple, List
 
+import bs4
 import click
+import requests
+
+try:
+    import settings
+except ImportError:
+    import example_settings as settings
 
 
 def get_current_directory(file_path):
@@ -441,9 +448,57 @@ class BaseChallenge:
     part_a_for_testing = None
     optionflags = doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE
 
+    re_part = re.compile(r"part_(a|b)")
+    re_day = re.compile(r"day_(\d\d)")
+    re_year = re.compile(r"year_(\d\d\d\d)")
+
     def __init__(self):
         self.module = sys.modules[self.__module__]
         self.input = self.get_input()
+        self.part = self.get_part()
+        self.day = self.get_day()
+        self.year = self.get_year()
+
+    def get_part(self):
+        path = Path(self.module.__file__)
+        part_name = path.name
+        part_match = self.re_part.match(part_name)
+        if not part_match:
+            raise Exception(
+                f"Challenge name is not a recognised part 'part_x': "
+                f"{part_name}")
+
+        part, = part_match.groups()
+
+        return part
+
+    def get_day(self):
+        path = Path(self.module.__file__)
+        day_name = path.parent.name
+        day_match = self.re_day.match(day_name)
+        if not day_match:
+            raise Exception(
+                f"Challenge path is not a recognised day 'day_xx': "
+                f"{day_name}")
+
+        day_text, = day_match.groups()
+        day = int(day_text)
+
+        return day
+
+    def get_year(self):
+        path = Path(self.module.__file__)
+        year_name = path.parent.parent.name
+        year_match = self.re_year.match(year_name)
+        if not year_match:
+            raise Exception(
+                f"Challenge path is not a recognised year 'year_xxxx': "
+                f"{year_name}")
+
+        year_text, = year_match.groups()
+        year = int(year_text)
+
+        return year
 
     def get_input(self):
         return get_input(self.module.__file__)
@@ -482,6 +537,12 @@ class BaseChallenge:
         @cli.command(name="play")
         def play(*args, **kwargs):
             self.play(*args, **kwargs)
+
+        @cli.command(name="submit")
+        @click.option('--no-prompt', '-y', 'no_prompt', type=bool)
+        @click.option('--solution', '-s', 'solution')
+        def submit(*args, **kwargs):
+            self.submit(*args, **kwargs)
 
         return cli
 
@@ -567,6 +628,80 @@ class BaseChallenge:
         click.echo(
             f"Solution: {styled_solution}"
             f" (in {round(stats['duration'], 2)}s)")
+
+    def submit(self, no_prompt=False, solution=None):
+        session_id = getattr(settings, 'AOC_SESSION_ID')
+        if not session_id:
+            click.echo(
+                f"You haven't set {click.style('AOC_SESSION_ID', fg='red')} in "
+                f"{click.style('settings.py', fg='red')}")
+            return None
+
+        if no_prompt:
+            solve_first = solution in (None, "")
+        else:
+            solution = click.prompt(
+                "Run to get the solution, or enter it manually?", default="")
+            solve_first = not solution
+
+        if solve_first:
+            solution = self.default_solve()
+        if solution in (None, ""):
+            click.echo(f"{click.style('No solution', fg='red')} was provided")
+            return
+        solution = str(solution)
+
+        if not no_prompt:
+            old_solution = None
+            while old_solution != solution:
+                old_solution = solution
+                solution = click.prompt(
+                    f"Submitting solution {click.style(solution, fg='green')}",
+                    default=solution)
+        if solution in (None, ""):
+            click.echo(f"{click.style('No solution', fg='red')} was provided")
+            return
+
+        response = requests.post(
+            f"https://adventofcode.com/{self.year}/day/{self.day}/answer",
+            cookies={"session": session_id},
+            headers={"User-Agent": "advent-of-code-submissions"},
+            data={"level": 1 if self.part == "a" else 2, "answer": solution}
+        )
+
+        if not response.ok:
+            click.echo(
+                f"There was {click.style('an error', fg='red')} submitting the "
+                f"answer: {response.status_code}")
+            return
+
+        answer_page = bs4.BeautifulSoup(response.text, "html.parser")
+        message = answer_page.article.text
+        if "That's the right answer" in message:
+            click.echo(
+                f"Congratulations! That was "
+                f"{click.style('the right answer', fg='green')}! Make sure to "
+                f"do `aoc fetch` and `aoc update-readme`")
+        elif "Did you already complete it" in message:
+            click.echo(
+                f"It looks like you have "
+                f"{click.style('already completed it', fg='yellow')}: "
+                f"{message}")
+        elif "That's not the right answer" in message:
+            click.echo(
+                f"It looks like {click.style(solution, fg='red')} was the "
+                f"{click.style('wrong answer', fg='yellow')}: "
+                f"{message}")
+        elif "You gave an answer too recently" in message:
+            click.echo(
+                f"It looks like you need "
+                f"{click.style('to wait a bit', fg='yellow')}: "
+                f"{message}")
+        else:
+            click.echo(
+                f"It's not clear "
+                f"{click.style('what was the response', fg='yellow')}: "
+                f"{message}")
 
 
 class Helper:
