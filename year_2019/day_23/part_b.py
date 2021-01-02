@@ -5,7 +5,7 @@ from year_2019.day_23.part_a import run_network
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         10650

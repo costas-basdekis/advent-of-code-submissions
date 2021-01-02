@@ -6,7 +6,7 @@ from year_2019.day_06.part_a import create_orbit_mapping, parse_orbits,\
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         562

@@ -7,7 +7,7 @@ from year_2019.day_12.part_a import repeat
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         '30550349'

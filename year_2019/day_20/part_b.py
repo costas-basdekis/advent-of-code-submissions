@@ -6,7 +6,7 @@ from year_2019.day_20.part_a import parse_map_walkways, parse_map_portals,\
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         7180

@@ -5,7 +5,7 @@ from year_2019.day_21.part_a import SpringScript, run_spring_robot
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         1139206699

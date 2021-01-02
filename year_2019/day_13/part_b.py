@@ -9,7 +9,7 @@ from year_2019.day_13.part_a import fill_game, TILE_EMPTY, TILE_WALL,\
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         12954

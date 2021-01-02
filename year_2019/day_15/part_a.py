@@ -7,7 +7,7 @@ from year_2019.day_05.part_b import get_program_result_and_output_extended
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         236

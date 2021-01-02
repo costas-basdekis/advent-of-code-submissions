@@ -7,7 +7,7 @@ from year_2019.day_08.part_a import split_text_into_layers
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         1    1111   11 1  1  11

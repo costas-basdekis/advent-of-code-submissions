@@ -5,7 +5,7 @@ from year_2018.day_01.part_a import parse_shifts
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         73272

@@ -7,7 +7,7 @@ from year_2019.day_04.part_a import is_password_valid, count_valid_passwords
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         1390

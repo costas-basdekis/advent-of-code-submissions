@@ -10,7 +10,7 @@ from year_2019.day_22 import part_a
 class Challenge(utils.BaseChallenge):
     part_a_for_testing = part_a
 
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         42
@@ -18,7 +18,7 @@ class Challenge(utils.BaseChallenge):
         # shuffles = ShufflesExtended.parse(_input)
         # deck = range(119315717514047)
         # return shuffles.get_card_at_position_after_shuffle_many(
-        #     deck, 101741582076661, 2020)
+        #     deck, 101741582076661, 2020, debug=debug)
 
 
 class ShufflesExtended(part_a.Shuffles):

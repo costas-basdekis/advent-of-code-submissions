@@ -8,13 +8,13 @@ import utils
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         23385
         """
         group_set = GroupSet.from_groups_text(_input)
-        group_set.step_many()
+        group_set.step_many(debug=debug)
         return group_set.get_unit_count()
 
 

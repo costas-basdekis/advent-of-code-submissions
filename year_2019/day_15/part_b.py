@@ -5,7 +5,7 @@ from year_2019.day_15.part_a import get_minimum_distances, play_game
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         368

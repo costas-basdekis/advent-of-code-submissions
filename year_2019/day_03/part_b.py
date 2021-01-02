@@ -5,7 +5,7 @@ from year_2019.day_03.part_a import get_points_for_lines, get_cross_points
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         3454

@@ -516,12 +516,14 @@ class BaseChallenge:
     def create_cli(self):
         @click.group(invoke_without_command=True)
         @click.option('--test', '-t', 'filters_texts', multiple=True)
+        @click.option('--debug', '-d', 'debug', is_flag=True)
         @click.pass_context
         def cli(*args, **kwargs):
             self.default_command(*args, **kwargs)
 
         @cli.command(name="all")
         @click.option('--test', '-t', 'filters_texts', multiple=True)
+        @click.option('--debug', '-d', 'debug', is_flag=True)
         def run_all(*args, **kwargs):
             self.run_all(*args, **kwargs)
 
@@ -531,6 +533,7 @@ class BaseChallenge:
             self.test(*args, **kwargs)
 
         @cli.command(name="run")
+        @click.option('--debug', '-d', 'debug', is_flag=True)
         def run(*args, **kwargs):
             self.run(*args, **kwargs)
 
@@ -539,7 +542,7 @@ class BaseChallenge:
             self.play(*args, **kwargs)
 
         @cli.command(name="submit")
-        @click.option('--no-prompt', '-y', 'no_prompt', type=bool)
+        @click.option('--no-prompt', '-y', 'no_prompt', is_flag=True)
         @click.option('--solution', '-s', 'solution')
         def submit(*args, **kwargs):
             self.submit(*args, **kwargs)
@@ -553,22 +556,22 @@ class BaseChallenge:
 
         return decorated
 
-    def default_solve(self, _input=None):
+    def default_solve(self, _input=None, debug=False):
         if _input is None:
             _input = self.input
-        return self.solve(_input)
+        return self.solve(_input, debug=debug)
 
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         raise NotImplementedError()
 
-    def default_command(self, ctx, filters_texts=()):
+    def default_command(self, ctx, filters_texts=(), debug=False):
         if ctx.invoked_subcommand:
             return
-        self.run_all(filters_texts=filters_texts)
+        self.run_all(filters_texts=filters_texts, debug=debug)
 
-    def run_all(self, filters_texts=()):
+    def run_all(self, filters_texts=(), debug=False):
         self.test(filters_texts=filters_texts)
-        self.run()
+        self.run(debug=debug)
 
     def play(self):
         raise Exception(f"Challenge has not implemented play")
@@ -618,9 +621,9 @@ class BaseChallenge:
             modules.append(self.part_a_for_testing)
         return modules
 
-    def run(self):
+    def run(self, debug=False):
         with helper.time_it() as stats:
-            solution = self.default_solve()
+            solution = self.default_solve(debug=debug)
         if solution is None:
             styled_solution = click.style(str(solution), fg='red')
         else:

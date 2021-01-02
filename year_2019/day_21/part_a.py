@@ -8,7 +8,7 @@ import year_2019.day_09.part_a
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         19348404

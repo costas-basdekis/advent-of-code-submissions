@@ -6,13 +6,13 @@ from year_2018.day_22 import part_a
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         982
         """
         return CaveExtended.from_cave_description(_input)\
-            .get_shortest_time()
+            .get_shortest_time(debug=debug)
 
 
 class CaveExtended(part_a.Cave):

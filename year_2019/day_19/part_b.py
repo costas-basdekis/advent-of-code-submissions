@@ -8,7 +8,7 @@ from year_2019.day_19.part_a import get_scan_point
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         7621042

@@ -10,7 +10,7 @@ from year_2019.day_12.part_a import make_moon, tick_moons, parse_simulation
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         282270365571288

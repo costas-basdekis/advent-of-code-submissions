@@ -9,7 +9,7 @@ sys.setrecursionlimit(3000)
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Part.from_instruction_text(Challenge().input).show(True) \\
         ...     == Challenge().input.strip()

@@ -7,7 +7,7 @@ from year_2019.day_14.part_a import parse_reactions, get_ore_requirements
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         8845261

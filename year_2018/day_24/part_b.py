@@ -6,16 +6,16 @@ from year_2018.day_24 import part_a
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         2344
         """
         group_set = GroupSetExtended.from_groups_text(_input)
         smallest_required_boost = BoostSolver().find_smallest_required_boost(
-            group_set, 'Immune System')
+            group_set, 'Immune System', debug=debug)
         boosted = group_set.boost(smallest_required_boost, 'Immune System')
-        boosted.step_many()
+        boosted.step_many(debug=debug)
         return boosted.get_unit_count()
 
 
