@@ -24,19 +24,23 @@ import utils
 YearsAndDays = List[Tuple[int, List[int], List[int]]]
 
 
-@click.group(invoke_without_command=True)
+@click.group(invoke_without_command=True, chain=True)
 @click.pass_context
 def aoc(ctx):
-    site_data = get_cached_site_data()
-    years_and_days = get_years_and_days()
-    ctx.obj = {
-        'site_data': site_data,
-        'years_and_days': years_and_days,
-        'combined_data': combine_data(site_data, years_and_days),
-    }
+    ctx.obj = {}
+    update_context_object(ctx, {
+        'site_data': get_cached_site_data(),
+        'years_and_days': get_years_and_days(),
+    })
     if ctx.invoked_subcommand:
         return
     ctx.invoke(list_years_and_days)
+
+
+def update_context_object(ctx, updates):
+    ctx.obj.update(updates)
+    ctx.obj['combined_data'] = combine_data(
+        ctx.obj['site_data'], ctx.obj['years_and_days'])
 
 
 def get_cached_site_data():
@@ -105,6 +109,10 @@ def add(ctx, year: int, day: int, part: str):
         f"Added challenge "
         f"{click.style(f'{year} {day} {part.upper()}', fg='green')} at "
         f"{click.style(str(part_path), fg='green')}")
+
+    update_context_object(ctx, {
+        'years_and_days': get_years_and_days(),
+    })
 
 
 @aoc.command()
@@ -395,7 +403,8 @@ def get_years_and_days() -> YearsAndDays:
 
 
 @aoc.command()
-def fetch():
+@click.pass_context
+def fetch(ctx):
     data = update_data_from_site()
     if data is None:
         click.echo(f"Could {click.style('not fetch data', fg='red')}")
@@ -408,6 +417,9 @@ def fetch():
         star_count_text = 'unknown'
     else:
         star_count_text = str(data['total_stars'])
+        update_context_object(ctx, {
+            'site_data': data,
+        })
     click.echo(
         f"Fetched data for {click.style(data['user_name'], fg='green')}: "
         f"{click.style(star_count_text + ' stars', fg='yellow')} in "
@@ -464,7 +476,7 @@ def get_years_and_details(events_page):
         if stars
     ]
     return {
-        year: {
+        str(year): {
             "stars": stars,
             "days": get_year_day_stars(year),
         }
@@ -551,7 +563,7 @@ def get_day_and_stars(day_node):
     else:
         stars = 0
 
-    return day, stars
+    return str(day), stars
 
 
 def get_year_and_stars(year_node):
