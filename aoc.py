@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import copy
 import glob
 import importlib
 import itertools
@@ -38,6 +39,14 @@ def get_cached_site_data():
 
     with site_data_file:
         return json.load(site_data_file)
+
+
+@aoc.command()
+@click.pass_context
+def dump_data(ctx):
+    site_data = ctx.obj['site_data']
+    years_and_days = get_years_and_days()
+    print(json.dumps(combine_data(site_data, years_and_days), indent=2))
 
 
 @aoc.command(context_settings={'ignore_unknown_options': True})
@@ -176,6 +185,112 @@ def list_days(site_data, years_and_days: YearsAndDays, year: int):
             for day in reversed(days_without_code)
         )
         click.echo(f"  * Missing code {missing_days_string}")
+
+
+PART_STATUS_COMPLETE = 'complete'
+PART_STATUS_FAILED = 'failed'
+PART_STATUS_DID_NOT_ATTEMPT = 'did-not-attempt'
+PART_STATUS_COULD_NOT_ATTEMPT = 'could-not-attempt'
+
+
+def combine_data(site_data, years_and_days):
+    if site_data is None:
+        combined_data = {
+            "has_site_data": False,
+            "user_name": None,
+            "total_stars": 0,
+            "years": {},
+        }
+    else:
+        combined_data = copy.deepcopy(site_data)
+        combined_data["has_site_data"] = True
+    days_by_year = {
+        str(year): days
+        for year, days, missing_days in years_and_days
+    }
+    for year in days_by_year:
+        if year not in combined_data['years']:
+            combined_data['years'][year] = {
+                "stars": 0,
+                "days": {
+                    str(day): 0
+                    for day in range(1, 26)
+                },
+            }
+    for year, year_data in combined_data["years"].items():
+        year_stars = year_data["stars"]
+        year_data["year"] = year
+        year_data["has_code"] = Path("year_{}/__init__.py".format(year))\
+            .exists()
+        for day, day_stars in list(year_data["days"].items()):
+            has_part_a = Path("year_{}/day_{:0>2}/part_{}.py".format(
+                year, day, "a",
+            )).exists()
+            has_part_b = Path("year_{}/day_{:0>2}/part_{}.py".format(
+                year, day, "b",
+            )).exists()
+            if day_stars >= 1:
+                part_a_status = PART_STATUS_COMPLETE
+            elif has_part_a:
+                part_a_status = PART_STATUS_FAILED
+            else:
+                part_a_status = PART_STATUS_DID_NOT_ATTEMPT
+            if day_stars == 2:
+                part_b_status = PART_STATUS_COMPLETE
+            elif day_stars == 1:
+                if day == "25" and year_stars < 49:
+                    part_b_status = PART_STATUS_COULD_NOT_ATTEMPT
+                elif has_part_b:
+                    part_b_status = PART_STATUS_FAILED
+                else:
+                    part_b_status = PART_STATUS_DID_NOT_ATTEMPT
+            elif has_part_a:
+                part_b_status = PART_STATUS_COULD_NOT_ATTEMPT
+            else:
+                part_b_status = PART_STATUS_DID_NOT_ATTEMPT
+            year_data["days"][day] = {
+                "year": year,
+                "day": "{:0>2}".format(day),
+                "stars": day_stars,
+                "has_code": has_part_a or has_part_b,
+                "parts": {
+                    part: {
+                        "year": year,
+                        "day": "{:0>2}".format(day),
+                        "part": part,
+                        "has_code": has_part,
+                        "star": day_stars >= minimum_stars,
+                        "status": part_status,
+                        "module_name": "year_{}.day_{:0>2}.part_{}".format(
+                            year, day, part),
+                    }
+                    for part, minimum_stars, has_part, part_status
+                    in [
+                        ("a", 1, has_part_a, part_a_status),
+                        ("b", 2, has_part_b, part_b_status),
+                    ]
+                }
+            }
+        year_data["by_part_status"] = {
+            part_status: len(list(items))
+            for part_status, items in itertools.groupby(sorted(
+                part["status"]
+                for day in year_data["days"].values()
+                for part in day["parts"].values()
+            ))
+        }
+        year_data["days_with_code"] = sum(
+            1
+            for day_data in year_data["days"].values()
+            if day_data["has_code"]
+        )
+    combined_data["years_with_code"] = sum(
+        1
+        for year_data in combined_data["years"].values()
+        if year_data["days_with_code"] > 0
+    )
+
+    return combined_data
 
 
 def get_years_and_days() -> YearsAndDays:
