@@ -293,6 +293,13 @@ PART_STATUS_FAILED = 'failed'
 PART_STATUS_DID_NOT_ATTEMPT = 'did-not-attempt'
 PART_STATUS_COULD_NOT_ATTEMPT = 'could-not-attempt'
 
+PART_STATUSES = [
+    PART_STATUS_COMPLETE,
+    PART_STATUS_FAILED,
+    PART_STATUS_DID_NOT_ATTEMPT,
+    PART_STATUS_COULD_NOT_ATTEMPT,
+]
+
 
 def combine_data(site_data, years_and_days):
     if site_data is None:
@@ -373,12 +380,18 @@ def combine_data(site_data, years_and_days):
                 }
             }
         year_data["by_part_status"] = {
-            part_status: len(list(items))
-            for part_status, items in itertools.groupby(sorted(
-                part["status"]
-                for day in year_data["days"].values()
-                for part in day["parts"].values()
-            ))
+            **{
+                status: 0
+                for status in PART_STATUSES
+            },
+            **{
+                part_status: len(list(items))
+                for part_status, items in itertools.groupby(sorted(
+                    part["status"]
+                    for day in year_data["days"].values()
+                    for part in day["parts"].values()
+                ))
+            },
         }
         year_data["days_with_code"] = sum(
             1
