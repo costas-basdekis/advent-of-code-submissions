@@ -788,50 +788,26 @@ def align_rows(rows):
     ]
 
 
+PART_STATUS_EMOJI_MAP = {
+    PART_STATUS_COMPLETE: ':star:',
+    PART_STATUS_FAILED: ':x:',
+    PART_STATUS_DID_NOT_ATTEMPT: '',
+    PART_STATUS_COULD_NOT_ATTEMPT: ':grey_exclamation:',
+}
+
+
 def get_submission_year_day_stars_tuple(day_data):
     year = day_data["year"]
     day = day_data["day"]
-    stars = day_data["stars"]
     has_part_a = day_data["parts"]["a"]["has_code"]
-    has_part_b = day_data["parts"]["b"]["has_code"]
     return (
         (
             "[Code][co-{}-{}]".format(year[-2:], day)
             if has_part_a else
             'Code'
         ),
-        (
-            ':star:'
-            if stars >= 1 else
-            (
-                ':x:'
-                if has_part_a else
-                ''
-            )
-        ),
-        (
-            ':star:'
-            if stars == 2 else
-            (
-                (
-                    (
-                        ':grey_exclamation:'
-                        if day == "25" and stars < 49 else
-                        ':x:'
-                    )
-                    if has_part_b else
-                    (
-                        ':grey_exclamation:'
-                        if day == "25" and stars < 49 else
-                        ''
-                    )
-                )
-                if stars == 1 else
-                ':grey_exclamation:'
-            )
-            if has_part_a else
-            ''
-        ),
+        PART_STATUS_EMOJI_MAP[day_data["parts"]["a"]["status"]],
+        PART_STATUS_EMOJI_MAP[day_data["parts"]["b"]["status"]],
         "[Challenge][ch-{}-{}]".format(year[-2:], day),
     )
 
