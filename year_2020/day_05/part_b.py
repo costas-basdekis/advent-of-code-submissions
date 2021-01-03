@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2020.day_05 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    617
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return BoardingPassesExtended.from_passes_text(_input)\
-        .find_missing_id_with_both_neighbours()
+class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
+
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        617
+        """
+        return BoardingPassesExtended.from_passes_text(_input)\
+            .find_missing_id_with_both_neighbours()
 
 
 class BoardingPassExtended(part_a.BoardingPass):
@@ -95,9 +93,5 @@ class BoardingPassesExtended(part_a.BoardingPasses):
                 triplet = triplet[1:]
 
 
-if __name__ == '__main__':
-    if doctest.testmod(part_a).failed or doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

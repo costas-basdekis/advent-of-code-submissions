@@ -5,13 +5,13 @@ import utils
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         3072905352
         """
         return Nodes.from_input(_input)\
-            .step_many()\
+            .step_many(debug=debug)\
             .get_star_hash()
 
 
@@ -117,4 +117,3 @@ class Node:
 
 challenge = Challenge()
 challenge.main()
-# challenge.main(sys_args=[None, 'run'])

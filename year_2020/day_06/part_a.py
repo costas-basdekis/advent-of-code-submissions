@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
-import doctest
 import functools
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    7128
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return Groups.from_groups_text(_input).get_total_collective_answer_count()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        7128
+        """
+        return Groups.from_groups_text(_input)\
+            .get_total_collective_answer_count()
 
 
 class Group(namedtuple("Group", ("answers",))):
@@ -77,9 +74,5 @@ class Groups:
         return sum(map(self.group_class.get_collective_answer_count, self.groups))
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
-import doctest
 import functools
 
-from utils import get_current_directory
+import utils
+
 from year_2020.day_06 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    3640
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return GroupsExtended.from_groups_text(_input)\
-        .get_total_common_answer_count()
+class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
+
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        3640
+        """
+        return GroupsExtended.from_groups_text(_input)\
+            .get_total_common_answer_count()
 
 
 class GroupExtended(part_a.Group):
@@ -46,9 +45,5 @@ class GroupsExtended(part_a.Groups):
         return sum(map(self.group_class.get_common_answer_count, self.groups))
 
 
-if __name__ == '__main__':
-    if doctest.testmod(part_a).failed or doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

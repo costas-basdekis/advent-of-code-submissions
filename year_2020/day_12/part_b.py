@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
-import doctest
-from abc import ABC
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
+
 from year_2020.day_12 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    126797
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
 
-    return WaypointProgram.from_program_text(_input).run().manhattan_distance()
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        126797
+        """
+
+        return WaypointProgram.from_program_text(_input).run()\
+            .manhattan_distance()
 
 
 class WaypointShip(namedtuple("Ship", ("position", "waypoint")),
@@ -97,9 +96,5 @@ class WaypointProgram(part_a.Program):
     ship_class = WaypointShip
 
 
-if __name__ == '__main__':
-    if doctest.testmod(part_a).failed | doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,28 +1,26 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2020.day_08 import part_a
 from year_2020.day_08.part_a import Acc, Jmp, Nop
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    1403
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    infinite_loop, value = DeCorruption()\
-        .de_corrupt_program(part_a.Program.from_program_text(_input))\
-        .to_runner(ProgramRunner2)\
-        .run()
-    if infinite_loop:
-        raise Exception("Got infinite loop")
+class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
 
-    return value
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        1403
+        """
+        infinite_loop, value = DeCorruption()\
+            .de_corrupt_program(part_a.Program.from_program_text(_input))\
+            .to_runner(ProgramRunner2)\
+            .run()
+        if infinite_loop:
+            raise Exception("Got infinite loop")
+
+        return value
 
 
 class DeCorruption:
@@ -175,9 +173,5 @@ class ProgramRunner2(part_a.ProgramRunner):
         return self.instruction_counter == len(self.program.instructions)
 
 
-if __name__ == '__main__':
-    if doctest.testmod(part_a).failed or doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

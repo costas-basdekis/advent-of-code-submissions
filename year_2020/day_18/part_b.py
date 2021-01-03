@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import functools
-import re
 from abc import ABC
 
 import utils
@@ -10,7 +8,7 @@ from year_2020.day_18 import part_a
 class Challenge(utils.BaseChallenge):
     part_a_for_testing = part_a
 
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         283582817678281

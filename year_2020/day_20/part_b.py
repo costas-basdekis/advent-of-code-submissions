@@ -9,7 +9,7 @@ from year_2020.day_20 import part_a
 class Challenge(utils.BaseChallenge):
     part_a_for_testing = part_a
 
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         1714

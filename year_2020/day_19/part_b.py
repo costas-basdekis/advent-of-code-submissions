@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 import functools
-import itertools
 import re
-from abc import ABC
-from collections import namedtuple
 
 import utils
 from year_2020.day_19 import part_a
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         267

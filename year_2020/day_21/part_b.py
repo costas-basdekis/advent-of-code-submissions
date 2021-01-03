@@ -4,7 +4,7 @@ from year_2020.day_21 import part_a
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         'jzzjz,bxkrd,pllzxb,gjddl,xfqnss,dzkb,vspv,dxvsp'

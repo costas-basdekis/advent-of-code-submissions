@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-import doctest
 from abc import ABC
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    1956
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        1956
+        """
 
-    return Program.from_program_text(_input).run().manhattan_distance()
+        return Program.from_program_text(_input).run().manhattan_distance()
 
 
 class BaseShip:
@@ -322,9 +318,5 @@ class GoForward(SingleLetterSingleNumberInstruction):
         return ship.move_forward(self.value)
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-import doctest
 import re
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    416
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    password_entries = parse_password_db(_input)
-    return get_valid_password_count(password_entries)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        416
+        """
+        password_entries = parse_password_db(_input)
+        return get_valid_password_count(password_entries)
 
 
 def is_password_entry_valid(entry):
@@ -62,9 +58,5 @@ def parse_password_db(password_db_text):
     ]
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

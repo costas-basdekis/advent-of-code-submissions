@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
-import doctest
-
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    410
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        410
+        """
 
-    return Game.from_game_text(_input).get_nth_spoken_number(2020)
+        return Game.from_game_text(_input).get_nth_spoken_number(2020)
 
 
 class Game:
@@ -152,9 +147,5 @@ class Game:
         return last_index - previous_index
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

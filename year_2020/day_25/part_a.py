@@ -5,7 +5,7 @@ import utils
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         17032383
@@ -66,19 +66,6 @@ def find_loop_size(subject_number, public_key):
     for loop_size, value in iterate_subject_number(subject_number):
         if value == public_key:
             return loop_size
-
-
-class FooSet:
-    foo_class = NotImplemented
-
-    @classmethod
-    def from_foos_text(cls, foos_text):
-        non_empty_lines = filter(None, foos_text.splitlines())
-
-        return cls(list(map(cls.foo_class.from_foo_text, non_empty_lines)))
-
-    def __init__(self, foos):
-        self.foos = foos
 
 
 challenge = Challenge()

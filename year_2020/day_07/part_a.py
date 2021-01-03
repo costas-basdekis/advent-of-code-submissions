@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 import re
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    238
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        238
+        """
 
-    return BagRuleSet.from_bag_rule_set_text(_input)\
-        .get_colour_count_eventually_containing_colour("shiny gold")
+        return BagRuleSet.from_bag_rule_set_text(_input)\
+            .get_colour_count_eventually_containing_colour("shiny gold")
 
 
 class BagRuleSet:
@@ -243,9 +239,5 @@ class BagQuantity(namedtuple("BagQuantity", ("colour", "count"))):
         return cls(colour, int(count_str))
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

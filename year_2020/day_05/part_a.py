@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
-import doctest
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    842
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return BoardingPasses.from_passes_text(_input).get_highest_seat_id()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        842
+        """
+        return BoardingPasses.from_passes_text(_input).get_highest_seat_id()
 
 
 class BoardingPass(namedtuple("BoardingPass", ("name",))):
@@ -78,9 +74,5 @@ class BoardingPasses:
         return max(map(self.boarding_pass_class.get_seat_id, self.passes))
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

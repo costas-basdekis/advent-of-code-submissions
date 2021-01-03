@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2020.day_04 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    186
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return len(StrictPassportBatch.from_batch_text(_input).passports)
+class Challenge(utils.BaseChallenge):
+    part_a_for_testing = part_a
+
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        186
+        """
+        return len(StrictPassportBatch.from_batch_text(_input).passports)
 
 
 class NoValueAcceptedField(part_a.Field):
@@ -186,9 +184,5 @@ StrictPassport(birth_year=1944, issue_year=2010, expiration_year=2021, height=15
         return super().from_batch_text(batch_text)
 
 
-if __name__ == '__main__':
-    if doctest.testmod(part_a).failed or doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

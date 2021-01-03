@@ -9,7 +9,7 @@ import utils
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input):
+    def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
         5966506063747

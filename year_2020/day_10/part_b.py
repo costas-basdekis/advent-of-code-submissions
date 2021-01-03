@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
-import doctest
 import functools
 import itertools
 
-from utils import get_current_directory
+import utils
+
 from year_2020.day_10 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    173625106649344
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return AdapterSetExtended.from_adapter_text(_input)\
-        .get_possible_arrangement_count()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        173625106649344
+        """
+        return AdapterSetExtended.from_adapter_text(_input)\
+            .get_possible_arrangement_count()
 
 
 class AdapterSetExtended(part_a.AdapterSet):
@@ -116,9 +113,5 @@ class AdapterSetExtended(part_a.AdapterSet):
         ]
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

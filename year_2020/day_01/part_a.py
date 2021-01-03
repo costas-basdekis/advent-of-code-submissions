@@ -1,25 +1,20 @@
 #!/usr/bin/env python3
-import doctest
-
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    1019371
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    pair = find_pair_with_sum(parse_entries(_input), 2020)
-    if not pair:
-        raise Exception("Could not find pair")
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        1019371
+        """
+        pair = find_pair_with_sum(parse_entries(_input), 2020)
+        if not pair:
+            raise Exception("Could not find pair")
 
-    first, second = pair
+        first, second = pair
 
-    return first * second
+        return first * second
 
 
 def find_pair_with_sum(entries, desired_sum):
@@ -101,9 +96,5 @@ def parse_entries(entries_text):
     return sorted(map(int, non_empty_lines))
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

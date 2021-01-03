@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 from collections import namedtuple
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    2481
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return Seating.from_seating_text(_input)\
-        .tick_many(None, True)\
-        .get_occupied_seat_count()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        2481
+        """
+        return Seating.from_seating_text(_input)\
+            .tick_many(None, True)\
+            .get_occupied_seat_count()
 
 
 class Seating(namedtuple("Seating", ("seats", "sitting"))):
@@ -354,9 +350,5 @@ sitting=((False, False, False), (False, True, True), (True, False, False)))
         )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

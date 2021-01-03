@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2020.day_15 import part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    238
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        238
+        """
 
-    return GameExtended.from_game_text(_input).get_nth_spoken_number(30000000)
+        return GameExtended.from_game_text(_input).get_nth_spoken_number(30000000)
 
 
 class GameExtended(part_a.Game):
@@ -40,9 +36,5 @@ class GameExtended(part_a.Game):
         pass
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()
