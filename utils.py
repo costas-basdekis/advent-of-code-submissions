@@ -458,6 +458,7 @@ class BaseChallenge:
         self.part = self.get_part()
         self.day = self.get_day()
         self.year = self.get_year()
+        self.is_final_part = (self.day, self.part) == (25, "b")
 
     def get_part(self):
         path = Path(self.module.__file__)
@@ -641,10 +642,20 @@ class BaseChallenge:
             return None
 
         if no_prompt:
-            solve_first = solution in (None, "")
+            if self.is_final_part:
+                solve_first = False
+                if solution in (None, ""):
+                    solution = "1"
+            else:
+                solve_first = solution in (None, "")
         else:
+            if self.is_final_part:
+                default_solution = "1"
+            else:
+                default_solution = ""
             solution = click.prompt(
-                "Run to get the solution, or enter it manually?", default="")
+                "Run to get the solution, or enter it manually?",
+                default=default_solution)
             solve_first = not solution
 
         if solve_first:
@@ -700,10 +711,17 @@ class BaseChallenge:
                 f"It looks like you need "
                 f"{click.style('to wait a bit', fg='yellow')}: "
                 f"{message}")
+        elif self.is_final_part \
+                and 'congratulations' in message.lower():
+            click.echo(
+                f"Congratulations! "
+                f"{click.style('You completed the whole year!', fg='green')}! "
+                f"Make sure to do `aoc fetch` and `aoc update-readme`:\n"
+                f"{message}")
         else:
             click.echo(
                 f"It's not clear "
-                f"{click.style('what was the response', fg='yellow')}: "
+                f"{click.style('what was the response', fg='yellow')}:\n"
                 f"{message}")
 
 
