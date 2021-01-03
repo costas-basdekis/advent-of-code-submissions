@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2019.day_05.part_a import get_program_result_and_output, OP_HANDLERS,\
     get_values, MODE_POSITION, run_program_extended, MODE_RELATIVE
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    3508186
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    _, output_stream = get_program_result_and_output_extended(_input, [5])
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        3508186
+        """
+        _, output_stream = get_program_result_and_output_extended(_input, [5])
 
-    *test_outputs, diagnostic_code = output_stream
-    if test_outputs:
-        raise Exception("Some test codes returned")
-    if any(test_outputs):
-        raise Exception(f"Some tests failed: {test_outputs}")
-    return diagnostic_code
+        *test_outputs, diagnostic_code = output_stream
+        if test_outputs:
+            raise Exception("Some test codes returned")
+        if any(test_outputs):
+            raise Exception(f"Some tests failed: {test_outputs}")
+        return diagnostic_code
 
 
 OP_HANDLERS_EXTENDED = dict(OP_HANDLERS)
@@ -260,9 +256,5 @@ def handle_equal(parameter_modes, program, program_counter,
     return program_counter, input_stream_counter, relative_base
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

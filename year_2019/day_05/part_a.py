@@ -1,27 +1,22 @@
 #!/usr/bin/env python3
-import doctest
-
-from utils import get_current_directory
+import utils
 from year_2019.day_02.part_a import parse_program, serialise_program
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    12234644
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    _, output_stream = get_program_result_and_output(_input, [1])
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        12234644
+        """
+        _, output_stream = get_program_result_and_output(_input, [1])
 
-    *test_outputs, diagnostic_code = output_stream
-    if not test_outputs:
-        raise Exception("No test codes returned")
-    if any(test_outputs):
-        raise Exception(f"Some tests failed: {test_outputs}")
-    return diagnostic_code
+        *test_outputs, diagnostic_code = output_stream
+        if not test_outputs:
+            raise Exception("No test codes returned")
+        if any(test_outputs):
+            raise Exception(f"Some tests failed: {test_outputs}")
+        return diagnostic_code
 
 
 OP_HANDLERS = {}
@@ -343,9 +338,5 @@ def get_values(count, parameter_modes, program, program_counter, relative_base,
     return pointers, values, program, program_counter
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

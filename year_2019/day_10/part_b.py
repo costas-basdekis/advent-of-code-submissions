@@ -1,29 +1,26 @@
 #!/usr/bin/env python3
-import doctest
 import math
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_10.part_a import parse_map, group_map_by_gcd,\
     get_position_with_best_visibility
 
 PI = math.asin(1) * 2
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    616
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    best_position, _ = get_position_with_best_visibility(parse_map(_input))
-    vapourisation_order = get_vapourisation_order(
-        parse_map(_input), best_position)
-    vapourised_200 = vapourisation_order[199]
-    x, y = vapourised_200
-    return x * 100 + y
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        616
+        """
+        best_position, _ = get_position_with_best_visibility(parse_map(_input))
+        vapourisation_order = get_vapourisation_order(
+            parse_map(_input), best_position)
+        vapourised_200 = vapourisation_order[199]
+        x, y = vapourised_200
+        return x * 100 + y
 
 
 def get_vapourisation_order(_map, center):
@@ -170,9 +167,5 @@ def un_center_point(point, center):
     return re_center_point(point, (-center_x, -center_y))
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

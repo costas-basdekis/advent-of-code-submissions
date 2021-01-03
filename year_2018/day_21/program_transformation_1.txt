@@ -1,0 +1,36 @@
+#ip
+#0 1  2  4  5
+a, b, c, e, f = 0, 0, 0, 0, 0
+goto 0
+
+  0 : b = 123                   # seti 123 ! b
+  1 : b &= 456                  # bani b 456 b
+  2 : b = 1 if b == 72 else 0   # eqri b 72 b
+  3 : goto b + 3 + 1            # addr b ip ip
+  4 : goto 0 + 1                # seti 0 ! ip
+  5 : b = 0                     # seti 0 ! b
+  6 : c = b | 65536             # bori b 65536 c
+  7 : b = 10605201              # seti 10605201 ! b
+  8 : f = c & 255               # bani c 255 f
+  9 : b += f                    # addr b f b
+ 10 : b &= 16777215             # bani b 16777215 b
+ 11 : b *= 65899                # muli b 65899 b
+ 12 : b &= 16777215             # bani b 16777215 b
+ 13 : f = 1 if 256 > c else 0   # gtir 256 c f
+ 14 : goto f + 14 + 1           # addr f ip ip
+ 15 : goto 15 + 1 + 1           # addi ip 1 ip
+ 16 : goto 27 + 1               # seti 27 ! ip
+ 17 : f = 0                     # seti 0 ! f
+ 18 : e = f + 1                 # addi f 1 e
+ 19 : e *= 256                  # muli e 256 e
+ 20 : e = 1 if e > c else 0     # gtrr e c e
+ 21 : goto e + 21 + 1           # addr e ip ip
+ 22 : goto 22 + 1 + 1           # addi ip 1 ip
+ 23 : goto 25 + 1               # seti 25 ! ip
+ 24 : f += 1                    # addi f 1 f
+ 25 : goto 17 + 1               # seti 17 ! ip
+ 26 : c = f                     # setr f ! c
+ 27 : goto 7 + 1                # seti 7 ! ip
+ 28 : f = 1 if b == a else 0    # eqrr b a f
+ 29 : goto f + 29 + 1           # addr f ip ip
+ 30 : goto 5 + 1                # seti 5 ! ip

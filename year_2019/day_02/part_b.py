@@ -1,29 +1,23 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2019.day_02.part_a import get_program_result
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    8226
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    noun, verb = find_verb_and_noun(_input, 19690720)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        8226
+        """
+        noun, verb = find_verb_and_noun(_input, 19690720)
 
-    return 100 * noun + verb
+        return 100 * noun + verb
 
 
 def find_verb_and_noun(program_text, expected_value):
     """
-    >>> _input = get_current_directory(__file__)\
-        .joinpath("part_a_input.txt")\
-        .read_text()
+    >>> _input = challenge.input
     >>> find_verb_and_noun(_input, 2890696)
     (12, 2)
     >>> find_verb_and_noun(_input, 19690720)
@@ -38,9 +32,5 @@ def find_verb_and_noun(program_text, expected_value):
     raise Exception(f"Could not find and noun to result in {expected_value}")
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

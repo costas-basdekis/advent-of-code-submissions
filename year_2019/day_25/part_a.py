@@ -1,40 +1,33 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
-import sys
-import time
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_15.part_a import run_interactive_program
 import year_2019.day_09.part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    8401920
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        8401920
+        """
+        password = play_game(_input)
+        if not password:
+            raise Exception("Could not find password")
 
-    password = play_game(_input)
-    if not password:
-        raise Exception("Could not find password")
+        return password
 
-    return password
+    def play(self):
+        play_game(self.input, interactive=True)
 
 
-def play_game(program_text=None, interactive=False):
+def play_game(program_text, interactive=False):
     if interactive:
         interactive_print = print
     else:
         interactive_print = lambda *args: None
-    if program_text is None:
-        program_text = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
 
     ship = {
         "rooms": {},
@@ -427,14 +420,5 @@ OPPOSITE_DIRECTION = {
 }
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if sys.argv[1:] != ['play']:
-            raise Exception(f"Only valid argument is 'play'")
-        play_game(interactive=True)
-    else:
-        if doctest.testmod().failed:
-            print("Tests failed")
-        else:
-            print("Tests passed")
-        print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 from collections import defaultdict
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_15.part_a import run_interactive_program
 import year_2019.day_09.part_a
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    15969
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return run_network(_input, manage_output_first_to_255)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        15969
+        """
+        return run_network(_input, manage_output_first_to_255)
 
 
 def run_network(_input, manage_output_func):
@@ -66,9 +63,5 @@ def manage_output_first_to_255(from_address, output, queues):
     return False, None
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

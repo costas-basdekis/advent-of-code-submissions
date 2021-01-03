@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
 from year_2019.day_20.part_a import parse_map_walkways, parse_map_portals,\
     combine_map_walkways_and_portals, find_path_length
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    7180
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    walkways = parse_map_walkways(_input)
-    portals = parse_map_portals(_input, walkways)
-    walkways_neighbours, free_portals = \
-        combine_map_walkways_and_portals(walkways, portals)
-    walkways_neighbours, free_portals = \
-        LazyMultiMap.from_map(
-            walkways_neighbours, free_portals, max_levels=200)
-    return walkways_neighbours.find_path_length(
-        free_portals['AA'], free_portals['ZZ'])
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        7180
+        """
+        walkways = parse_map_walkways(_input)
+        portals = parse_map_portals(_input, walkways)
+        walkways_neighbours, free_portals = \
+            combine_map_walkways_and_portals(walkways, portals)
+        walkways_neighbours, free_portals = \
+            LazyMultiMap.from_map(
+                walkways_neighbours, free_portals, max_levels=200)
+        return walkways_neighbours.find_path_length(
+            free_portals['AA'], free_portals['ZZ'])
 
 
 class LazyMultiMap:
@@ -511,9 +507,5 @@ def get_portals(walkways_neighbours):
     )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

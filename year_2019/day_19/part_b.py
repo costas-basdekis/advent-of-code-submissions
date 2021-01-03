@@ -1,30 +1,27 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 from typing import Iterable
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_19.part_a import get_scan_point
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    7621042
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    scan = DynamicScan(_input)
-    common_corner = find_square(scan, 100, 100, 2000)
-    if not common_corner:
-        raise Exception("Could not find common corner")
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        7621042
+        """
+        scan = DynamicScan(_input)
+        common_corner = find_square(scan, 100, 100, 2000)
+        if not common_corner:
+            raise Exception("Could not find common corner")
 
-    x, y = common_corner
-    solution = x * 10000 + y
+        x, y = common_corner
+        solution = x * 10000 + y
 
-    return solution
+        return solution
 
 
 def find_square(scan, width, height, count):
@@ -369,9 +366,5 @@ class DynamicScan(Scan):
         return get_scan_point(self.program_text, x, y)
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print(f"Solution:\n{solve()}")
+challenge = Challenge()
+challenge.main()

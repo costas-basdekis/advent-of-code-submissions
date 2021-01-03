@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 from string import ascii_uppercase
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    590
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    walkways = parse_map_walkways(_input)
-    portals = parse_map_portals(_input, walkways)
-    walkways_neighbours, free_portals = \
-        combine_map_walkways_and_portals(walkways, portals)
-    return find_path_length(
-        walkways_neighbours, free_portals['AA'], free_portals['ZZ'])
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        590
+        """
+        walkways = parse_map_walkways(_input)
+        portals = parse_map_portals(_input, walkways)
+        walkways_neighbours, free_portals = \
+            combine_map_walkways_and_portals(walkways, portals)
+        return find_path_length(
+            walkways_neighbours, free_portals['AA'], free_portals['ZZ'])
 
 
 def find_path_length(walkways_neighbours, start, end, include_visits=False):
@@ -374,9 +370,5 @@ def parse_map_walkways(map_text):
     ]
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

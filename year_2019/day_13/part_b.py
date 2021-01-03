@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-import doctest
-import sys
+import utils
 
-from utils import get_current_directory
 from year_2019.day_05.part_a import InsufficientInputError
 from year_2019.day_05.part_b import get_program_result_and_output_extended
 from year_2019.day_12.part_a import sign
@@ -10,17 +8,17 @@ from year_2019.day_13.part_a import fill_game, TILE_EMPTY, TILE_WALL,\
     TILE_BLOCK, TILE_PADDLE, TILE_BALL
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    12954
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    game = play_game(_input)
-    return game.get((-1, 0))
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        12954
+        """
+        game = play_game(_input)
+        return game.get((-1, 0))
+
+    def play(self):
+        play_game(self.input, interactive=True)
 
 
 def play_game(program_text=None, interactive=False):
@@ -110,14 +108,5 @@ def show_game(game):
     ])
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if sys.argv[1:] != ['play']:
-            raise Exception(f"Only valid argument is 'play'")
-        play_game(interactive=True)
-    else:
-        if doctest.testmod().failed:
-            print("Tests failed")
-        else:
-            print("Tests passed")
-        print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

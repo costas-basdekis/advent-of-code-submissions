@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
-import doctest
-
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    453028
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_total_orbit_count(create_orbit_mapping(parse_orbits(_input)))
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        453028
+        """
+        return get_total_orbit_count(create_orbit_mapping(parse_orbits(_input)))
 
 
 UNIVERSAL_CENTER_OF_MASS = 'COM'
@@ -122,9 +117,5 @@ def parse_orbits(_input):
     return pairs
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 import itertools
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_05.part_a import InsufficientInputError
 from year_2019.day_05.part_b import get_program_result_and_output_extended
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    368584
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_max_amplifier_chain_result(_input)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        368584
+        """
+        return get_max_amplifier_chain_result(_input)
 
 
 def get_max_amplifier_chain_result(program_text, phase_inputs=tuple(range(5)),
@@ -81,9 +78,5 @@ def get_amplifier_chain_result(program_text, phase_sequence, initial_input=0):
     return value
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
-import doctest
-
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    2890696
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_program_result(_input, {1: 12, 2: 2})
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        2890696
+        """
+        return get_program_result(_input, {1: 12, 2: 2})
 
 
 def get_program_result(program_text, substitutions=None):
@@ -73,9 +68,5 @@ def serialise_program(program):
     return ",".join(map(str, program))
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,23 +1,28 @@
 #!/usr/bin/env python3
-import doctest
-import sys
 import click
 
-from utils import get_current_directory
+import utils
 from year_2019.day_05.part_a import InsufficientInputError
 from year_2019.day_05.part_b import get_program_result_and_output_extended
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    236
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return get_minimum_distance_to_oxygen(play_game(_input))
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        236
+        """
+        return get_minimum_distance_to_oxygen(play_game(_input))
+
+    def play(self):
+        _game = play_game(interactive=True)
+        print(show_game(_game, max_offset_show=None))
+        if is_game_fully_discovered(_game):
+            print("Fully discovered")
+            print(f"Minimum steps to oxygen: "
+                  f"{get_minimum_distance_to_oxygen(_game)}")
+        else:
+            print("Couldn't discover everything")
 
 
 def run_interactive_program(program_text, endless=False):
@@ -44,12 +49,7 @@ def run_interactive_program(program_text, endless=False):
         input_stream.extend(next_inputs)
 
 
-def run_interactive_game(program_text=None):
-    if program_text is None:
-        program_text = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-
+def run_interactive_game(program_text):
     program = run_interactive_program(program_text, endless=True)
     game = fill_game(None, None, False, game=None)
 
@@ -393,21 +393,5 @@ def limit_range(_min, _max, position, max_offset):
     return _min, _max
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if sys.argv[1:] != ['play']:
-            raise Exception(f"Only valid argument is 'play'")
-        _game = play_game(interactive=False)
-        print(show_game(_game, max_offset_show=None))
-        if is_game_fully_discovered(_game):
-            print("Fully discovered")
-            print(f"Minimum steps to oxygen: "
-                  f"{get_minimum_distance_to_oxygen(_game)}")
-        else:
-            print("Couldn't discover everything")
-    else:
-        if doctest.testmod().failed:
-            print("Tests failed")
-        else:
-            print("Tests passed")
-        print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
-import doctest
 import functools
 import itertools
 import math
 from copy import deepcopy
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_12.part_a import make_moon, tick_moons, parse_simulation
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    282270365571288
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    return find_repeat_count_intelligent(parse_simulation(_input))
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        282270365571288
+        """
+        return find_repeat_count_intelligent(parse_simulation(_input))
 
 
 def find_repeat_count_intelligent(moons):
@@ -122,9 +119,5 @@ def hash_moon(moon):
     )
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

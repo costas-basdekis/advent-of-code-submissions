@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 import re
 from copy import deepcopy
 
-from utils import get_current_directory
+import utils
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    14809
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    moons_0 = parse_scan(_input)
-    moons_1000 = repeat(tick_moons, 1000, moons_0)
-    return get_moons_energy(moons_1000)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        14809
+        """
+        moons_0 = parse_scan(_input)
+        moons_1000 = repeat(tick_moons, 1000, moons_0)
+        return get_moons_energy(moons_1000)
 
 
 def get_moons_energy(moons):
@@ -371,9 +367,5 @@ def make_moon(position, velocity=(0, 0, 0)):
     }
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

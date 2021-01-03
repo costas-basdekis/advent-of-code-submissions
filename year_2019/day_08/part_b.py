@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
-import doctest
 from copy import deepcopy
 
-from utils import get_current_directory
+import utils
+
 from year_2019.day_08.part_a import split_text_into_layers
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    1    1111   11 1  1  11
-    1    1       1 1 1  1  1
-    1    111     1 11   1
-    1    1       1 1 1  1
-    1    1    1  1 1 1  1  1
-    1111 1111  11  1  1  11
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    print(serialise_image(parse_image(_input, 25, 6)))
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        1    1111   11 1  1  11
+        1    1       1 1 1  1  1
+        1    111     1 11   1
+        1    1       1 1 1  1
+        1    1    1  1 1 1  1  1
+        1111 1111  11  1  1  11
+        """
+        print(serialise_image(parse_image(_input, 25, 6)))
 
 
 def serialise_image(image):
@@ -82,9 +79,5 @@ def parse_layer(text, width, height):
     ]
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
-import doctest
+import utils
 
-from utils import get_current_directory
-from year_2019.day_16.part_a import get_nth_phase_message, get_phase_patterns,\
-    get_next_phase
+from year_2019.day_16.part_a import get_phase_patterns, get_next_phase
 
 
-def solve(_input=None):
-    # """
-    # >>> solve()
-    # 42
-    # """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    # return decode_signal(_input.strip())
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        42
+        """
+        # return decode_signal(_input.strip())
 
 
 def decode_signal(message):
@@ -160,9 +155,5 @@ def combine_phase_patterns(lhs, rhs):
     return result
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()

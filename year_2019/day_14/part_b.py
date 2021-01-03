@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-import doctest
 import math
 
-from utils import get_current_directory
-from year_2019.day_14.part_a import parse_reactions, get_balance,\
-    get_ore_requirements
+import utils
+
+from year_2019.day_14.part_a import parse_reactions, get_ore_requirements
 
 
-def solve(_input=None):
-    """
-    >>> solve()
-    8845261
-    """
-    if _input is None:
-        _input = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
-    reactions = parse_reactions(_input)
-    return get_fuel_for_ore(reactions, 1000000000000)
+class Challenge(utils.BaseChallenge):
+    def solve(self, _input, debug=False):
+        """
+        >>> Challenge().default_solve()
+        8845261
+        """
+        reactions = parse_reactions(_input)
+        return get_fuel_for_ore(reactions, 1000000000000)
 
 
 def get_fuel_for_ore(reactions, ore):
@@ -92,9 +88,5 @@ def get_fuel_for_ore(reactions, ore):
         return min_fuel
 
 
-if __name__ == '__main__':
-    if doctest.testmod().failed:
-        print("Tests failed")
-    else:
-        print("Tests passed")
-    print("Solution:", solve())
+challenge = Challenge()
+challenge.main()
