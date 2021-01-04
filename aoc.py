@@ -613,7 +613,7 @@ def parse_star_count(stars_nodes, default=None):
     if not stars_nodes:
         return default
     stars_node = stars_nodes[0]
-    stars_match = re.compile(r'^(\d+)\*$').match(stars_node.text)
+    stars_match = re.compile(r'^(\d+)\*$').match(stars_node.text.strip())
     if not stars_match:
         return default
 
