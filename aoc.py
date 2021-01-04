@@ -68,6 +68,17 @@ def dump_data(ctx):
 def challenge(ctx, year: int, day: int, part: str, rest):
     combined_data = ctx.obj['combined_data']
     challenge_instance = get_challenge_instance(combined_data, year, day, part)
+    if not challenge_instance:
+        should_create_challenge = click.prompt(
+            f"Do you want to create challenge "
+            f"{click.style(f'{year} {day} {part.upper()}', fg='green')}?",
+            type=bool, default=True)
+        if not should_create_challenge:
+            return
+        ctx.invoke(add, year=year, day=day, part=part)
+        combined_data = ctx.obj['combined_data']
+        challenge_instance = get_challenge_instance(
+            combined_data, year, day, part)
     challenge_instance.run_main_arguments(args=rest)
 
 
@@ -178,25 +189,25 @@ def get_challenge_instance(combined_data, year: int, day: int, part: str):
         click.echo(
             f"It looks like there is no code for "
             f"{click.style(str(year), fg='red')}")
-        return
+        return None
     day_data = year_data["days"].get(str(day))
     if not day_data:
         click.echo(
             f"It looks like there is no code for "
             f"{click.style(f'{year} day {day}', fg='red')}")
-        return
+        return None
     part_data = day_data["parts"].get(part)
     if not part_data:
         click.echo(
             f"It looks like there is no code for "
             f"{click.style(f'{year} day {day} part {part}', fg='red')}")
-        return
+        return None
     module_name = part_data["module_name"]
     try:
         module = importlib.import_module(module_name)
     except ImportError:
         click.echo(f"Could not find {click.style(module_name, fg='red')}")
-        return
+        return None
 
     if not hasattr(module, 'challenge'):
         challenge_class = getattr(module, 'Challenge')
@@ -206,7 +217,7 @@ def get_challenge_instance(combined_data, year: int, day: int, part: str):
                 f"Challenge {click.style(module_name, fg='red')} does not "
                 f"use `BaseChallenge` and doesn't specify a `challenge` "
                 f"instance")
-            return
+            return None
         challenge_instance = challenge_class()
     else:
         challenge_instance = getattr(module, 'challenge')
@@ -215,7 +226,7 @@ def get_challenge_instance(combined_data, year: int, day: int, part: str):
         click.echo(
             f"Challenge {click.style(module_name, fg='red')} `challenge` "
             f"instance is not of `BaseChallenge`")
-        return
+        return None
 
     return challenge_instance
 
