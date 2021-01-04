@@ -63,16 +63,20 @@ def dump_data(ctx):
 @click.argument('year', type=int)
 @click.argument('day', type=int)
 @click.argument('part', type=click.Choice(['a', 'b']))
+@click.option('-f', '--force', 'force', is_flag=True)
 @click.argument('rest', nargs=-1, type=click.UNPROCESSED)
 @click.pass_context
-def challenge(ctx, year: int, day: int, part: str, rest):
+def challenge(ctx, year: int, day: int, part: str, force: bool, rest):
     combined_data = ctx.obj['combined_data']
     challenge_instance = get_challenge_instance(combined_data, year, day, part)
     if not challenge_instance:
-        should_create_challenge = click.prompt(
-            f"Do you want to create challenge "
-            f"{click.style(f'{year} {day} {part.upper()}', fg='green')}?",
-            type=bool, default=True)
+        if not force:
+            should_create_challenge = click.prompt(
+                f"Do you want to create challenge "
+                f"{click.style(f'{year} {day} {part.upper()}', fg='green')}?",
+                type=bool, default=True)
+        else:
+            should_create_challenge = True
         if not should_create_challenge:
             return
         ctx.invoke(add, year=year, day=day, part=part)
