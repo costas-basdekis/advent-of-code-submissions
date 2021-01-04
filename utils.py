@@ -673,6 +673,9 @@ class BaseChallenge:
                 solution = click.prompt(
                     f"Submitting solution {click.style(solution, fg='green')}",
                     default=solution)
+        else:
+            click.echo(
+                f"Submitting solution {click.style(solution, fg='green')}")
         if solution in (None, ""):
             click.echo(f"{click.style('No solution', fg='red')} was provided")
             return
