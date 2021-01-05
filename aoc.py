@@ -83,7 +83,10 @@ def challenge(ctx, year: int, day: int, part: str, force: bool, rest):
         combined_data = ctx.obj['combined_data']
         challenge_instance = get_challenge_instance(
             combined_data, year, day, part)
-    challenge_instance.run_main_arguments(args=rest)
+    challenge_instance.run_main_arguments(args=rest, obj={
+        'aoc_ctx': ctx,
+        'aoc_module': importlib.import_module(__name__),
+    })
 
 
 @aoc.command()

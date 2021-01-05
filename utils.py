@@ -511,9 +511,9 @@ class BaseChallenge:
             return
         self.run_main_arguments()
 
-    def run_main_arguments(self, args=None, prog_name=None):
+    def run_main_arguments(self, args=None, prog_name=None, obj=None):
         cli = self.create_cli()
-        cli(args=args, prog_name=prog_name)
+        cli(args=args, prog_name=prog_name, obj=obj)
 
     def create_cli(self):
         @click.group(invoke_without_command=True)
@@ -546,6 +546,7 @@ class BaseChallenge:
         @cli.command(name="submit")
         @click.option('--no-prompt', '-y', 'no_prompt', is_flag=True)
         @click.option('--solution', '-s', 'solution')
+        @click.pass_context
         def submit(*args, **kwargs):
             self.submit(*args, **kwargs)
 
@@ -634,7 +635,7 @@ class BaseChallenge:
             f"Solution: {styled_solution}"
             f" (in {round(stats['duration'], 2)}s)")
 
-    def submit(self, no_prompt=False, solution=None):
+    def submit(self, ctx, no_prompt=False, solution=None):
         session_id = getattr(settings, 'AOC_SESSION_ID')
         if not session_id:
             click.echo(
@@ -698,8 +699,25 @@ class BaseChallenge:
         if "That's the right answer" in message:
             click.echo(
                 f"Congratulations! That was "
-                f"{click.style('the right answer', fg='green')}! Make sure to "
-                f"do `aoc fetch` and `aoc update-readme`")
+                f"{click.style('the right answer', fg='green')}!")
+            if no_prompt:
+                fetch_and_update_readme = True
+            else:
+                fetch_and_update_readme = click.prompt(
+                    f"Do you want to "
+                    f"{click.style('fetch stars', fg='green')} and "
+                    f"{click.style('update the README', fg='green')}?",
+                    type=bool, default=True)
+            if fetch_and_update_readme:
+                click.echo(
+                    f"Fetching {click.style('stars', fg='yellow')} and "
+                    f"updating {click.style('README', fg='green')}...")
+                ctx.obj['aoc_ctx'].invoke(ctx.obj['aoc_module'].fetch)
+                ctx.obj['aoc_ctx'].invoke(ctx.obj['aoc_module'].update_readme)
+            else:
+                click.echo(
+                    f"Make sure to do {click.style('aoc fetch', fg='green')} "
+                    f"and {click.style('aoc update-readme', fg='green')}")
         elif "Did you already complete it" in message:
             click.echo(
                 f"It looks like you have "
