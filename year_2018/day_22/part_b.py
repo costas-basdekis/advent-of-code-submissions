@@ -85,7 +85,7 @@ class CaveExtended(part_a.Cave):
     def get_neighbours(self, position, tool):
         return [
             (x, y)
-            for x, y in utils.helper.get_manhattan_neighbours(position)
+            for x, y in utils.Point2D(*position).get_manhattan_neighbours()
             if x >= 0 and y >= 0
             and tool in self.TOOLS_BY_TYPE[self.get_type((x, y))]
         ]

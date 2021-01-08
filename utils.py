@@ -749,37 +749,6 @@ class BaseChallenge:
 
 
 class Helper:
-    MANHATTAN_OFFSETS = [
-        (-1, 0),
-        (1, 0),
-        (0, -1),
-        (0, 1),
-    ]
-
-    def get_manhattan_neighbours(self, position):
-        """
-        >>> sorted(Helper().get_manhattan_neighbours((0, 0)))
-        [(-1, 0), (0, -1), (0, 1), (1, 0)]
-        >>> sorted(Helper().get_manhattan_neighbours((-3, 5)))
-        [(-4, 5), (-3, 4), (-3, 6), (-2, 5)]
-        """
-        return [
-            self.add_points(position, offset)
-            for offset in self.MANHATTAN_OFFSETS
-        ]
-
-    def add_points(self, lhs, rhs):
-        """
-        >>> Helper().add_points((0, 0), (0, 0))
-        (0, 0)
-        >>> Helper().add_points((1, -4), (-2, 5))
-        (-1, 1)
-        """
-        l_x, l_y = lhs
-        r_x, r_y = rhs
-
-        return l_x + r_x, l_y + r_y
-
     def iterable_length(self, iterable):
         return sum(1 for _ in iterable)
 
