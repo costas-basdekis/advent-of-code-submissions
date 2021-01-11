@@ -5,13 +5,13 @@ leaderboards have submitted the challenges
 
 ## Summary
 
-[//]: # (summary-start)
+[//]: # (event-summary-start)
 
 | Total | 2020 | 2019 | 2018 | 2017 |
 | --- | --- | --- | --- | --- |
 | 197 :star: | 50 :star: :star: | 47 :star: | 50 :star: :star: | 50 :star: :star: |
 
-[//]: # (summary-end)
+[//]: # (event-summary-end)
 
 ## The submissions
 

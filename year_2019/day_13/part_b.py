@@ -23,9 +23,7 @@ class Challenge(utils.BaseChallenge):
 
 def play_game(program_text=None, interactive=False):
     if program_text is None:
-        program_text = get_current_directory(__file__)\
-            .joinpath("part_a_input.txt")\
-            .read_text()
+        program_text = Challenge().input
     error = None
     input_stream = []
     game = {}
