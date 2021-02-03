@@ -43,5 +43,5 @@ def parse_shifts(shifts_text):
     return list(map(int, non_empty_lines))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

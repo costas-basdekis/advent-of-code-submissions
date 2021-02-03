@@ -200,5 +200,5 @@ class Condition:
         return self.operation(register_value, self.value)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -39,5 +39,5 @@ class MemoryExtended(part_a.Memory):
         return len(seen), len(seen) - seen.index(_hash)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

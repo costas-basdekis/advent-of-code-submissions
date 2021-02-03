@@ -14,5 +14,5 @@ class Challenge(utils.BaseChallenge):
             .get_pixel_count()
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

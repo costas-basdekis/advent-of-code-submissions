@@ -377,5 +377,5 @@ class Point(namedtuple("Point", ("x", "y"))):
         return math.sqrt(d_x * d_x + d_y * d_y)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -133,5 +133,5 @@ class ParticleExtended(part_a.Particle):
 ParticleSetExtended.particle_class = ParticleExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

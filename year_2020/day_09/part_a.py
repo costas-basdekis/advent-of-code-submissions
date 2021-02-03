@@ -70,5 +70,5 @@ class Decoder(namedtuple("Decoder", ("memory_size",))):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -48,5 +48,5 @@ class NodeExtended(part_a.Node):
             return self.metadata_sum()
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

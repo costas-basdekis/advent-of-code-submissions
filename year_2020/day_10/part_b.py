@@ -113,5 +113,5 @@ class AdapterSetExtended(part_a.AdapterSet):
         ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

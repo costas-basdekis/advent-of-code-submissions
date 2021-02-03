@@ -253,5 +253,5 @@ class DealIntoNewStackShuffle(RegexParsingShuffle):
         return f"deal into new stack"
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -15,5 +15,5 @@ class Challenge(utils.BaseChallenge):
                 [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)])
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

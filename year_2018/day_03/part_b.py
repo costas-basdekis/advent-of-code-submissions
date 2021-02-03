@@ -59,5 +59,5 @@ class ClaimsExtended(Claims):
         return non_overlapping_claims
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

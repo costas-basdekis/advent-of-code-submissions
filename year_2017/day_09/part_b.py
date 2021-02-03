@@ -63,5 +63,5 @@ class GroupExtended(NodeExtended, part_a.Group):
 NodeExtended.group_class = GroupExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

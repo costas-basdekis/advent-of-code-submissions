@@ -180,5 +180,5 @@ def parse_image(image):
     return "".join(map(chr, image))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

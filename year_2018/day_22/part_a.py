@@ -201,5 +201,5 @@ class Cave:
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

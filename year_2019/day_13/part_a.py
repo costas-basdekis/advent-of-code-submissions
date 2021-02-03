@@ -41,5 +41,5 @@ def fill_game(output_stream, game=None):
     return game
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

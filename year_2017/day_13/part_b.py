@@ -126,5 +126,5 @@ class FirewallExtended(part_a.Firewall):
         return self
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -239,5 +239,5 @@ class BagQuantity(namedtuple("BagQuantity", ("colour", "count"))):
         return cls(colour, int(count_str))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

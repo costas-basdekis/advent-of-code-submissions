@@ -17,5 +17,5 @@ class Challenge(utils.BaseChallenge):
         return length
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

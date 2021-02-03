@@ -151,5 +151,5 @@ class Generator:
 GeneratorPair.generator_class = Generator
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

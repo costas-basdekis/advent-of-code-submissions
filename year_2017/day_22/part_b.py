@@ -73,5 +73,5 @@ class GridExtended(part_a.Grid):
             raise Exception(f"Unknown state '{state}'")
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

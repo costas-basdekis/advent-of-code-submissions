@@ -169,5 +169,5 @@ class RecipeBoard(namedtuple("RecipeBoard", ("sequence", "indexes"))):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -66,5 +66,5 @@ class Node(namedtuple("Node", ("children", "metadata"))):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

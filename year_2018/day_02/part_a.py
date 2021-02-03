@@ -115,5 +115,5 @@ def parse_boxes(boxes_text):
     return list(non_empty_lines)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

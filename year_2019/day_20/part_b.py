@@ -507,5 +507,5 @@ def get_portals(walkways_neighbours):
     )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

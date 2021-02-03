@@ -93,5 +93,5 @@ class Game:
         return picked_cups, destination_cup
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

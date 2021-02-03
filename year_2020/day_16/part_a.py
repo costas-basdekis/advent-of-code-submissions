@@ -348,5 +348,5 @@ Solver.ticket_class = Ticket
 TicketSet.ticket_class = Ticket
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

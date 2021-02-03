@@ -55,5 +55,5 @@ class DecoderExtended(part_a.Decoder):
         return None, None
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

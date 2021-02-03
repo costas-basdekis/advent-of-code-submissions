@@ -96,5 +96,5 @@ def parse_entries(entries_text):
     return sorted(map(int, non_empty_lines))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

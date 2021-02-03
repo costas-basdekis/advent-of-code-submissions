@@ -63,5 +63,5 @@ def manage_output_first_to_255(from_address, output, queues):
     return False, None
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -62,5 +62,5 @@ def find_one_letter_difference_pair(box_ids):
     return replaced, group
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

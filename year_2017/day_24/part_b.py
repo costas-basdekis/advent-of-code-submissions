@@ -21,5 +21,5 @@ class GraphExtended(part_a.Graph):
         return longest_path_distance
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

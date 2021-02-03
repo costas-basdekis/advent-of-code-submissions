@@ -112,5 +112,5 @@ class Recipe(namedtuple("Recipe", ("ingredients", "allergens"))):
         return cls(ingredients, allergens)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

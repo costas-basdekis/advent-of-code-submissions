@@ -45,5 +45,5 @@ class SpinlockExtended(part_a.Spinlock):
         return previous_position, new_value
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

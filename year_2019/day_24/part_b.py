@@ -595,5 +595,5 @@ def parse_scan_extended(scan_text):
     return scan
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

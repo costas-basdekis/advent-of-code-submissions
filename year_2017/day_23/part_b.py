@@ -32,5 +32,5 @@ def is_prime(number):
     )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

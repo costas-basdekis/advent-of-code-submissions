@@ -114,5 +114,5 @@ class SampleExtended(part_a.Sample):
 SampleSetExtended.sample_class = SampleExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

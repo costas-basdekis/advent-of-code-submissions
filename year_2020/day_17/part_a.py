@@ -287,5 +287,5 @@ class Grid:
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

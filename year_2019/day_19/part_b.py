@@ -366,5 +366,5 @@ class DynamicScan(Scan):
         return get_scan_point(self.program_text, x, y)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

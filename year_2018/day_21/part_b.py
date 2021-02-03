@@ -26,5 +26,5 @@ def get_last_acceptable_a(start=0):
     return previous_value
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

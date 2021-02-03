@@ -258,5 +258,5 @@ class Grid:
         return _range
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -108,5 +108,5 @@ class ParallelResolver(part_a.Resolver):
         return base_duration + string.ascii_uppercase.index(step) + 1
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

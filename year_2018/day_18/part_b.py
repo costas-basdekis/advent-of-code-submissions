@@ -83,5 +83,5 @@ class AreaExtended(part_a.Area):
         return original_step + delta % period
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

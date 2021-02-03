@@ -160,5 +160,5 @@ class MarbleGame(namedtuple("MarbleGame", ("player_count", "marble_count"))):
         return circle, position
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

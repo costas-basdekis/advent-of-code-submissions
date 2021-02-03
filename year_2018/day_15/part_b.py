@@ -296,5 +296,5 @@ class CaveExtended(part_a.Cave):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

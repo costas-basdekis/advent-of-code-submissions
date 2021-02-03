@@ -31,5 +31,5 @@ class DirectionsRotator:
         ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

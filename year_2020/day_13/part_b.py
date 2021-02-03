@@ -132,5 +132,5 @@ def product(items):
     return items_product
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

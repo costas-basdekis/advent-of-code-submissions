@@ -36,5 +36,5 @@ class ProgramExtended(part_a.Program):
         return applied
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

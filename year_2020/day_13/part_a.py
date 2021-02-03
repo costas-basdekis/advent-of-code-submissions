@@ -102,5 +102,5 @@ class Schedule:
         return earliest_bus_number, earlier_bus_time
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

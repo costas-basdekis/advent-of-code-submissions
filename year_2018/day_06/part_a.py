@@ -355,5 +355,5 @@ class Danger(namedtuple("Danger", ("x", "y"))):
         return abs(x - self.x) + abs(y - self.y)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

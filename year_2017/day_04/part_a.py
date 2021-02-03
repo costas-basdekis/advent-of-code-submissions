@@ -58,5 +58,5 @@ class Phrase:
 PhraseSet.phrase_class = Phrase
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

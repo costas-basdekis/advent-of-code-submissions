@@ -178,5 +178,5 @@ def parse_reaction(reaction_text):
     return result, int(quantity), ingredients
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

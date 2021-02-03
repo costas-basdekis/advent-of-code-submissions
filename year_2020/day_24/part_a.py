@@ -200,5 +200,5 @@ class Path:
         return position
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -178,5 +178,5 @@ class TreeMap:
         ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -719,5 +719,5 @@ class ChoicesPart(Part):
             yield self.MOVEMENT_BRANCH_END
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

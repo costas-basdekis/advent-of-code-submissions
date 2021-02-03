@@ -167,5 +167,5 @@ def un_center_point(point, center):
     return re_center_point(point, (-center_x, -center_y))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

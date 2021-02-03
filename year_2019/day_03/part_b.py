@@ -61,5 +61,5 @@ def get_steps_for_point_in_line(points, point):
     return points.index(point) + 1
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

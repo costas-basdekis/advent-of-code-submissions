@@ -184,5 +184,5 @@ StrictPassport(birth_year=1944, issue_year=2010, expiration_year=2021, height=15
         return super().from_batch_text(batch_text)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

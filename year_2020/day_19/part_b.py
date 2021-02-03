@@ -166,5 +166,5 @@ class RuleSetExtended(part_a.RuleSet):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

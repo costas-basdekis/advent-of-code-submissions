@@ -18,5 +18,5 @@ class Challenge(utils.BaseChallenge):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

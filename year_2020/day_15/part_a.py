@@ -147,5 +147,5 @@ class Game:
         return last_index - previous_index
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

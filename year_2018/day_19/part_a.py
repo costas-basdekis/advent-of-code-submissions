@@ -482,5 +482,5 @@ class EqRRExtended(
     operation_display = "=="
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

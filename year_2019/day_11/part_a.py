@@ -131,5 +131,5 @@ def move(position, direction):
     return x + offset_x, y + offset_y
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

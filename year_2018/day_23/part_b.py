@@ -305,5 +305,5 @@ class RobotExtended(part_a.Robot):
 RobotSetExtended.robot_class = RobotExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

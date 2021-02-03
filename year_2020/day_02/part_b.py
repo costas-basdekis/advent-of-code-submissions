@@ -31,5 +31,5 @@ def is_password_entry_valid_alternate(entry):
     return is_in_first_position != is_in_second_position
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

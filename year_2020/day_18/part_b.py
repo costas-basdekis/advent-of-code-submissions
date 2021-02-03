@@ -80,5 +80,5 @@ class Mul2(Expression2, part_a.Mul):
 Expression2.mul_class = Mul2
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

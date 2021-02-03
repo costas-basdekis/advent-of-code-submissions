@@ -100,5 +100,5 @@ class TrackMapExtended(part_a.TrackMap):
         ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

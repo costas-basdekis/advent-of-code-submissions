@@ -207,5 +207,5 @@ class Nop(InstructionWithOneIntArgument):
         return instruction_counter, value
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -315,5 +315,5 @@ class DealIntoNewStackShuffleExtended(
         return 2
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -91,5 +91,5 @@ class Knot:
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

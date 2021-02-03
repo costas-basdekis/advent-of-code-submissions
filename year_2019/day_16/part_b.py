@@ -155,5 +155,5 @@ def combine_phase_patterns(lhs, rhs):
     return result
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

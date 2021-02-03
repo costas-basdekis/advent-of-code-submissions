@@ -96,5 +96,5 @@ class GeneratorExtended(part_a.Generator):
 GeneratorPairExtended.generator_class = GeneratorExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

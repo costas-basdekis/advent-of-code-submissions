@@ -38,5 +38,5 @@ def find_triplet_with_sum(entries, desired_sum):
     return None
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

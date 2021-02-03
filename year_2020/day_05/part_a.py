@@ -74,5 +74,5 @@ class BoardingPasses:
         return max(map(self.boarding_pass_class.get_seat_id, self.passes))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

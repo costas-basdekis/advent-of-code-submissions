@@ -358,5 +358,5 @@ class Either(Node, namedtuple("Either", ("branches",))):
         ), [])
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

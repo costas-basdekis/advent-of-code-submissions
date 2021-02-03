@@ -118,5 +118,5 @@ class Game:
         return len(set(part_a.Path.get_neighbours(tile)) & self.black_tiles)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

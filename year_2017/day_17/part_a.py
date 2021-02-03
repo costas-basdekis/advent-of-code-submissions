@@ -66,5 +66,5 @@ class Spinlock:
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

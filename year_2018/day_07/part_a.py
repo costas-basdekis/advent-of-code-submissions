@@ -121,5 +121,5 @@ class Requirement(namedtuple("Step", ("step", "prerequisite"))):
         return cls(step, prerequisite)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -592,5 +592,5 @@ class Group:
 GroupSet.group_class = Group
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -15,5 +15,5 @@ class Challenge(utils.BaseChallenge):
         return max(minimum_distances.values())
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

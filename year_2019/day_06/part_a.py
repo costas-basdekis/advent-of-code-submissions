@@ -117,5 +117,5 @@ def parse_orbits(_input):
     return pairs
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

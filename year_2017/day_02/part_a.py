@@ -52,5 +52,5 @@ class Spreadsheet:
         return max_value - min_value
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

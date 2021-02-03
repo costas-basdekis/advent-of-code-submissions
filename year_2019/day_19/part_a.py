@@ -52,5 +52,5 @@ def show_scan(scan):
         for line in scan
     )
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

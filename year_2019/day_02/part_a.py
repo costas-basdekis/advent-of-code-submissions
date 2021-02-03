@@ -68,5 +68,5 @@ def serialise_program(program):
     return ",".join(map(str, program))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

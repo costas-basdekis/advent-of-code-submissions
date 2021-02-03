@@ -46,5 +46,5 @@ class ProgramExtended(part_a.Program):
         return final_registers
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

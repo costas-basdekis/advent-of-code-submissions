@@ -170,5 +170,5 @@ class Receive(InstructionExtended, part_a.RegisterInstruction):
         registers[self.register] = value
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -101,5 +101,5 @@ class RecursivePlayer(part_a.Player):
 RecursiveGame.player_class = RecursivePlayer
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

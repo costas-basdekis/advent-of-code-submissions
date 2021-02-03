@@ -37,4 +37,3 @@ class GameExtended(part_a.Game):
 
 
 challenge = Challenge()
-challenge.main()

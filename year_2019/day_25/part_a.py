@@ -420,5 +420,5 @@ OPPOSITE_DIRECTION = {
 }
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -119,5 +119,5 @@ class KnotExtendedTwice(KnotExtended):
             .get_dense_hash(block_size)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -93,5 +93,5 @@ class BoardingPassesExtended(part_a.BoardingPasses):
                 triplet = triplet[1:]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

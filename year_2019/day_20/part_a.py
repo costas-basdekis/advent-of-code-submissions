@@ -370,5 +370,5 @@ def parse_map_walkways(map_text):
     ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

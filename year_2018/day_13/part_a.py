@@ -554,5 +554,5 @@ class TrackMap:
         return cart.position
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

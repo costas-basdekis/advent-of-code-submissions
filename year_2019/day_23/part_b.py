@@ -55,5 +55,5 @@ def create_manage_output_twice_to_0():
     return manage_output_twice_to_0
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

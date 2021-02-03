@@ -114,5 +114,5 @@ def count_valid_passwords(_range, is_password_valid_func=is_password_valid):
     )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

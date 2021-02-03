@@ -226,5 +226,5 @@ class Group(Node):
 Node.group_class = Group
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

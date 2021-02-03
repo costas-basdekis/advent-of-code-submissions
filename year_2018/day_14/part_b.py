@@ -57,5 +57,5 @@ class RecipeBoardExtended(part_a.RecipeBoard):
         return sequence.index(text, len(sequence) - (len(text) + 2))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

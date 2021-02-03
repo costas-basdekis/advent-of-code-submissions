@@ -338,5 +338,5 @@ def get_values(count, parameter_modes, program, program_counter, relative_base,
     return pointers, values, program, program_counter
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

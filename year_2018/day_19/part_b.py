@@ -48,5 +48,5 @@ def factorise(number):
     return [2, 2, 2, 3, 41, 10723]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

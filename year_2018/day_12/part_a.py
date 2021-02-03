@@ -364,5 +364,5 @@ class PotState(namedtuple("PotState", ("active_pot_indexes",))):
         return sum(self.active_pot_indexes)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

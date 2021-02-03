@@ -239,5 +239,5 @@ class Polymer(str):
         return lhs.lower() == rhs.lower() and lhs != rhs
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

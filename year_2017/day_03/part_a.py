@@ -79,5 +79,5 @@ class Grid:
         return math.floor(math.sqrt(index - 1) + 1) // 2
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

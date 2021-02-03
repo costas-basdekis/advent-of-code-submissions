@@ -11,5 +11,5 @@ class Challenge(utils.BaseChallenge):
         return 42
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

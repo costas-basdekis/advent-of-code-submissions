@@ -105,5 +105,5 @@ class AdapterSet:
         return difference_counts.get(1, 0), difference_counts.get(3, 0)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

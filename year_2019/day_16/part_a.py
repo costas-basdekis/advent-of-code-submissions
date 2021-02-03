@@ -110,5 +110,5 @@ def get_phase_base_pattern(position):
     )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

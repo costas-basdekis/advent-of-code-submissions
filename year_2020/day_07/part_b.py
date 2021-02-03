@@ -18,5 +18,5 @@ class Challenge(utils.BaseChallenge):
         return content_count["shiny gold"] - 1
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -221,5 +221,5 @@ Passport(birth_year=1931, issue_year=2013, expiration_year=2024, height=179, hai
         self.passports = passports
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

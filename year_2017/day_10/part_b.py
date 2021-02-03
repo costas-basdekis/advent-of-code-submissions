@@ -117,5 +117,5 @@ class KnotExtended(part_a.Knot):
         return self
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

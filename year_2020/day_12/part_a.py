@@ -318,5 +318,5 @@ class GoForward(SingleLetterSingleNumberInstruction):
         return ship.move_forward(self.value)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -31,5 +31,5 @@ class GridExtended(part_a.Grid):
         return values
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

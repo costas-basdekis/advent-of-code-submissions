@@ -54,5 +54,5 @@ def handle_adjust_relative_base(parameter_modes, program, program_counter,
     return program_counter, input_stream_counter, relative_base
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

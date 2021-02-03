@@ -329,5 +329,5 @@ class Area:
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

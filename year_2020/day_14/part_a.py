@@ -214,5 +214,5 @@ class Bitmask(Instruction):
         return memory
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

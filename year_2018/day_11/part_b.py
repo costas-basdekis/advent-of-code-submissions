@@ -109,5 +109,5 @@ class FuelGridExtended(part_a.FuelGrid):
         ))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

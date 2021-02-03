@@ -17,5 +17,5 @@ class Challenge(utils.BaseChallenge):
         return coordinates
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

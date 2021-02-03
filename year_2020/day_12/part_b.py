@@ -96,5 +96,5 @@ class WaypointProgram(part_a.Program):
     ship_class = WaypointShip
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

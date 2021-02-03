@@ -393,5 +393,5 @@ def limit_range(_min, _max, position, max_offset):
     return _min, _max
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

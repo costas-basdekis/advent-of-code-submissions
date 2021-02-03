@@ -418,5 +418,5 @@ def show_map(contents, start_positions):
     )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

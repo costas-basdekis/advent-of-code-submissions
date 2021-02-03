@@ -64,5 +64,5 @@ def is_password_valid_complete(password, _range=None):
     return True
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

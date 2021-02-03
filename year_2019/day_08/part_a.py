@@ -53,5 +53,5 @@ def split_text_into_layers(text, width, height):
     ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

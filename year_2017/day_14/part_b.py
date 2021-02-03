@@ -97,5 +97,5 @@ class DiskExtended(part_a.Disk):
         return regions_by_cell
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

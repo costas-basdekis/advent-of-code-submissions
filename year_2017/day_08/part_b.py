@@ -57,5 +57,5 @@ class InstructionSetExtended(part_a.InstructionSet):
         return registers, max_value
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -160,5 +160,5 @@ class Node:
         return descendants
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

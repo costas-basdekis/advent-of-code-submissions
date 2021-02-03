@@ -194,5 +194,5 @@ class ExtendedDangerMap(part_a.DangerMap):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

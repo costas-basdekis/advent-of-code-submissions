@@ -167,5 +167,5 @@ class NodeExtended(part_a.Node):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

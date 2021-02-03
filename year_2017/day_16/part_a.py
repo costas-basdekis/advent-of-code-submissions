@@ -208,5 +208,5 @@ class Partner(Move):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

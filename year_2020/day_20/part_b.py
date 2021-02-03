@@ -753,5 +753,5 @@ class TileBorderExtended(part_a.TileBorder):
 TileExtended.border_class = TileBorderExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

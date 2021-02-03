@@ -34,5 +34,5 @@ def get_fuel_recursive(weight):
     return total
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

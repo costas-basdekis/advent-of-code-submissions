@@ -325,5 +325,5 @@ class Packet:
         return next_position
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

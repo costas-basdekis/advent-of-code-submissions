@@ -14,5 +14,5 @@ class Challenge(utils.BaseChallenge):
         return part_a.Diagram.from_diagram_text(_input).get_step_count()
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

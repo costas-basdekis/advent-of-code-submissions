@@ -106,5 +106,5 @@ def show_game(game):
     ])
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

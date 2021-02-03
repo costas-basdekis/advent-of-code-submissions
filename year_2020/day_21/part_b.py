@@ -64,5 +64,5 @@ class RecipeSetExtended(part_a.RecipeSet):
         return allergen_by_allergenic_ingredient
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

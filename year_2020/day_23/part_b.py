@@ -115,5 +115,5 @@ class Node:
             new_last.replace_next(_next)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

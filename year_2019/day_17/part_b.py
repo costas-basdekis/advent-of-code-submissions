@@ -553,5 +553,5 @@ def get_offset(start, end):
     return end_x - start_x, end_y - start_y
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

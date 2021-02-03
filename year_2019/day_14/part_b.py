@@ -88,5 +88,5 @@ def get_fuel_for_ore(reactions, ore):
         return min_fuel
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

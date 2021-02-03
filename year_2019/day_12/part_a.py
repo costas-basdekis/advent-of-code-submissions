@@ -367,5 +367,5 @@ def make_moon(position, velocity=(0, 0, 0)):
     }
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

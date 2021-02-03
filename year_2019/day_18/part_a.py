@@ -313,5 +313,5 @@ def get_neighbour_positions(position):
     ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

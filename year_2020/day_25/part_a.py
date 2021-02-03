@@ -68,5 +68,5 @@ def find_loop_size(subject_number, public_key):
             return loop_size
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

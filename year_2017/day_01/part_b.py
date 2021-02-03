@@ -34,5 +34,5 @@ class CaptchaExtended(part_a.Captcha):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

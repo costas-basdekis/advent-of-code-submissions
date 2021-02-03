@@ -47,5 +47,5 @@ class NetworkExtended(part_a.Network):
         }.values()
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

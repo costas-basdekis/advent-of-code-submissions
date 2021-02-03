@@ -35,5 +35,5 @@ class Challenge(utils.BaseChallenge):
             _input, phase_inputs=list(range(5, 10)))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

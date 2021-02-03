@@ -58,5 +58,5 @@ def parse_password_db(password_db_text):
     ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

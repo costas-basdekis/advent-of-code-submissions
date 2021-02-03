@@ -262,5 +262,5 @@ class SSNot(SSBinary):
         return not a
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

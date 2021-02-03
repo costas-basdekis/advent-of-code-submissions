@@ -96,5 +96,5 @@ class FuelCell(namedtuple("FuelCell", ("x", "y", "grid_serial_number"))):
         return power_level
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

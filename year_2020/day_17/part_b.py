@@ -333,5 +333,5 @@ class Grid4:
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

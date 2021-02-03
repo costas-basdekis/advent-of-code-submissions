@@ -191,5 +191,5 @@ class Player:
 Game.player_class = Player
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

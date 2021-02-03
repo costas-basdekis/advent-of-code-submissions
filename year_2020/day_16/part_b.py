@@ -180,5 +180,5 @@ class TicketSetExtended(part_a.TicketSet):
 SolverExtended.ticket_set_class = TicketSetExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

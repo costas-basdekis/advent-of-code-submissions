@@ -55,5 +55,5 @@ class GroundExtended(part_a.Ground):
         return len(self.settled_water)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

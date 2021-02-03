@@ -20,5 +20,5 @@ class Challenge(utils.BaseChallenge):
         return max_distance
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

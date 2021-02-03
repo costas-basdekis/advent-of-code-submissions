@@ -194,5 +194,5 @@ class Point(utils.Point4D):
         return self.get_manhattan_neighbourhood(3)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

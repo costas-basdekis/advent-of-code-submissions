@@ -110,5 +110,5 @@ class Claim(namedtuple("Claim", ("id", "left", "top", "width", "height"))):
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

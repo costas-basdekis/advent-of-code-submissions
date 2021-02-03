@@ -366,5 +366,5 @@ def parse_scan(scan_text, parse_scan_map=PARSE_SCAN_MAP):
     }
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

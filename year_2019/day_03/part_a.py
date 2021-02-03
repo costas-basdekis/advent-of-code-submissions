@@ -137,5 +137,5 @@ def move_and_add_points(position, move_text, points):
     return position, points
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

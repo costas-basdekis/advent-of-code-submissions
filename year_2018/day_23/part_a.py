@@ -123,5 +123,5 @@ class Robot:
 RobotSet.robot_class = Robot
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

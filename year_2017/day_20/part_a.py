@@ -150,5 +150,5 @@ class Particle:
 ParticleSet.particle_class = Particle
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

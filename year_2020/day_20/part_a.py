@@ -758,5 +758,5 @@ class TileBorder(namedtuple(
 Tile.border_class = TileBorder
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -41,5 +41,5 @@ def show_paint_map(paint_map):
     )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

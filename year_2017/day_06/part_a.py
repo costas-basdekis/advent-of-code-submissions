@@ -95,5 +95,5 @@ class Memory:
         return self.banks[index], -index
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

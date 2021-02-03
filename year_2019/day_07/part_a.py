@@ -78,5 +78,5 @@ def get_amplifier_chain_result(program_text, phase_sequence, initial_input=0):
     return value
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -173,5 +173,5 @@ class ProgramRunner2(part_a.ProgramRunner):
         return self.instruction_counter == len(self.program.instructions)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

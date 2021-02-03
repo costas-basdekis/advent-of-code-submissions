@@ -169,5 +169,5 @@ class ProgramExtended(part_a.Program):
         return {'bitmask': 0, 'floating': 0, 'values': {}}
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

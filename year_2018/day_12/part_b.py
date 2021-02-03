@@ -37,5 +37,5 @@ class PotRuleSetExtended(part_a.PotRuleSet):
         return target_pot_state
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

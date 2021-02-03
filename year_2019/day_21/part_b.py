@@ -33,5 +33,5 @@ def get_extended_script():
         .and_('T', 'J')
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -56,5 +56,5 @@ class SpreadsheetExtended(part_a.Spreadsheet):
         })
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

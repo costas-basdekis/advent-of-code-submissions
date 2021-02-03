@@ -37,5 +37,5 @@ class Captcha:
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

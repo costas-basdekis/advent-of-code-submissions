@@ -190,5 +190,5 @@ def parse_map(map_text):
     ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

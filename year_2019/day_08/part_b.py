@@ -79,5 +79,5 @@ def parse_layer(text, width, height):
     ]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

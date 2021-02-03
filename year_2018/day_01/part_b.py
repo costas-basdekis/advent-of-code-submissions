@@ -38,5 +38,5 @@ def repeating(items):
         yield from items
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

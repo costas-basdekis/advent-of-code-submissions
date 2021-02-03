@@ -74,5 +74,5 @@ class Network:
         return self.groups[program]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

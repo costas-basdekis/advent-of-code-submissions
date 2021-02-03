@@ -502,5 +502,5 @@ class EqRR(EqualToInstruction):
     op_type_b = Instruction.OP_TYPE_REGISTER
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

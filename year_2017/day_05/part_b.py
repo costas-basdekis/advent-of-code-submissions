@@ -26,5 +26,5 @@ class MessageExtended(part_a.Message):
             self.instructions[self.position] -= 1
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

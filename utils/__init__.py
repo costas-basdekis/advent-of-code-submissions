@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import importlib
+from .base_challenge import *
+from .helper import *
+from .point import *
 
 test_modules_names = [
     'base_challenge',
@@ -23,10 +26,6 @@ if __name__ == "__main__":
     else:
         print(f"{succeeded} tests passed")
 else:
-    from .base_challenge import *
-    from .helper import *
-    from .point import *
-
     test_modules = [
         importlib.import_module(f'utils.{name}')
         for name in test_modules_names

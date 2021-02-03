@@ -20,5 +20,5 @@ class Challenge(utils.BaseChallenge):
         return sleepiest_profile.get_signature()
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

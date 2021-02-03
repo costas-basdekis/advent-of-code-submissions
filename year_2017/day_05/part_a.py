@@ -87,5 +87,5 @@ class Message:
         return not (0 <= self.position < len(self.instructions))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

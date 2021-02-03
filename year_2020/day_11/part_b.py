@@ -323,5 +323,5 @@ class SeatingExtended(part_a.Seating):
             yield neighbour_x, neighbour_y
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

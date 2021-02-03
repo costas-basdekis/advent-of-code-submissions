@@ -512,5 +512,5 @@ class Observation(namedtuple(
             hour=self.hour, minute=self.minute)
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

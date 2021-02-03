@@ -32,5 +32,5 @@ def find_verb_and_noun(program_text, expected_value):
     raise Exception(f"Could not find and noun to result in {expected_value}")
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

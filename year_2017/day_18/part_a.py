@@ -377,5 +377,5 @@ class Jgz(RvalueRValueInstruction):
         return next_instruction_pointer
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

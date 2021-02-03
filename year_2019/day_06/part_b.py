@@ -74,5 +74,5 @@ def get_common_ancestor(path_a, path_b):
     raise Exception("Could not find common ancestor")
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

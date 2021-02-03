@@ -255,5 +255,5 @@ class Rule:
         execution.state = self.next_state
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

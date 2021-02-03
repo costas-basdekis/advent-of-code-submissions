@@ -136,5 +136,5 @@ class MarbleGameExtended(part_a.MarbleGame):
         return circle, position
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

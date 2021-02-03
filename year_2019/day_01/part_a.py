@@ -41,5 +41,5 @@ def get_fuel(weight):
     return math.floor(weight / 3) - 2
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -45,5 +45,5 @@ class PhraseExtended(part_a.Phrase):
 PhraseSetExtended.phrase_class = PhraseExtended
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

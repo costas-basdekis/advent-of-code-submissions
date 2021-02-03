@@ -110,5 +110,5 @@ class Graph:
         return distances, longest_path_distance, longest_path
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

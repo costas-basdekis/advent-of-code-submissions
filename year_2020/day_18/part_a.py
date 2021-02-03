@@ -278,5 +278,5 @@ class ExpressionEx:
         return contents_group, remaining_parts[0], remaining_parts[1:]
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

@@ -1362,5 +1362,5 @@ class Elf(Unit):
     show_symbol = "E"
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

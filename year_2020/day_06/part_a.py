@@ -74,5 +74,5 @@ class Groups:
         return sum(map(self.group_class.get_collective_answer_count, self.groups))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

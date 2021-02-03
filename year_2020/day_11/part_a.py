@@ -350,5 +350,5 @@ sitting=((False, False, False), (False, True, True), (True, False, False)))
         )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

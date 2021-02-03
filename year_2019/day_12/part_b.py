@@ -119,5 +119,5 @@ def hash_moon(moon):
     )
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()

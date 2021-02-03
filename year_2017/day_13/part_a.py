@@ -226,5 +226,5 @@ class Firewall:
         ]))
 
 
+Challenge.main()
 challenge = Challenge()
-challenge.main()
