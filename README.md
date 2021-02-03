@@ -3,6 +3,11 @@
 I'll document my submissions here, and push them after everyone in my 
 leaderboards have submitted the challenges
 
+I'm using the [aox] CLI tool to manage the boilerplate, and also display the
+summaries below.
+
+[aox]: https://github.com/costas-basdekis/aox
+
 ## Summary
 
 [//]: # (event-summary-start)
