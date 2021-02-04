@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import aox.utils
+from aox.boilerplate import DefaultBoilerplate
 
 dot_aox = Path(os.path.dirname(os.path.realpath(__file__)))
 repo_root = dot_aox.parent
@@ -29,7 +30,9 @@ The name of the module under which the challenges leave. If there is no parent
 module (or it is the root one) you can leave it as `None`.
 """
 
-CHALLENGES_BOILERPLATE = "custom.custom_boilerplate.CustomBoilerplate"
+CHALLENGES_BOILERPLATE = DefaultBoilerplate(
+    example_part_path=repo_root.joinpath('custom', 'custom_example_part.py'),
+)
 """
 The name of the class that knows where individual challenges are on the disk,
 and knows how to create them.
@@ -50,4 +53,11 @@ README_PATH = repo_root.joinpath('README.md')
 The path for your README file, so that it can update the stats.
 
 This needs to be a `Path` instance.
+"""
+
+EXTRA_MODULE_IMPORTS = []
+"""
+Also import these extra modules, eg if you specify custom summaries.
+
+It needs to be a list of strings that are valid module names.
 """
