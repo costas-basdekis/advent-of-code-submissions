@@ -21,6 +21,7 @@ class BasePointMeta(type):
         # noinspection PyPep8Naming
         Point = super().__new__(mcs, *args, **kwargs)
 
+        # noinspection PyArgumentList
         mcs.assign_auto_attributes(mcs, Point)
 
         return Point
@@ -191,11 +192,15 @@ class BasePoint(metaclass=BasePointMeta):
         >>> Point3D(-3, 4, 0).sign()
         Point3D(x=-1, y=1, z=0)
         """
+        # noinspection PyUnresolvedReferences
         sign_x = self.x // (abs(self.x) or 1)
+        # noinspection PyUnresolvedReferences
         sign_y = self.y // (abs(self.y) or 1)
+        # noinspection PyUnresolvedReferences
         sign_z = self.z // (abs(self.z) or 1)
 
         cls = type(self)
+        # noinspection PyArgumentList
         return cls(sign_x, sign_y, sign_z)
 
     def get_manhattan_neighbours(self):
@@ -422,6 +427,7 @@ class PointHex:
             y += d_y
 
         cls = type(self)
+        # noinspection PyArgumentList
         return cls(x, y)
 
     def move(self, direction):
