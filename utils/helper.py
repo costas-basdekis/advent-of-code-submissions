@@ -2,6 +2,9 @@ import itertools
 from typing import Dict, Type, Iterable, Tuple, Union, Any
 
 
+__all__ = ['Helper', 'helper']
+
+
 class Helper:
     def iterable_length(self, iterable):
         return sum(1 for _ in iterable)

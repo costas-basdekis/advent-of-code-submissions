@@ -4,6 +4,21 @@ from .base_challenge import *
 from .helper import *
 from .point import *
 
+# noinspection PyProtectedMember
+from .base_challenge import __all__ as base_challenge_all
+# noinspection PyProtectedMember
+from .helper import __all__ as helper_all
+# noinspection PyProtectedMember
+from .point import __all__ as point_all
+
+__all__ = [
+    'test_modules_names', 'test_modules',
+] + (
+    base_challenge_all
+    + helper_all
+    + point_all
+)
+
 test_modules_names = [
     'base_challenge',
     'helper',

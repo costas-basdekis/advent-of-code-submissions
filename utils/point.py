@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from typing import Tuple, List
 
 
+__all__ = ['BasePoint', 'Point2D', 'Point3D', 'Point4D', 'PointHex']
+
+
 class BasePointMeta(type):
     @classmethod
     def auto_assign_to(mcs, attribute):
