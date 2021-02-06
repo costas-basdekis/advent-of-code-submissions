@@ -13,13 +13,14 @@ test_modules = [
 # noinspection PyUnresolvedReferences
 __all__ = [
     'test_modules',
+    'test_utils',
 ] + sum((
     test_module.__all__
     for test_module in test_modules
 ), [])
 
 
-if __name__ == "__main__":
+def test_utils():
     import doctest
     optionflags = doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE
     succeeded, failed = 0, 0
@@ -34,3 +35,7 @@ if __name__ == "__main__":
         print(f"{failed} tests failed")
     else:
         print(f"{succeeded} tests passed")
+
+
+if __name__ == "__main__":
+    test_utils()
