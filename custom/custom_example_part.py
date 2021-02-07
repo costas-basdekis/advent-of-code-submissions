@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import utils
+from utils import BaseChallenge
 
 
-class Challenge(utils.BaseChallenge):
+class Challenge(BaseChallenge):
     def solve(self, _input, debug=False):
         """
         >>> Challenge().default_solve()
