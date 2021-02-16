@@ -4,13 +4,13 @@ from . import part_a
 
 
 class Challenge(BaseChallenge):
-    def solve(self, _input, debug=False):
+    def solve(self, _input, debugger):
         """
         >>> Challenge().default_solve()
-        10101011110100011
+        '10101011110100011'
         """
         return part_a.DataGenerator()\
-            .get_disk_checksum(35651584, _input.strip(), debug=debug)
+            .get_disk_checksum(35651584, _input.strip(), debugger=debugger)
 
 
 Challenge.main()

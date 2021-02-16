@@ -1,51 +1,48 @@
 #!/usr/bin/env python3
-from aox.utils import Timer
+from aox.challenge import Debugger
 
 from utils import BaseChallenge, in_groups
 
 
 class Challenge(BaseChallenge):
-    def solve(self, _input, debug=False):
+    def solve(self, _input, debugger):
         """
         >>> Challenge().default_solve()
         '10011010010010010'
         """
-        return DataGenerator().get_disk_checksum(272, _input.strip())
+        return DataGenerator().get_disk_checksum(
+            272, _input.strip(), debugger=debugger)
 
 
 class DataGenerator:
-    def get_disk_checksum(self, size: int, initial: str, debug: bool = False,
+    def get_disk_checksum(self, size: int, initial: str, debugger: Debugger,
                           ) -> str:
         """
         >>> DataGenerator().get_disk_checksum(20, "10000")
         '01100'
         """
-        disk = self.fill_disk(size, initial, debug=debug)
-        return self.get_checksum(disk, debug=debug)
+        debugger.report_if("Getting disk checksum")
+        disk = self.fill_disk(size, initial, debugger=debugger.sub_debugger())
+        return self.get_checksum(disk, debugger=debugger.sub_debugger())
 
-    def fill_disk(self, size: int, initial: str, debug: bool = False) -> str:
+    def fill_disk(self, size: int, initial: str, debugger: Debugger) -> str:
         """
         >>> DataGenerator().fill_disk(20, "10000")
         '10000011110010000111'
         """
         disk = initial
-        if debug:
-            step = 0
-            timer = Timer()
         while len(disk) < size:
             disk = self.increase_data(disk)
-            if debug:
-                if step % 10 == 0:
-                    print(
-                        f"Filling, step: {step}, time: "
-                        f"{timer.get_pretty_current_duration()}, size: "
-                        f"{len(disk)}/{size}")
-                step += 1
+            if debugger.should_report():
+                debugger.report(
+                    f"Filling, step: {debugger.step_count}, time: "
+                    f"{debugger.pretty_duration_since_start}, size: "
+                    f"{len(disk)}/{size}")
 
         disk = disk[:size]
         return disk
 
-    def get_checksum(self, data: str, debug: bool = False) -> str:
+    def get_checksum(self, data: str, debugger: Debugger) -> str:
         """
         >>> DataGenerator().get_checksum("110010110100")
         '100'
@@ -57,21 +54,17 @@ class DataGenerator:
         '01100'
         """
         reduced = data
-        if debug:
-            step = 0
-            timer = Timer()
         while True:
             new_reduced = self.reduce_data(reduced)
             if new_reduced == reduced:
                 break
             reduced = new_reduced
 
-            if debug:
-                if step % 10 == 0:
-                    print(
-                        f"Check summing, step: {step}, time: "
-                        f"{timer.get_pretty_current_duration()}, size: "
-                        f"{len(reduced)}/{len(data)}")
+            if debugger.should_report():
+                debugger.report(
+                    f"Check summing, step: {debugger.step_count}, time: "
+                    f"{debugger.pretty_duration_since_start}, size: "
+                    f"{len(reduced)}/{len(data)}")
 
         return reduced
 
