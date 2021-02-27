@@ -2,7 +2,6 @@ import math
 from typing import Any, TypeVar, Iterable, List, Tuple
 
 __all__ = [
-    'numbers_product',
     'get_non_co_primes',
     'solve_linear_congruence_system',
     'get_bezout_coefficients',
@@ -11,22 +10,6 @@ __all__ = [
 import utils
 
 T = TypeVar('T', bound=Any)
-
-
-def numbers_product(items: Iterable[T]) -> T:
-    """
-    >>> numbers_product([])
-    1
-    >>> numbers_product([0, 1, 2])
-    0
-    >>> numbers_product([3, 4, 5, 6])
-    360
-    """
-    items_product = 1
-    for item in items:
-        items_product *= item
-
-    return items_product
 
 
 def get_non_co_primes(items: Iterable[int]) -> List[int]:
@@ -40,7 +23,7 @@ def get_non_co_primes(items: Iterable[int]) -> List[int]:
     >>> get_non_co_primes([3, 4, 5, 6])
     [3, 4, 6]
     """
-    items_product = numbers_product(items)
+    items_product = utils.product(items)
     return [
         item
         for item in items
@@ -62,7 +45,7 @@ def solve_linear_congruence_system(
     if non_co_prime_divisors:
         raise Exception(
             f"Some divisors are not co-prime: {non_co_prime_divisors}")
-    divisors_product = utils.numbers_product(divisors)
+    divisors_product = utils.product(divisors)
     coefficients_pairs = (
         get_bezout_coefficients(divisor, divisors_product // divisor)
         for divisor in divisors
