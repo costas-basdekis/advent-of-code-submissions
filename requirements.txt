@@ -2,4 +2,4 @@ ipdb
 Click>=7, <8
 requests==2.22.0
 beautifulsoup4==4.9.3
-aox
+aox==1.1.1

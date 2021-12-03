@@ -3,7 +3,7 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Generic, Type, Optional, Any
+from typing import Dict, List, Generic, Type, Optional, Any, Callable
 
 import click
 
@@ -142,43 +142,37 @@ class Game(Generic[PlayerT, BossT]):
     def find_min_mana_necessary(
         self, debugger: Debugger = Debugger(enabled=False),
     ) -> int:
-        debugger.default_report_if(
-            "Searching for a winning game, no winner yet..."
-        )
-        stack = [deepcopy(self)]
-        min_mana_spent = None
-        while stack:
-            debugger.step()
+        def reporting_format(_: Debugger, message: str) -> str:
             if min_mana_spent is None:
                 min_mana_spent_str = "no winner yet"
             else:
                 min_mana_spent_str = f"best is {min_mana_spent}"
-            debugger.default_report_if(
-                f"Searching for a winning game, {min_mana_spent_str}..."
-            )
-            game = stack.pop(0)
-            if min_mana_spent is not None \
-                    and game.player.mana_spent >= min_mana_spent:
-                continue
-            next_games = game.get_next_games(debugger)
-            for next_game in next_games:
-                if not next_game.finished:
-                    continue
-                if next_game.winner != CharacterEnum.Player:
-                    continue
-                if (
-                    min_mana_spent is not None
-                    and next_game.player.mana_spent >= min_mana_spent
-                ):
-                    continue
-                min_mana_spent = next_game.player.mana_spent
-            stack.extend(next_games)
+            return f"{message} ({min_mana_spent_str}, {len(stack)} in stack)"
 
-        if min_mana_spent is None:
-            min_mana_spent_str = "no winner yet"
-        else:
-            min_mana_spent_str = f"best is {min_mana_spent}"
-        debugger.default_report_if(f"Finished searching: {min_mana_spent_str}")
+        with debugger.adding_extra_report_format(reporting_format):
+            stack = [deepcopy(self)]
+            min_mana_spent = None
+            debugger.default_report_if("Searching for a winning game...")
+            while stack:
+                debugger.step()
+                debugger.default_report_if("Searching for a winning game...")
+                game = stack.pop(0)
+                if min_mana_spent is not None \
+                        and game.player.mana_spent >= min_mana_spent:
+                    continue
+                next_games = game.get_next_games(debugger)
+                for next_game in next_games:
+                    if (
+                        next_game.winner == CharacterEnum.Player
+                        and (
+                            min_mana_spent is None
+                            or next_game.player.mana_spent < min_mana_spent
+                        )
+                    ):
+                        min_mana_spent = next_game.player.mana_spent
+                stack.extend(next_games)
+
+            debugger.default_report(f"Finished searching")
 
         if min_mana_spent is None:
             raise Exception(f"Could not find a winning game")
@@ -224,24 +218,38 @@ class Game(Generic[PlayerT, BossT]):
         character = self.next_turn_character
         other = self.next_turn_other_character
 
-        actions = list(filter(None, [
-            character.apply_spells_start_of_turn(other),
-            other.apply_spells_start_of_turn(character),
-            character.play(other, option),
-            character.apply_spells_end_of_turn(other),
-            other.apply_spells_end_of_turn(character),
-        ]))
+        steps = self.get_play_steps(character, other, option)
+        actions = []
+        for step in steps:
+            actions.append(step())
+            if character.is_dead or other.is_dead:
+                break
+        actions = list(filter(None, actions))
         if actions:
             result = "\n".join(actions)
         else:
             result = None
 
-        if other.is_dead:
+        if character.is_dead:
+            self.winner = self.next_turn_other_character_type
+            return result
+        elif other.is_dead:
             self.winner = self.next_turn_character_type
             return result
 
         self.next_turn_character_type = self.next_turn_other_character_type
         return result
+
+    def get_play_steps(
+        self, character: "Character", other: "Character", option: Any,
+    ) -> List[Callable[[], Optional[str]]]:
+        return [
+            lambda: character.apply_spells_start_of_turn(other),
+            lambda: other.apply_spells_start_of_turn(character),
+            lambda: character.play(other, option),
+            lambda: character.apply_spells_end_of_turn(other),
+            lambda: other.apply_spells_end_of_turn(character),
+        ]
 
     @property
     def next_turn_character(self) -> "Character":
