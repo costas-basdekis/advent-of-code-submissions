@@ -67,6 +67,18 @@ class Game:
         ... ''')
         Game(player_1_position=5, player_2_position=6, ...)
         """
+        player_1_position, player_2_position = \
+            cls.get_player_initial_positions_from_game_text(game_text)
+        return cls(
+            player_1_position=player_1_position,
+            player_2_position=player_2_position,
+            **kwargs,
+        )
+
+    @classmethod
+    def get_player_initial_positions_from_game_text(
+        cls, game_text: str,
+    ) -> Tuple[int, int]:
         players_lines = filter(None, map(str.strip, game_text.splitlines()))
         (
             (player_a_name_str, player_a_position),
@@ -77,11 +89,8 @@ class Game:
         else:
             player_positions_str = player_b_position, player_a_position
         player_1_position, player_2_position = map(int, player_positions_str)
-        return cls(
-            player_1_position=player_1_position,
-            player_2_position=player_2_position,
-            **kwargs,
-        )
+
+        return player_1_position, player_2_position
 
     @property
     def finished(self) -> bool:
