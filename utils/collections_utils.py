@@ -1,5 +1,6 @@
 import itertools
-from typing import Iterable, Tuple, TypeVar, List, Optional
+from typing import Iterable, Tuple, TypeVar, List, Optional, Sized, cast, Dict, \
+    Callable
 
 __all__ = [
     'KeyedDefaultDict',
@@ -8,6 +9,8 @@ __all__ = [
     'all_possible_permutations',
     'all_possible_quantity_splits',
     'get_windows',
+    'iterable_length',
+    'count_by',
 ]
 
 
@@ -40,6 +43,7 @@ class KeyedDefaultDict(dict):
         return value
 
 
+S = TypeVar('S')
 T = TypeVar('T')
 
 
@@ -172,3 +176,43 @@ def last(items: Iterable[T], default: T = NotImplemented) -> Optional[T]:
         pass
 
     return item
+
+
+def iterable_length(iterable: Iterable[T]) -> int:
+    """
+    >>> iterable_length(range(5))
+    5
+    >>> iterable_length(range(-5))
+    0
+    >>> iterable_length((1, 2))
+    2
+    >>> iterable_length([1, 2])
+    2
+    """
+    if hasattr(iterable, "__len__"):
+        return len(cast(Sized, iterable))
+    return sum(1 for _ in iterable)
+
+
+def count_by(
+    iterable: Iterable[T], key: Optional[Callable[[T], S]] = None,
+) -> Dict[T, int]:
+    """
+    >>> count_by(range(5))
+    {0: 1, 1: 1, 2: 1, 3: 1, 4: 1}
+    >>> count_by(range(-5))
+    {}
+    >>> count_by((1, 2))
+    {1: 1, 2: 1}
+    >>> count_by([1, 2])
+    {1: 1, 2: 1}
+    >>> count_by([1, 2, 1, 2, 2])
+    {1: 2, 2: 3}
+    >>> count_by([1, 1, 1, 1, 1])
+    {1: 5}
+    """
+    return {
+        _key: iterable_length(items)
+        for _key, items
+        in itertools.groupby(sorted(iterable, key=key), key=key)
+    }
