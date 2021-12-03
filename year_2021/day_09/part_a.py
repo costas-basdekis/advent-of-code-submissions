@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from typing import List, Union, Tuple, Iterable
+from typing import List, Union, Tuple, Iterable, Optional, Set
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, Point2D
@@ -130,7 +130,11 @@ class Cave:
             if self.is_low_point(position)
         ]
 
-    def is_low_point(self, position: Union[Tuple, Point2D]) -> bool:
+    def is_low_point(
+        self, position: Union[Tuple, Point2D],
+        excluding: Optional[Set[Point2D]] = None,
+        allow_equal: bool = False,
+    ) -> bool:
         """
         >>> Cave.from_cave_text('''
         ...     2199943210
@@ -152,19 +156,27 @@ class Cave:
         if not isinstance(position, Point2D):
             position = Point2D(position)
 
+        neighbours = position.get_manhattan_neighbours()
+        if excluding is None:
+            positions = neighbours
+        else:
+            positions = set(neighbours) - excluding
+
         height = self[position]
         try:
-            min_neighbour_height = min(
+            min_neighbour_height = min((
                 self[neighbour]
-                for neighbour in position.get_manhattan_neighbours()
+                for neighbour in positions
                 if neighbour in self
-            )
-        except Exception as base:
+            ), default=height - 1)
+        except KeyError as base:
             raise Exception(
-                f"Error while checking neighbours "
-                f"{list(position.get_manhattan_neighbours())}"
+                f"Error while checking neighbours {list(neighbours)}"
             ) from base
-        return height < min_neighbour_height
+        if allow_equal:
+            return height <= min_neighbour_height
+        else:
+            return height < min_neighbour_height
 
 
 Challenge.main()
