@@ -359,6 +359,11 @@ class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
     coordinates_names = ("x", "y")
 
     def __new__(cls, *args, **kwargs):
+        if len(args) == 1:
+            if isinstance(args[0], cls):
+                return args[0]
+            if isinstance(args[0], tuple):
+                args = args[0]
         # noinspection PyTypeChecker
         return super().__new__(cls, *args, **kwargs)
 
@@ -367,6 +372,11 @@ class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
     coordinates_names = ("x", "y", "z")
 
     def __new__(cls, *args, **kwargs):
+        if len(args) == 1:
+            if isinstance(args[0], cls):
+                return args[0]
+            if isinstance(args[0], tuple):
+                args = args[0]
         # noinspection PyTypeChecker
         return super().__new__(cls, *args, **kwargs)
 
@@ -375,6 +385,11 @@ class Point4D(namedtuple("Point4D", ("x", "y", "z", "t")), BasePoint):
     coordinates_names = ("x", "y", "z", "t")
 
     def __new__(cls, *args, **kwargs):
+        if len(args) == 1:
+            if isinstance(args[0], cls):
+                return args[0]
+            if isinstance(args[0], tuple):
+                args = args[0]
         # noinspection PyTypeChecker
         return super().__new__(cls, *args, **kwargs)
 
