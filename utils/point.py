@@ -160,6 +160,8 @@ class BasePoint(metaclass=BasePointMeta):
         >>> Point3D(3, -2, 4).offset((-2, -5, 3), factor=-1)
         Point3D(x=5, y=3, z=1)
         """
+        if factor == 0:
+            return self
         cls = type(self)
         # noinspection PyArgumentList
         return cls(**{

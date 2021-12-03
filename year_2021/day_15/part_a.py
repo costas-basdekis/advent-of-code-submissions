@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
+from itertools import chain
 from typing import Generic, List, Union, Type, Iterable, Dict
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D, TV, get_type_argument_class
+from utils import BaseChallenge, Point2D, TV, get_type_argument_class, \
+    min_and_max_tuples
 
 
 class Challenge(BaseChallenge):
@@ -21,7 +23,7 @@ CavernMeasurerT = TV["CavernMeasurer"]
 
 @dataclass
 class Cavern(Generic[CavernMeasurerT]):
-    risks: List[List[int]]
+    risks: Dict[Point2D, int]
 
     @classmethod
     def get_measurer_class(cls) -> Type[CavernMeasurerT]:
@@ -53,38 +55,34 @@ class Cavern(Generic[CavernMeasurerT]):
         1293138521
         2311944581
         """
+        lines = filter(None, map(str.strip, cavern_text.splitlines()))
         return cls(
-            risks=[
-                list(map(int, line))
-                for line
-                in filter(None, map(str.strip, cavern_text.splitlines()))
-            ],
+            risks={
+                Point2D(x, y): int(risk_str)
+                for y, line in enumerate(lines)
+                for x, risk_str in enumerate(line)
+            },
         )
 
     def __str__(self) -> str:
+        (min_x, min_y), (max_x, max_y) = min_and_max_tuples(self.risks)
         return "\n".join(
-            "".join(map(str, line))
-            for line in self.risks
+            "".join(
+                str(self.risks.get(Point2D(x, y), "."))
+                for x in range(min_x, max_x + 1)
+            )
+            for y in range(min_y, max_y + 1)
         )
 
     @property
     def target(self) -> Point2D:
-        return Point2D(len(self.risks[-1]) - 1, len(self.risks) - 1)
+        return max(self.risks)
 
     def __getitem__(self, item: Union[tuple, Point2D]) -> int:
-        item = Point2D(item)
-        if item not in self:
-            raise KeyError(item)
-        return self.risks[item.y][item.x]
+        return self.risks[Point2D(item)]
 
     def __contains__(self, item: Union[tuple, Point2D]) -> bool:
-        item = Point2D(item)
-        if not (0 <= item.y < len(self.risks)):
-            return False
-        if not (0 <= item.x < len(self.risks[item.y])):
-            return False
-
-        return True
+        return Point2D(item) in self.risks
 
     def find_lowest_risk_path_risk(
         self, debugger: Debugger = Debugger(enabled=False),
@@ -140,6 +138,26 @@ class CavernMeasurer(Generic[CavernMeasurerStateT]):
             distances={initial.position: 0},
         )
 
+    def __str__(self) -> str:
+        max_distance = max(self.distances.values()) or 1
+        state_positions = {state.position for state in self.stack}
+        (min_x, min_y), (max_x, max_y) = min_and_max_tuples(chain(
+            self.distances,
+            state_positions,
+        ))
+        return "\n".join(
+            "".join(
+                "*"
+                if point in state_positions else
+                str(int(9 * self.distances[point] / max_distance))
+                if point in self.distances else
+                "."
+                for x in range(min_x, max_x + 1)
+                for point in [Point2D(x, y)]
+            )
+            for y in range(min_y, max_y + 1)
+        )
+
     def find_min_target_distance(
         self, debugger: Debugger = Debugger(enabled=False),
     ) -> int:
@@ -155,14 +173,21 @@ class CavernMeasurer(Generic[CavernMeasurerStateT]):
         self, debugger: Debugger = Debugger(enabled=False),
     ) -> None:
         while debugger.step_if(self.stack):
+            should_report = debugger.should_report()
             debugger.default_report_if(
                 f"Seen {len(self.distances)}, {len(self.stack)} in stack, "
                 f"target risk is {self.distances.get(self.target)}"
             )
+            if should_report:
+                debugger.report(str(self))
             state = self.stack.pop(0)
+            if state.distance > self.distances[state.position]:
+                continue
 
             for next_state in state.get_next_states(self):
                 self.visit_state(next_state)
+        if debugger.enabled:
+            debugger.report(str(self))
 
     def visit_state(self, state: CavernMeasurerStateT) -> bool:
         if not self.visit_for_distance(state):

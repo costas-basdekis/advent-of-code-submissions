@@ -65,7 +65,7 @@ def min_and_max_tuples(tuples: Iterable[TupleT],
     >>> min_and_max_tuples([1])
     Traceback (most recent call last):
     ...
-    TypeError: min_and_max_tuples() arg is not a tuple sequence
+    TypeError: min_and_max_tuples() arg is not a tuple sequence, but int
     >>> min_and_max_tuples([], ())
     ((), ())
     >>> min_and_max_tuples([], (1, 2, 3))
@@ -97,11 +97,17 @@ def min_and_max_tuples(tuples: Iterable[TupleT],
     except StopIteration:
         raise ValueError('min_and_max_tuples() arg is an empty sequence')
     if not isinstance(first_tuple, tuple):
-        raise TypeError('min_and_max_tuples() arg is not a tuple sequence')
+        raise TypeError(
+            f'min_and_max_tuples() arg is not a tuple sequence, but '
+            f'{type(first_tuple).__name__} '
+        )
     min_values = max_values = first_tuple
     for _tuple in tuples:
         if not isinstance(_tuple, tuple):
-            raise TypeError('min_and_max_tuples() arg is not a tuple sequence')
+            raise TypeError(
+                f'min_and_max_tuples() arg is not a tuple sequence, but '
+                f'{type(_tuple).__name__}'
+            )
         if len(_tuple) != len(first_tuple):
             raise TypeError(
                 'min_and_max_tuples() arg is not a fixed length tuple sequence')
