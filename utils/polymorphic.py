@@ -1,4 +1,4 @@
-from typing import Dict, Type
+from typing import Dict, Type, TypeVar
 
 __all__ = ['CouldNotParseException', 'PolymorphicParser']
 
@@ -7,12 +7,16 @@ class CouldNotParseException(Exception):
     pass
 
 
+TT = TypeVar("TT", bound=Type["PolymorphicParser"])
+
+
 class PolymorphicParser:
     name: str = NotImplemented
 
     sub_classes: Dict[str, Type['PolymorphicParser']]
     is_root: bool
     parse_root: Type['PolymorphicParser']
+    root_class: Type['PolymorphicParser']
 
     def __init_subclass__(cls, **kwargs):
         """
@@ -44,6 +48,12 @@ class PolymorphicParser:
                 cls.sub_classes = {}
             else:
                 cls.sub_classes = dict(cls.sub_classes)
+        root_classes = [
+            _class
+            for _class in cls.mro()
+            if getattr(_class, "is_root", False)
+        ]
+        cls.root_class = root_classes[0]
 
     @classmethod
     def register(cls, sub_class: Type['PolymorphicParser'],
@@ -149,3 +159,7 @@ class PolymorphicParser:
     @classmethod
     def try_parse(cls, text: str):
         raise NotImplementedError()
+
+    @classmethod
+    def __class_getitem__(cls, item: TT) -> TT:
+        return cls.sub_classes[item.name]
