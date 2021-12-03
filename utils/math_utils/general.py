@@ -1,9 +1,11 @@
+import math
 from typing import Any, TypeVar, Iterable, Tuple, Optional, Callable
 
 __all__ = [
     'min_and_max',
     'min_and_max_tuples',
     'product',
+    'lcm',
 ]
 
 T = TypeVar('T', bound=Any)
@@ -142,3 +144,13 @@ def product(values: Iterable[T], default=1) -> T:
         result *= value
 
     return result
+
+
+def lcm(a: int, b: int) -> int:
+    """
+    >>> lcm(2, 3)
+    6
+    >>> lcm(4, 6)
+    12
+    """
+    return abs(a * b) // math.gcd(a, b)

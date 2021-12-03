@@ -7,6 +7,7 @@ from abc import ABC
 
 import utils
 from aox.challenge import Debugger
+from utils import lcm
 from year_2019.day_22 import part_a
 
 
@@ -19,10 +20,17 @@ class Challenge(utils.BaseChallenge):
         True
         """
         shuffles = ShufflesExtended.parse(_input)
+
+        size = 119315717514047
+        count = 101741582076661
+        index = 2020
+
+        period = shuffles.get_shuffling_period(size)
+        search_count = count % period
         return shuffles.get_index_at_position_after_shuffle_many(
-            index=2020,
-            size=119315717514047,
-            count=101741582076661,
+            index=index,
+            size=size,
+            count=search_count,
             debugger=debugger,
         )
 
@@ -35,7 +43,7 @@ class ShufflesExtended(part_a.Shuffles):
     def get_shuffling_period(self, size):
         period = 1
         for shuffle in self.shuffles:
-            period = math.lcm(period, shuffle.get_shuffling_period(size))
+            period = lcm(period, shuffle.get_shuffling_period(size))
 
         return period
 
@@ -182,16 +190,24 @@ class ShufflesExtended(part_a.Shuffles):
                 total_index = shuffle(total_index)
             if total_index == index:
                 break
-            debugger.default_report_if("Looking...")
+            debugger.default_report_if(
+                f"Looking {int(step / count * 10000) / 100}% "
+                f"(current is {total_index})..."
+            )
         else:
             return total_index
 
         cycle_length = step + 1
         debugger.default_report(f"Found cycle of length {cycle_length}")
 
-        return self.get_index_at_position_after_shuffle_many(
-            2020, size, count=count % cycle_length, debugger=debugger,
-        )
+        for _ in debugger.stepping(range(count % cycle_length)):
+            for shuffle in shuffles:
+                total_index = shuffle(total_index)
+            debugger.default_report_if(
+                f"Finishing after cycle (current is {total_index})..."
+            )
+
+        return total_index
 
     def get_index_at_position_after_shuffle(self, index, size):
         """
