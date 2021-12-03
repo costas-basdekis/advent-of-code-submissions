@@ -165,15 +165,18 @@ class CaveFinder(Generic[CaveFinderStateT]):
 
     def find(self, debugger: Debugger = Debugger(enabled=False)) -> Paths:
         def reporting_format(_: Debugger, message: str) -> str:
-            return f"{message} ({len(seen)} seen, {len(stack)} in stack)"
+            return (
+                f"{message} ({len(paths)} found, {len(seen)} seen, "
+                f"{len(stack)} in stack)"
+            )
 
         paths = []
         stack: List[CaveFinderStateT] = [self.get_state_class().make_initial()]
         seen = {stack[0]}
         with debugger.adding_extra_report_format(reporting_format):
-            debugger.report("Looking...")
+            debugger.default_report("Looking...")
             while debugger.step_if(stack):
-                debugger.report("Looking...")
+                debugger.default_report_if("Looking...")
                 state = stack.pop(0)
                 for next_state in state.get_next_states(self.system.graph):
                     if next_state in seen:
@@ -181,9 +184,9 @@ class CaveFinder(Generic[CaveFinderStateT]):
                     seen.add(next_state)
                     if next_state.is_terminal:
                         paths.append(next_state.path)
-                        debugger.report(f"Found path {next_state.path}")
                         continue
                     stack.append(next_state)
+            debugger.default_report("Finished looking")
 
         return paths
 
@@ -216,20 +219,23 @@ class CaveFindingState:
         if self.is_terminal:
             return
 
-        cls = type(self)
         for next_position in graph[self.position]:
-            next_small_visited = self.small_visited
-            if self.is_cave_small(next_position):
-                if next_position in next_small_visited:
-                    continue
-                next_small_visited = next_small_visited | {next_position}
-            next_path = self.path + [next_position]
+            if not self.can_visit(next_position):
+                continue
             # noinspection PyArgumentList
-            yield cls(
-                position=next_position,
-                path=next_path,
-                small_visited=next_small_visited,
-            )
+            yield self.visit(next_position)
+
+    def visit(self, next_position: str) -> "CaveFindingState":
+        cls = type(self)
+        next_small_visited = self.small_visited
+        if self.is_cave_small(next_position):
+            next_small_visited = next_small_visited | {next_position}
+        # noinspection PyArgumentList
+        return cls(
+            position=next_position,
+            path=self.path + [next_position],
+            small_visited=next_small_visited,
+        )
 
     @property
     def is_terminal(self) -> bool:
@@ -240,6 +246,11 @@ class CaveFindingState:
         True
         """
         return self.path[-1] == CaveSystem.END
+
+    def can_visit(self, cave: str) -> bool:
+        if not self.is_cave_small(cave):
+            return True
+        return cave not in self.small_visited
 
     def is_cave_small(self, cave: str) -> bool:
         """
