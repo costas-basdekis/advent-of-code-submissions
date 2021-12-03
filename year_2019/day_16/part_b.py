@@ -1,15 +1,59 @@
 #!/usr/bin/env python3
-import utils
+import math
 
-from year_2019.day_16.part_a import get_phase_patterns, get_next_phase
+import utils
+from aox.challenge import Debugger
+
+from year_2019.day_16.part_a import get_phase_patterns, get_next_phase, \
+    get_nth_phase_message, get_digit
 
 
 class Challenge(utils.BaseChallenge):
-    def solve(self, _input, debug=False):
+    def solve(self, _input, debugger: Debugger):
         """
         >>> Challenge().default_solve()
         42
         """
+        input_message = _input.strip()
+        original_initial = input_message * 10000
+        original_offset = int(input_message[:7])
+        return get_nth_phase_message(
+            original_initial, count=1, message_offset=original_offset,
+            debugger=debugger,
+        )
+
+        # return "".join(map(str, (
+        #     get_digit(original_initial, offset, count=2)
+        #     for offset in range(original_offset, original_offset + 8)
+        # )))
+
+        # original_initial_length = len(input_message) * 10000
+        # # original_initial = input_message * 10000
+        # truncated_initial_length = (
+        #     original_initial_length
+        #     - (
+        #         math.floor(original_offset / len(input_message))
+        #         * len(input_message)
+        #     )
+        # )
+        # debugger.report(f"Creating a message of {truncated_initial_length / 1000}K instead of {original_initial_length / 1000}K")
+        # truncated_initial = (
+        #     input_message
+        #     * (truncated_initial_length // len(input_message))
+        # )
+        # truncated_offset = (
+        #     original_offset
+        #     - (original_initial_length - truncated_initial_length)
+        # )
+        # debugger.report(f"Offset will be {truncated_offset} instead of {original_offset}")
+        # truncated_initial = list(map(int, truncated_initial))
+        # debugger.report(f"Created a list of length {len(truncated_initial)}")
+        # return get_nth_phase_message(
+        #     truncated_initial,
+        #     message_offset=truncated_offset,
+        #     count=1,
+        #     debugger=debugger,
+        # )
         # return decode_signal(_input.strip())
 
 
@@ -50,8 +94,8 @@ def get_nth_phase_message_multiple(initial, count=100, message_offset=0):
     if isinstance(initial, str):
         initial = list(map(int, initial))
     phase_patterns = multiple_phase_patterns(
-        list(get_phase_patterns(len(initial))), count)
-    result = get_next_phase(initial, phase_patterns)
+        list(map(list, get_phase_patterns(len(initial)))), count)
+    result = get_next_phase(initial, len(initial), phase_patterns)
     # phase_patterns = multiple_phase_patterns(
     #     list(get_phase_patterns(len(initial))), 2)
     # result = repeat(
@@ -62,7 +106,7 @@ def get_nth_phase_message_multiple(initial, count=100, message_offset=0):
 
 def multiple_phase_patterns(patterns, count):
     """
-    >>> single = list(get_phase_patterns(8))
+    >>> single = list(map(list, get_phase_patterns(8)))
     >>> multiple_phase_patterns(single, 1) == single
     True
     >>> doubled = combine_phase_patterns(single, single)
