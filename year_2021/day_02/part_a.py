@@ -2,10 +2,11 @@
 import re
 from abc import ABC
 from dataclasses import dataclass
-from typing import ClassVar, List
+from typing import ClassVar, List, Generic, Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, PolymorphicParser, Point2D
+from utils import BaseChallenge, PolymorphicParser, Point2D, TV, \
+    get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -18,9 +19,16 @@ class Challenge(BaseChallenge):
         return position.x * position.y
 
 
+InstructionT = TV['Instruction']
+
+
 @dataclass
-class InstructionSet:
-    instructions: List["Instruction"]
+class InstructionSet(Generic[InstructionT]):
+    instructions: List[InstructionT]
+
+    @classmethod
+    def get_instruction_class(cls) -> Type[InstructionT]:
+        return get_type_argument_class(cls, InstructionT)
 
     @classmethod
     def from_instructions_text(cls, instructions_text: str) -> "InstructionSet":
@@ -40,9 +48,10 @@ class InstructionSet:
             DownInstruction(offset=Point2D(x=0, y=8)),
             ForwardInstruction(offset=Point2D(x=2, y=0))])
         """
+        instruction_class = cls.get_instruction_class()
         return cls(
             instructions=list(map(
-                Instruction.parse,
+                instruction_class.parse,
                 instructions_text.splitlines(),
             )),
         )
