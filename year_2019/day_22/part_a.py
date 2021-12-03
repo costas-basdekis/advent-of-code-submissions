@@ -23,7 +23,7 @@ class Shuffles:
 
     @classmethod
     def parse(cls, text):
-        lines = text.splitlines()
+        lines = map(str.strip, text.splitlines())
         non_empty_lines = filter(None, lines)
         shuffles = list(map(cls.shuffle_class.parse, non_empty_lines))
 
