@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import re
 from dataclasses import dataclass
-from typing import Dict, Union
+from typing import Dict, Union, Generic
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, helper, iterable_length, min_and_max
+from utils import BaseChallenge, helper, iterable_length, min_and_max, TV
 
 
 class Challenge(BaseChallenge):
@@ -20,9 +20,11 @@ class Challenge(BaseChallenge):
         return process.apply_many(polymer, count=10).score
 
 
+PolymerT = TV["Polymer"]
+
 
 @dataclass
-class Process:
+class Process(Generic[PolymerT]):
     rules: Dict[str, str]
 
     re_rule = re.compile(r"^\s*(\w{2})\s*->\s*(\w)\s*$")
@@ -59,7 +61,7 @@ class Process:
             },
         )
 
-    def apply_many(self, polymer: "Polymer", count: int) -> "Polymer":
+    def apply_many(self, polymer: PolymerT, count: int) -> PolymerT:
         """
         >>> Process.from_rules_text('''
         ...     CH -> B
@@ -87,7 +89,7 @@ class Process:
 
         return result
 
-    def apply(self, polymer: "Polymer") -> "Polymer":
+    def apply(self, polymer: PolymerT) -> PolymerT:
         """
         >>> Process.from_rules_text('''
         ...     CH -> B

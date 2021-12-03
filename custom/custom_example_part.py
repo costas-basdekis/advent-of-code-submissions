@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-from typing import Union
+from dataclasses import dataclass
+import re
+from typing import Callable, Dict, Generic, List, Optional, Tuple, Union
 
 from aox.challenge import Debugger
-from utils import BaseChallenge
+from utils import BaseChallenge, Point2D, TV, get_type_argument_class
 
 
 class Challenge(BaseChallenge):
