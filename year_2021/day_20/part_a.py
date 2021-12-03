@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 from dataclasses import dataclass
 from typing import cast, Dict, Set, Tuple, Union, Iterable
 
@@ -135,6 +136,10 @@ class Area:
     def ys(self, pad_count: int = 0) -> Iterable[int]:
         yield from range(self.min.y - pad_count, self.max.y + pad_count + 1)
 
+    @property
+    def size(self) -> Point2D:
+        return Point2D(self.max.x - self.min.x + 1, self.max.y - self.min.y + 1)
+
 
 @dataclass
 class Image:
@@ -205,7 +210,10 @@ class Image:
         else:
             return self.default_out_of_boundary
 
-    def step_many(self, algorithm: IEAlgorithm, count: int) -> "Image":
+    def step_many(
+        self, algorithm: IEAlgorithm, count: int,
+        debugger: Debugger = Debugger(enabled=False),
+    ) -> "Image":
         """
         >>> _algorithm = IEAlgorithm.from_mapping_text(
         ...     "..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#...."
@@ -249,8 +257,13 @@ class Image:
         ...........
         """
         result = self
-        for _ in range(count):
+        debugger.default_report(f"Stepping {count} times")
+        for step in debugger.stepping(range(count)):
             result = result.step(algorithm)
+            debugger.default_report_if(
+                f"Stepped {step}/{count} times, {result.light_pixel_count} "
+                f"lights in result, size of {tuple(result.boundary.size)}"
+            )
 
         return result
 
@@ -313,7 +326,7 @@ class Image:
         ))
 
     @property
-    def light_pixel_count(self) -> int:
+    def light_pixel_count(self) -> Union[int, float]:
         """
         >>> _algorithm = IEAlgorithm.from_mapping_text(
         ...     "..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#...."
@@ -337,7 +350,7 @@ class Image:
         35
         """
         if self.default_out_of_boundary:
-            raise Exception(f"Infinite pixels")
+            return math.inf
         return len(self.light_pixels)
 
 
