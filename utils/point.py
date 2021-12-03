@@ -1,3 +1,5 @@
+from operator import le, lt
+
 import itertools
 import math
 from collections import namedtuple
@@ -354,6 +356,54 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             )
 
         return self.EUCLIDEAN_NEIGHBOUR_OFFSETS[size]
+
+    def is_bound(
+        self, min_value: "BasePoint", max_value: "BasePoint",
+        min_inclusive: bool = True, max_inclusive: bool = True,
+    ) -> bool:
+        """
+        >>> Point2D(2, 2).is_bound(Point2D(0, 0), Point2D(4, 4))
+        True
+        >>> Point2D(2, 2).is_bound(Point2D(2, 2), Point2D(4, 4))
+        True
+        >>> Point2D(2, 2).is_bound(Point2D(0, 0), Point2D(2, 2))
+        True
+        >>> Point2D(2, 2).is_bound(
+        ...     Point2D(0, 0), Point2D(4, 4), max_inclusive=False)
+        True
+        >>> Point2D(2, 2).is_bound(
+        ...     Point2D(2, 2), Point2D(4, 4), min_inclusive=False)
+        False
+        >>> Point2D(2, 2).is_bound(
+        ...     Point2D(0, 0), Point2D(2, 2), max_inclusive=False)
+        False
+        >>> Point2D(2, 5).is_bound(Point2D(0, 0), Point2D(4, 4))
+        False
+        >>> Point2D(2, 5).is_bound(Point2D(2, 2), Point2D(4, 4))
+        False
+        >>> Point2D(2, 5).is_bound(Point2D(0, 0), Point2D(2, 2))
+        False
+        >>> Point3D(2, 2, 2).is_bound(Point3D(0, 0, 0), Point3D(4, 4, 4))
+        True
+        >>> Point4D(2, 2, 2, 2).is_bound(
+        ...     Point4D(0, 0, 0, 0), Point4D(4, 4, 4, 4))
+        True
+        """
+        if min_inclusive:
+            min_operator = le
+        else:
+            min_operator = lt
+        if max_inclusive:
+            max_operator = le
+        else:
+            max_operator = lt
+
+        # noinspection PyTypeChecker
+        return all(
+            min_operator(min_value, value)
+            and max_operator(value, max_value)
+            for value, min_value, max_value in zip(self, min_value, max_value)
+        )
 
 
 class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
