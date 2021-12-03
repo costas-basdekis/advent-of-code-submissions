@@ -60,10 +60,15 @@ class DiagnosticEntrySet(Generic[DiagnosticEntryT]):
         return cls(entries=entries, size=size)
 
     def count_bits(self, position: int) -> int:
+        return self.count_bits_in_entries(self.entries, position)
+
+    def count_bits_in_entries(
+            self, entries: List[DiagnosticEntryT], position: int,
+    ) -> int:
         mask = 2 ** position
         return sum(
             1
-            for entry in self.entries
+            for entry in entries
             if entry.has_bit(mask)
         )
 
