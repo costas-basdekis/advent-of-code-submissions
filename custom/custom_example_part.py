@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 import re
+from enum import Enum
 from typing import (
-    Callable, Dict, Generic, Iterable, List, Optional, Set, Tuple, Type, Union,
+    Any, cast, Callable, ClassVar, Dict, Generic, Iterable, List, Optional, Set,
+    Tuple, Type, Union, TypeVar,
 )
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D, TV, get_type_argument_class
+from utils import (
+    BaseChallenge, Point2D, get_type_argument_class, helper,
+)
 
 
 class Challenge(BaseChallenge):

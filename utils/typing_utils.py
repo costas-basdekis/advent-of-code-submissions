@@ -1,6 +1,6 @@
 import sys
 from typing import TypeVar, Type, ForwardRef, get_args, Generic, Union, \
-    Optional, Dict, Any
+    Optional, Dict, Any, cast
 # noinspection PyUnresolvedReferences,PyProtectedMember
 from typing import _type_check
 
@@ -93,12 +93,15 @@ def create_bound_type_var(bound: Bound) -> TypeVar:
 T = TypeVar('T')
 TV: Dict[Bound, T] = KeyedDefaultDict(create_bound_type_var)
 
+TypeT = TypeVar("TypeT", bound=TypeVar)
+
 TypeArgument = Union[TypeVar, ForwardRef, Type]
 
 
 def get_type_argument_class(
-        cls: Type['Generic'], argument_type_var: TypeVar,
-        class_globals: Optional[Dict[str, Any]] = None) -> Type:
+    cls: Type['Generic'], argument_type_var: TypeT,
+    class_globals: Optional[Dict[str, Any]] = None,
+) -> Type[TypeT]:
     """
     Get the subclassed type argument, eg for `T2` in `B(A[E, F, G])` it's F,
     where `A(Generic[T1, T2, T3])`, and for `A` it's `D` where
@@ -138,7 +141,10 @@ def get_type_argument_class(
     <class '....B2'>
     """
     type_or_var = get_type_argument(cls, argument_type_var)
-    return resolve_type_argument(cls, type_or_var, class_globals=class_globals)
+    return cast(
+        Type[TypeT],
+        resolve_type_argument(cls, type_or_var, class_globals=class_globals),
+    )
 
 
 def resolve_type_argument(cls: Type['Generic'], type_or_var: TypeArgument,

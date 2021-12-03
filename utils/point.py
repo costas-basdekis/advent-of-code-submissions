@@ -19,17 +19,16 @@ class BasePointMeta(type):
 
     def __new__(mcs, *args, **kwargs):
         # noinspection PyPep8Naming
-        Point = super().__new__(mcs, *args, **kwargs)
+        Point = super().__new__(mcs, *args)
 
-        # noinspection PyArgumentList
-        mcs.assign_auto_attributes(mcs, Point)
+        if not kwargs.get("abstract", False):
+            # noinspection PyArgumentList
+            mcs.assign_auto_attributes(mcs, Point)
 
         return Point
 
     # noinspection PyPep8Naming
     def assign_auto_attributes(cls, Point):
-        if Point.__name__ == 'BasePoint':
-            return
         for name in dir(Point):
             attribute = getattr(Point, name)
             if attribute == cls:
@@ -40,7 +39,7 @@ class BasePointMeta(type):
             setattr(Point, auto_assign_to, attribute())
 
 
-class BasePoint(metaclass=BasePointMeta):
+class BasePoint(metaclass=BasePointMeta, abstract=True):
     _fields: Tuple[str, ...]
     coordinates_names: Tuple[str, ...]
 
