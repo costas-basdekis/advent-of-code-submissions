@@ -1,4 +1,4 @@
-from typing import Any, TypeVar, Iterable, Tuple
+from typing import Any, TypeVar, Iterable, Tuple, Optional, Callable
 
 __all__ = [
     'min_and_max',
@@ -9,8 +9,10 @@ __all__ = [
 T = TypeVar('T', bound=Any)
 
 
-def min_and_max(values: Iterable[T], default: T = NotImplemented
-                ) -> Tuple[T, T]:
+def min_and_max(
+    values: Iterable[T], default: T = NotImplemented,
+    key: Optional[Callable[[T], Any]] = None,
+) -> Tuple[T, T]:
     """
     >>> min_and_max([])
     Traceback (most recent call last):
@@ -27,6 +29,9 @@ def min_and_max(values: Iterable[T], default: T = NotImplemented
     >>> # noinspection PyUnresolvedReferences
     >>> min_and_max(x for x in [1, 2, 4, 5, -1, 8, 2])
     (-1, 8)
+    >>> # noinspection PyUnresolvedReferences
+    >>> min_and_max((x for x in [1, 2, 4, 5, -1, 8, 2]), key=lambda x: -x)
+    (8, -1)
     """
     values = iter(values)
     if default is NotImplemented:
@@ -39,8 +44,8 @@ def min_and_max(values: Iterable[T], default: T = NotImplemented
         raise ValueError('min_and_max() arg is an empty sequence')
     min_value = max_value = first_value
     for value in values:
-        min_value = min(min_value, value)
-        max_value = max(max_value, value)
+        min_value = min(min_value, value, key=key)
+        max_value = max(max_value, value, key=key)
 
     return min_value, max_value
 
