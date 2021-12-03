@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from functools import reduce
 
 from itertools import combinations
-from typing import List, Iterable, Tuple
+from typing import List, Iterable, Tuple, ClassVar, Type, cast
 
 from aox.challenge import Debugger
 from utils import BaseChallenge
@@ -23,6 +23,15 @@ class Challenge(BaseChallenge):
 @dataclass
 class PackageSet:
     packages: List[int]
+    group_count: ClassVar[int] = 3
+
+    @classmethod
+    def of_group_count(cls, group_count: int) -> Type["PackageSet"]:
+        return cast(Type[PackageSet], type(
+            f"PackageSetOf{group_count}",
+            (cls,),
+            {"group_count": group_count},
+        ))
 
     @classmethod
     def from_packages_text(cls, packages_text: str) -> "PackageSet":
@@ -54,13 +63,13 @@ class PackageSet:
         20
         """
         total_sum = sum(self.packages)
-        if total_sum % 3 != 0:
+        if total_sum % self.group_count != 0:
             raise Exception(
-                f"Expected total sum to be divisible by 3, but it wasn't: "
-                f"{total_sum}"
+                f"Expected total sum to be divisible by {self.group_count}, "
+                f"but it wasn't: {total_sum}"
             )
 
-        return total_sum // 3
+        return total_sum // self.group_count
 
     @property
     def first_group_quantum_entanglement(self) -> int:
