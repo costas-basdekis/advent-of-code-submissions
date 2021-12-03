@@ -24,6 +24,12 @@ State = List[int]
 def find_maximum_valid_input(
     debugger: Debugger = Debugger(enabled=False),
 ) -> int:
+    return find_first_valid_input(range(9, 0, -1), debugger=debugger)
+
+
+def find_first_valid_input(
+    digits: Iterable[int], debugger: Debugger = Debugger(enabled=False),
+) -> int:
     def get_next_chains(
         _chains: Iterable[Tuple[InputList, int]], _index: int,
     ) -> Iterable[Tuple[InputList, int]]:
@@ -34,7 +40,7 @@ def find_maximum_valid_input(
                     f"{run_program_optimised(previous_inputs, True)}/"
                     f"{run_program_optimised_list(previous_inputs, True)}",
                 )
-            for next_input in range(9, 0, -1):
+            for next_input in digits:
                 state = get_program_optimised_state(
                     previous_state, _index, next_input,
                 )
