@@ -32,14 +32,14 @@ SIGNALS_BY_DIGIT: Dict[int, Signals] = {
     8: ('a', 'b', 'c', 'd', 'e', 'f', 'g'),
     9: ('a', 'b', 'c', 'd', 'f', 'g'),
 }
-DIGITS_BY_SIGNAL: Dict[int, Signals] = {
+DIGITS_BY_SIGNALS: Dict[Signals, int] = {
     signals: digit
     for digit, signals in SIGNALS_BY_DIGIT.items()
 }
 DIGITS_BY_SIGNAL_LENGTH = helper.group_by(
-    DIGITS_BY_SIGNAL,
+    DIGITS_BY_SIGNALS,
     key=len,
-    value=DIGITS_BY_SIGNAL.__getitem__,
+    value=DIGITS_BY_SIGNALS.__getitem__,
 )
 
 
@@ -140,7 +140,7 @@ class Entry(Generic[DisplayT]):
         return sum(
             1
             for display in self.outputs
-            if display.try_get_digit_by_length() is not None
+            if display.try_get_digit_by_length() in (1, 4, 7, 8)
         )
 
 
