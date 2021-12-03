@@ -80,6 +80,8 @@ class School:
         26
         >>> School.from_school_text("3,4,3,1,2").advance_many(80).fish_count
         5934
+        >>> School.from_school_text("3,4,3,1,2").advance_many(256).fish_count
+        26984457539
         """
         return sum(self.counts.values())
 
