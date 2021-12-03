@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 from dataclasses import dataclass
-from typing import Generic, Type, cast, List, Set
+from typing import Generic, Type, List, Set, Iterable
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, Point2D, TV, get_type_argument_class
@@ -82,9 +82,12 @@ class LineSet(Generic[LineT]):
 
     @property
     def non_diagonal_overlapping_points(self) -> Set[Point2D]:
+        return self.get_overlapping_points(self.non_diagonal_lines)
+
+    def get_overlapping_points(self, lines: Iterable[LineT]) -> Set[Point2D]:
         points = set()
         overlapping_points = set()
-        for line in self.non_diagonal_lines:
+        for line in lines:
             line_points = line.points
             overlapping_points |= points & line_points
             points |= line_points
@@ -153,12 +156,20 @@ class Line:
         """
         >>> Line(Point2D(0, 0), Point2D(5, 0)).width
         6
+        >>> Line(Point2D(0, 0), Point2D(-5, 0)).width
+        6
         >>> Line(Point2D(0, 0), Point2D(0, 5)).width
         1
         >>> Line(Point2D(0, 0), Point2D(5, 5)).width
         6
+        >>> Line(Point2D(0, 0), Point2D(-5, 5)).width
+        6
+        >>> Line(Point2D(0, 0), Point2D(5, -5)).width
+        6
+        >>> Line(Point2D(0, 0), Point2D(-5, -5)).width
+        6
         """
-        return self.end.x - self.start.x + 1
+        return abs(self.end.x - self.start.x) + 1
 
     @property
     def height(self) -> int:
@@ -167,10 +178,18 @@ class Line:
         1
         >>> Line(Point2D(0, 0), Point2D(0, 5)).height
         6
+        >>> Line(Point2D(0, 0), Point2D(0, -5)).height
+        6
         >>> Line(Point2D(0, 0), Point2D(5, 5)).height
         6
+        >>> Line(Point2D(0, 0), Point2D(-5, 5)).width
+        6
+        >>> Line(Point2D(0, 0), Point2D(5, -5)).width
+        6
+        >>> Line(Point2D(0, 0), Point2D(-5, -5)).width
+        6
         """
-        return self.end.y - self.start.y + 1
+        return abs(self.end.y - self.start.y) + 1
 
     @property
     def point_count(self) -> int:
