@@ -143,17 +143,21 @@ class BingoGame(Generic[NumberDrawerT, BingoCardT]):
 
     @property
     def winning_score(self) -> int:
-        winning_cards = [
-            card
-            for card in self.cards
-            if card.has_won
-        ]
+        winning_cards = self.winning_cards
         if not winning_cards:
             raise Exception("No card has won yet")
         if len(winning_cards) > 1:
             raise Exception(f"Multiple cards ({len(winning_cards)}) have won")
         winning_card, = winning_cards
         return winning_card.get_winning_score(self.drawer.current_number)
+
+    @property
+    def winning_cards(self) -> List[BingoCardT]:
+        return [
+            card
+            for card in self.cards
+            if card.has_won
+        ]
 
 
 @dataclass
@@ -348,6 +352,9 @@ class BingoCard:
             ).rstrip()
             for line in self.numbers
         )
+
+    def __hash__(self):
+        return hash(id(self))
 
     @property
     def all_numbers(self) -> Set[int]:
