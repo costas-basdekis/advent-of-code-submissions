@@ -220,7 +220,7 @@ def resolve_type_argument(cls: Type['Generic'], type_or_var: TypeArgument,
         for class_globals in class_globals_list:
             try:
                 # noinspection PyProtectedMember,PyArgumentList
-                _type = ref._evaluate(class_globals, None, set())
+                _type = ref._evaluate(class_globals, None)
                 break
             except NameError as e:
                 name_error_exception = e
