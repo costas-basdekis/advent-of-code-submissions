@@ -12,12 +12,15 @@ class Challenge(BaseChallenge):
 
     def solve(self, _input, debugger: Debugger):
         """
-        >>> Challenge().default_solve()
-        1295
+        >>> 1195 < Challenge().default_solve() < 1295
+        True
         """
         return GameExtended\
             .from_boss_text(_input)\
             .find_min_mana_necessary(debugger)
+
+    def play(self):
+        GameExtended.from_boss_text(self.input).play()
 
 
 class GameExtended(Game):
@@ -26,12 +29,13 @@ class GameExtended(Game):
     ) -> List[Callable[[], Optional[str]]]:
         steps = super().get_play_steps(character, other, option)
         if self.next_turn_character_type == CharacterEnum.Player:
-            steps = steps + [self.lose_1_hit_point]
+            steps = [self.lose_1_hit_point] + steps
 
         return steps
 
     def lose_1_hit_point(self) -> Optional[str]:
-        attack_amount = self.player.attack(1)
+        attack_amount = self.player.attack(1, force=True)
+        assert attack_amount == 1
         return f"Player loses {attack_amount}HP"
 
 
