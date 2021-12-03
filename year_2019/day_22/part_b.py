@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
+from typing import Union
+
 import math
 import time
 from abc import ABC
 
 import utils
+from aox.challenge import Debugger
 from year_2019.day_22 import part_a
 
 
 class Challenge(utils.BaseChallenge):
     part_a_for_testing = part_a
 
-    def solve(self, _input, debug=False):
+    def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve() < 71271225751690
         True
@@ -20,7 +23,7 @@ class Challenge(utils.BaseChallenge):
             index=2020,
             size=119315717514047,
             count=101741582076661,
-            debug=debug,
+            debugger=debugger,
         )
 
 
@@ -166,32 +169,29 @@ class ShufflesExtended(part_a.Shuffles):
                     step, duration / report_count,
                     duration / report_count * ((size - step) or 1) / 3600)
 
-    def get_index_at_position_after_shuffle_many(self, index, size, count,
-                                                 debug=False,
-                                                 report_count=100000):
+    def get_index_at_position_after_shuffle_many(
+        self, index, size, count, debugger: Debugger = Debugger(enabled=False),
+    ):
         total_index = index
         shuffles = [
             shuffle.make_get_index_at_position_after_shuffle(size)
             for shuffle in reversed(self.shuffles)
         ]
-        for step in range(count):
+        for step in debugger.stepping(range(count)):
             for shuffle in shuffles:
                 total_index = shuffle(total_index)
             if total_index == index:
                 break
-            if debug:
-                if step % report_count == 0:
-                    print(step, f"{100000 * step // count / 1000}%")
+            debugger.default_report_if("Looking...")
         else:
             return total_index
 
         cycle_length = step + 1
-        if debug:
-            print(f'Found cycle of length {cycle_length}')
+        debugger.default_report(f"Found cycle of length {cycle_length}")
 
         return self.get_index_at_position_after_shuffle_many(
-            2020, size, count=count % cycle_length, debug=debug,
-            report_count=report_count)
+            2020, size, count=count % cycle_length, debugger=debugger,
+        )
 
     def get_index_at_position_after_shuffle(self, index, size):
         """
