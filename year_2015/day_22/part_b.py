@@ -12,8 +12,8 @@ class Challenge(BaseChallenge):
 
     def solve(self, _input, debugger: Debugger):
         """
-        >>> 1195 < Challenge().default_solve() < 1295
-        True
+        >>> Challenge().default_solve()
+        1289
         """
         return GameExtended\
             .from_boss_text(_input)\

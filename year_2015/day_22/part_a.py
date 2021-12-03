@@ -98,9 +98,14 @@ class Game(Generic[PlayerT, BossT]):
         )
 
     def play(self):
-        debugger = Debugger()
         while not self.finished:
             click.echo(self)
+            result = self.pre_play_turn()
+            if result:
+                click.echo(
+                    f"Pre-play result:\n{click.style(result, fg='blue')}"
+                )
+
             options = self.get_play_options()
             if options:
                 for index, option in enumerate(options, 1):
@@ -127,18 +132,17 @@ class Game(Generic[PlayerT, BossT]):
             if user_choice == "a":
                 for option in options:
                     game_copy = deepcopy(self)
-                    result = game_copy.play_turn(option, debugger=debugger)
+                    result = game_copy.play_turn(option)
                     if result:
                         click.echo(f"Result:\n{click.style(result, fg='blue')}")
                     click.echo(game_copy)
             else:
-                result = self.play_turn(option, debugger=debugger)
+                result = self.play_turn(option)
                 if result:
                     click.echo(f"Result:\n{click.style(result, fg='blue')}")
 
         click.echo(self)
         click.echo(f"Winner: {click.style(self.winner.name, fg='blue')}")
-
 
     @property
     def finished(self) -> bool:
@@ -196,20 +200,13 @@ class Game(Generic[PlayerT, BossT]):
         self, debugger: Debugger = Debugger(enabled=False),
     ) -> List["Game"]:
         def play_turn(option: Any) -> Game:
-            game = deepcopy(self)
-            game.play_turn(option, debugger)
-            return game
+            next_game = deepcopy(game)
+            next_game.play_turn(option)
+            return next_game
 
-        return list(map(play_turn, self.get_play_options()))
-
-    def play_first_option(self) -> Optional[str]:
-        options = self.get_play_options()
-        if options:
-            option = None
-        else:
-            option = options[0]
-
-        return self.play_turn(option)
+        game = deepcopy(self)
+        game.pre_play_turn()
+        return list(map(play_turn, game.get_play_options()))
 
     def get_play_options(self) -> List[Any]:
         if self.winner:
@@ -218,9 +215,17 @@ class Game(Generic[PlayerT, BossT]):
         character = self.next_turn_character
         return character.get_play_options()
 
-    def play_turn(
-        self, option: Any, debugger: Debugger = Debugger(enabled=False),
-    ) -> Optional[str]:
+    def pre_play_turn(self) -> Optional[str]:
+        if self.finished:
+            return None
+
+        character = self.next_turn_character
+        other = self.next_turn_other_character
+
+        steps = self.get_pre_play_steps(character, other)
+        return self.apply_play_steps(steps)
+
+    def play_turn(self, option: Any) -> Optional[str]:
         if self.finished:
             return None
 
@@ -234,6 +239,19 @@ class Game(Generic[PlayerT, BossT]):
         other = self.next_turn_other_character
 
         steps = self.get_play_steps(character, other, option)
+        result = self.apply_play_steps(steps)
+        if self.finished:
+            return result
+
+        self.next_turn_character_type = self.next_turn_other_character_type
+        return result
+
+    def apply_play_steps(
+        self, steps: List[Callable[[], Optional[str]]],
+    ) -> Optional[str]:
+        character = self.next_turn_character
+        other = self.next_turn_other_character
+
         actions = []
         for step in steps:
             actions.append(step())
@@ -252,18 +270,21 @@ class Game(Generic[PlayerT, BossT]):
             self.winner = self.next_turn_character_type
             return result
 
-        self.next_turn_character_type = self.next_turn_other_character_type
         return result
+
+    def get_pre_play_steps(
+        self, character: "Character", other: "Character",
+    ) -> List[Callable[[], Optional[str]]]:
+        return [
+            lambda: character.apply_spells(other),
+            lambda: other.apply_spells(character),
+        ]
 
     def get_play_steps(
         self, character: "Character", other: "Character", option: Any,
     ) -> List[Callable[[], Optional[str]]]:
         return [
-            lambda: character.apply_spells_start_of_turn(other),
-            lambda: other.apply_spells_start_of_turn(character),
             lambda: character.play(other, option),
-            lambda: character.apply_spells_end_of_turn(other),
-            lambda: other.apply_spells_end_of_turn(character),
         ]
 
     @property
@@ -317,10 +338,7 @@ class Character:
     def attack(self, amount: int, force: bool = False) -> int:
         raise NotImplementedError()
 
-    def apply_spells_start_of_turn(self, other: "Character") -> Optional[str]:
-        raise NotImplementedError()
-
-    def apply_spells_end_of_turn(self, other: "Character") -> Optional[str]:
+    def apply_spells(self, other: "Character") -> Optional[str]:
         raise NotImplementedError()
 
 
@@ -340,9 +358,9 @@ class Player(Character):
     }
 
     SPELL_DURATION = {
-        SpellEnum.Shield: 7,
-        SpellEnum.Poison: 7,
-        SpellEnum.Recharge: 6,
+        SpellEnum.Shield: 6,
+        SpellEnum.Poison: 6,
+        SpellEnum.Recharge: 5,
     }
 
     def __str__(self):
@@ -431,8 +449,9 @@ class Player(Character):
         self.hit_points -= attack_amount
         return attack_amount
 
-    def apply_spells_start_of_turn(self, other: "Character") -> Optional[str]:
+    def apply_spells(self, other: "Character") -> Optional[str]:
         actions = []
+
         if self.active_spell_timers.get(SpellEnum.Poison, 0) > 0:
             attack_amount = other.attack(3)
             actions.append(f"Poison attacked for {attack_amount}DMG")
@@ -440,13 +459,7 @@ class Player(Character):
             self.mana += 101
             actions.append("Recharged 101M")
 
-        if actions:
-            return f", ".join(actions)
-        else:
-            return None
-
-    def apply_spells_end_of_turn(self, other: "Character") -> Optional[str]:
-        actions = ", ".join(
+        spell_timer_actions = ", ".join(
             f"{spell}'s timer is now {timer - 1}"
             for spell, timer in self.active_spell_timers.items()
             if timer > 0
@@ -456,8 +469,11 @@ class Player(Character):
             for spell, timer in self.active_spell_timers.items()
             if timer > 1
         }
+        if spell_timer_actions:
+            actions.append(spell_timer_actions)
+
         if actions:
-            return actions
+            return f", ".join(actions)
         else:
             return None
 
@@ -536,10 +552,7 @@ class Boss(Character):
         self.hit_points -= attack_amount
         return attack_amount
 
-    def apply_spells_start_of_turn(self, other: "Character") -> Optional[str]:
-        return None
-
-    def apply_spells_end_of_turn(self, other: "Character") -> Optional[str]:
+    def apply_spells(self, other: "Character") -> Optional[str]:
         return None
 
 
