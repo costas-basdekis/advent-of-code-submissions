@@ -50,7 +50,13 @@ class CrabSet:
         >>> CrabSet([16, 1, 2, 0, 4, 2, 7, 1, 2, 14]).get_distance(2)
         37
         """
-        return sum(abs(crab - position) for crab in self.crabs)
+        return sum(
+            self.get_crab_distance(crab, position)
+            for crab in self.crabs
+        )
+
+    def get_crab_distance(self, crab: int, position: int) -> int:
+        return abs(crab - position)
 
 
 Challenge.main()
