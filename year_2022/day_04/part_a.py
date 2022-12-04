@@ -64,6 +64,22 @@ class AssignmentPairSet:
             if pair.is_an_assignment_contained()
         ]
 
+    def get_overlapping_pair_count(self) -> int:
+        """
+        >>> AssignmentPairSet.from_assignment_pairs_text(
+        ...     "2-4,6-8\\n2-3,4-5\\n5-7,7-9\\n2-8,3-7\\n6-6,4-6\\n2-6,4-8")\\
+        ...     .get_overlapping_pair_count()
+        4
+        """
+        return len(self.get_overlapping_pairs())
+
+    def get_overlapping_pairs(self) -> ["AssignmentPair"]:
+        return [
+            pair
+            for pair in self.pairs
+            if pair.do_assignments_overlap()
+        ]
+
 
 @dataclass
 class AssignmentPair:
@@ -90,6 +106,9 @@ class AssignmentPair:
         >>> AssignmentPair.from_assignment_pair_text("2-4,6-8")\\
         ...     .is_an_assignment_contained()
         False
+        >>> AssignmentPair.from_assignment_pair_text("2-6,6-8")\\
+        ...     .is_an_assignment_contained()
+        False
         >>> AssignmentPair.from_assignment_pair_text("2-8,3-7")\\
         ...     .is_an_assignment_contained()
         True
@@ -101,6 +120,23 @@ class AssignmentPair:
             self.first.contains(self.second)
             or self.second.contains(self.first)
         )
+
+    def do_assignments_overlap(self) -> bool:
+        """
+        >>> AssignmentPair.from_assignment_pair_text("2-4,6-8")\\
+        ...     .do_assignments_overlap()
+        False
+        >>> AssignmentPair.from_assignment_pair_text("2-6,6-8")\\
+        ...     .do_assignments_overlap()
+        True
+        >>> AssignmentPair.from_assignment_pair_text("2-8,3-7")\\
+        ...     .do_assignments_overlap()
+        True
+        >>> AssignmentPair.from_assignment_pair_text("6-6,4-6")\\
+        ...     .do_assignments_overlap()
+        True
+        """
+        return self.first.overlaps_with(self.second)
 
 
 @dataclass
@@ -138,6 +174,42 @@ class Assignment:
         False
         """
         return self.start <= other.start and self.end >= other.end
+
+    def overlaps_with(self, other: "Assignment") -> bool:
+        """
+        >>> Assignment(2, 8).overlaps_with(Assignment(3, 7))
+        True
+        >>> Assignment(2, 8).overlaps_with(Assignment(3, 8))
+        True
+        >>> Assignment(2, 8).overlaps_with(Assignment(2, 7))
+        True
+        >>> Assignment(2, 8).overlaps_with(Assignment(2, 8))
+        True
+        >>> Assignment(2, 8).overlaps_with(Assignment(2, 9))
+        True
+        >>> Assignment(2, 8).overlaps_with(Assignment(1, 8))
+        True
+        >>> Assignment(2, 8).overlaps_with(Assignment(20, 30))
+        False
+        >>> Assignment(3, 7).overlaps_with(Assignment(2, 8))
+        True
+        >>> Assignment(3, 8).overlaps_with(Assignment(2, 8))
+        True
+        >>> Assignment(2, 7).overlaps_with(Assignment(2, 8))
+        True
+        >>> Assignment(2, 8).overlaps_with(Assignment(2, 8))
+        True
+        >>> Assignment(2, 9).overlaps_with(Assignment(2, 8))
+        True
+        >>> Assignment(1, 8).overlaps_with(Assignment(2, 8))
+        True
+        >>> Assignment(20, 30).overlaps_with(Assignment(2, 8))
+        False
+        """
+        return (
+            self.start <= other.start <= self.end
+            or other.start <= self.start <= other.end
+        )
 
 
 Challenge.main()
