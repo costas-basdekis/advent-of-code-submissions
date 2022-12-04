@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import ClassVar, Dict, Union
 
 from aox.challenge import Debugger
-from utils import BaseChallenge
+from utils import BaseChallenge, Cls, Self
 
 
 class Challenge(BaseChallenge):
@@ -23,7 +23,9 @@ class RucksackSet:
     rucksacks: ["Rucksack"]
 
     @classmethod
-    def from_rucksacks_text(cls, rucksacks_text: str) -> "RucksackSet":
+    def from_rucksacks_text(
+        cls: Cls["RucksackSet"], rucksacks_text: str,
+    ) -> Self["RucksackSet"]:
         """
         >>> RucksackSet.from_rucksacks_text(
         ...     "vJrwpWtwJgWrhcsFMMfFFhFp"
