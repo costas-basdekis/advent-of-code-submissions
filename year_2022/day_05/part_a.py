@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 import re
-from typing import Union
+from typing import Union, Generic, Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge
+from utils import BaseChallenge, TV, get_type_argument_class, Cls, Self
 
 
 class Challenge(BaseChallenge):
@@ -19,13 +19,27 @@ class Challenge(BaseChallenge):
             .get_stack_tops()
 
 
+WarehouseT = TV["Warehouse"]
+MoveSetT = TV["MoveSet"]
+
+
 @dataclass
-class Procedure:
-    warehouse: "Warehouse"
-    moves: "MoveSet"
+class Procedure(Generic[WarehouseT, MoveSetT]):
+    warehouse: WarehouseT
+    moves: MoveSetT
 
     @classmethod
-    def from_procedure_text(cls, procedure_text: str) -> "Procedure":
+    def get_warehouse_class(cls) -> Type[WarehouseT]:
+        return get_type_argument_class(cls, WarehouseT)
+
+    @classmethod
+    def get_moves_class(cls) -> Type[MoveSetT]:
+        return get_type_argument_class(cls, MoveSetT)
+
+    @classmethod
+    def from_procedure_text(
+        cls: Cls["Procedure"], procedure_text: str,
+    ) -> Self["Procedure"]:
         """
         >>> print(str(Procedure.from_procedure_text(
         ...     "    [D]    \\n"
@@ -50,8 +64,10 @@ class Procedure:
         """
         warehouse_text, moves_text = procedure_text.rstrip().split("\n\n")
         return cls(
-            warehouse=Warehouse.from_warehouse_text(warehouse_text),
-            moves=MoveSet.from_moves_text(moves_text),
+            warehouse=(
+                cls.get_warehouse_class().from_warehouse_text(warehouse_text)
+            ),
+            moves=cls.get_moves_class().from_moves_text(moves_text),
         )
 
     def __str__(self) -> str:
@@ -74,7 +90,7 @@ class Procedure:
         """
         return self.warehouse.get_stack_tops()
 
-    def apply_all_moves(self) -> "Procedure":
+    def apply_all_moves(self: Self["Procedure"]) -> Self["Procedure"]:
         """
         >>> procedure = Procedure.from_procedure_text(
         ...     "    [D]    \\n"
@@ -99,7 +115,7 @@ class Procedure:
             self.apply_next_move()
         return self
 
-    def apply_next_move(self) -> "Procedure":
+    def apply_next_move(self: Self["Procedure"]) -> Self["Procedure"]:
         """
         >>> procedure = Procedure.from_procedure_text(
         ...     "    [D]    \\n"
@@ -150,12 +166,21 @@ class Procedure:
         return self
 
 
+MoveT = TV["Move"]
+
+
 @dataclass
-class MoveSet:
-    moves: ["Move"]
+class MoveSet(Generic[MoveT]):
+    moves: [MoveT]
 
     @classmethod
-    def from_moves_text(cls, moves_text: str) -> "MoveSet":
+    def get_move_class(cls) -> Type[MoveT]:
+        return get_type_argument_class(cls, MoveT)
+
+    @classmethod
+    def from_moves_text(
+        cls: Cls["MoveSet"], moves_text: str,
+    ) -> Self["MoveSet"]:
         """
         >>> MoveSet.from_moves_text(
         ...     "move 1 from 2 to 1\\n"
@@ -167,7 +192,7 @@ class MoveSet:
         """
         return cls(
             moves=[
-                Move.from_move_text(line)
+                cls.get_move_class().from_move_text(line)
                 for line in moves_text.strip().splitlines()
             ],
         )
@@ -190,7 +215,7 @@ class MoveSet:
     def has_moves(self) -> bool:
         return bool(self.moves)
 
-    def pop_first(self) -> "Move":
+    def pop_first(self: Self["Move"]) -> Self["Move"]:
         return self.moves.pop(0)
 
 
@@ -203,7 +228,7 @@ class Move:
     re_move = re.compile(r"^move (\d+) from (\d) to (\d)$")
 
     @classmethod
-    def from_move_text(cls, move_text: str) -> "Move":
+    def from_move_text(cls: Cls["Move"], move_text: str) -> Self["Move"]:
         """
         >>> Move.from_move_text("move 1 from 2 to 3")
         Move(source=2, target=3, count=1)
@@ -234,7 +259,9 @@ class Warehouse:
     re_crate = re.compile(r"^\[(\w)]$")
 
     @classmethod
-    def from_warehouse_text(cls, warehouse_text: str) -> "Warehouse":
+    def from_warehouse_text(
+        cls: Cls["Warehouse"], warehouse_text: str,
+    ) -> Self["Warehouse"]:
         """
         >>> Warehouse.from_warehouse_text(
         ...     "    [D]    \\n"
@@ -321,7 +348,7 @@ class Warehouse:
             ),
         )
 
-    def apply_move(self, move: Move) -> "Warehouse":
+    def apply_move(self: Self["Warehouse"], move: Move) -> Self["Warehouse"]:
         """
         >>> print(str(Warehouse.from_warehouse_text(
         ...     "    [D]    \\n"
@@ -332,6 +359,18 @@ class Warehouse:
         [D]
         [N] [C]
         [Z] [M] [P]
+         1   2   3
+        >>> print(str(Warehouse.from_warehouse_text(
+        ...     "    [D]    \\n"
+        ...     "[N] [C]    \\n"
+        ...     "[Z] [M] [P]\\n"
+        ...     " 1   2   3 "
+        ... ).apply_move(Move.from_move_text("move 3 from 2 to 1"))))
+        [M]
+        [C]
+        [D]
+        [N]
+        [Z]     [P]
          1   2   3
         """
         for _ in range(move.count):
