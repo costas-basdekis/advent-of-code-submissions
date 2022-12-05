@@ -9,7 +9,7 @@ from typing import (
 
 from aox.challenge import Debugger
 from utils import (
-    BaseChallenge, Point2D, get_type_argument_class, helper,
+    BaseChallenge, Point2D, get_type_argument_class, helper, Cls, Self,
 )
 
 
