@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from abc import ABC
+
 import itertools
 from dataclasses import dataclass, field
 import re
@@ -67,16 +69,25 @@ class Parser:
             - k (file, size=7214296)
         >>> print("\\n".join(
         ...     f"{_directory.path}: {_directory.get_total_size()}"
-        ...     for directories
-        ...     in [[_root], _root.directories(_sorted=True, recursive=True)]
-        ...     for _directory in directories
+        ...     for _directory in _root.directories(
+        ...         _sorted=True, recursive=True, include_self=True,
+        ...     )
         ... ))
         /: 48381165
         /a/: 94853
         /d/: 24933642
         /a/e/: 584
+        >>> print("\\n".join(
+        ...     f"{_directory.path}: {_directory.get_total_size()}"
+        ...     for _directory
+        ...     in _root.get_directories_that_can_free_enough_space()
+        ... ))
+        /: 48381165
+        /d/: 24933642
         >>> _root.get_total_size_for_directories_with_max_total_size()
         95437
+        >>> _root.get_smallest_directory_that_can_free_enough_space().path
+        '/d/'
         """
         lines = output.strip().splitlines()
         root: Directory = Directory(name="/", parent=None)
@@ -132,13 +143,23 @@ class Parser:
 
 
 @dataclass
-class Item:
+class Item(ABC):
     name: str
     parent: Optional["Directory"]
 
     @property
     def path(self) -> str:
         raise NotImplementedError()
+
+    @property
+    def root(self) -> "Directory":
+        parent = self
+        while parent.parent:
+            parent = parent.parent
+        if not isinstance(parent, Directory):
+            raise Exception(f"Item is an orphan")
+
+        return parent
 
     def get_tree(self, level: int = 0) -> str:
         raise NotImplementedError()
@@ -256,10 +277,14 @@ class Directory(Item):
 
     def directories(
         self, _sorted: bool = False, recursive: bool = False,
+        include_self: bool = False,
     ) -> Iterable["Directory"]:
+        items = self.items(_sorted=_sorted, recursive=recursive)
+        if include_self:
+            items = itertools.chain([self], items)
         return (
             item
-            for item in self.items(_sorted=_sorted, recursive=recursive)
+            for item in items
             if isinstance(item, Directory)
         )
 
@@ -306,12 +331,45 @@ class Directory(Item):
         )
 
     def get_directories_with_max_total_size(
-        self, max_size: int = 100000,
+        self, max_size: int = 100000, include_self: bool = False,
     ) -> Iterable["Directory"]:
         return (
             directory
-            for directory in self.directories(recursive=True)
+            for directory in self.directories(
+                _sorted=True, recursive=True, include_self=include_self,
+            )
             if directory.get_total_size() <= max_size
+        )
+
+    def get_directories_with_min_total_size(
+        self, min_size: int = 100000, include_self: bool = False,
+    ) -> Iterable["Directory"]:
+        return (
+            directory
+            for directory in self.directories(
+                _sorted=True, recursive=True, include_self=include_self,
+            )
+            if directory.get_total_size() >= min_size
+        )
+
+    def get_smallest_directory_that_can_free_enough_space(
+        self, total_space: int = 40000000,
+    ) -> "Directory":
+        directories = self\
+            .get_directories_that_can_free_enough_space(total_space)
+        return min(
+            directories,
+            key=lambda directory: directory.get_total_size(),
+        )
+
+    def get_directories_that_can_free_enough_space(
+        self, total_space: int = 40000000,
+    ) -> Iterable["Directory"]:
+        root = self.root
+        total_size = root.get_total_size()
+        min_total_size = total_size - total_space
+        return self.get_directories_with_min_total_size(
+            min_total_size, include_self=True,
         )
 
 
