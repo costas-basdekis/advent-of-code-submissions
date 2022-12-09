@@ -14,11 +14,12 @@ class Challenge(BaseChallenge):
         >>> Challenge().default_solve()
         6057
         """
-        return Rope()\
+        rope = Rope()\
             .move_on_instructions(
                 InstructionSet.from_instructions_text(_input),
-            )\
-            .tail_history_length
+            )
+        debugger.report(rope.get_history_diagram())
+        return rope.tail_history_length
 
 
 @dataclass
