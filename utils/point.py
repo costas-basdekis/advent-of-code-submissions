@@ -195,16 +195,14 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         >>> Point3D(-3, 4, 0).sign()
         Point3D(x=-1, y=1, z=0)
         """
-        # noinspection PyUnresolvedReferences
-        sign_x = self.x // (abs(self.x) or 1)
-        # noinspection PyUnresolvedReferences
-        sign_y = self.y // (abs(self.y) or 1)
-        # noinspection PyUnresolvedReferences
-        sign_z = self.z // (abs(self.z) or 1)
+        coordinates = tuple(
+            coordinate // (abs(coordinate or 1))
+            for coordinate in self.coordinates
+        )
 
         cls = type(self)
         # noinspection PyArgumentList
-        return cls(sign_x, sign_y, sign_z)
+        return cls(coordinates)
 
     def get_manhattan_neighbours(self):
         """
@@ -305,12 +303,65 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         >>> sorted(Point2D.EUCLIDEAN_OFFSETS)
         [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         """
+        return cls.get_euclidean_offsets_of(1)
+
+    @classmethod
+    def get_euclidean_offsets_of(cls, distance: int):
+        """
+        >>> sorted(Point2D(0, 0).get_euclidean_offsets_of(1))
+        [(-1, -1), (-1, 0), (-1, 1),
+            (0, -1), (0, 1),
+            (1, -1), (1, 0), (1, 1)]
+        >>> sorted(Point3D(0, 0, 0).get_euclidean_offsets_of(1))
+        [(-1, -1, -1), (-1, -1, 0), (-1, -1, 1),
+            (-1, 0, -1), (-1, 0, 0), (-1, 0, 1),
+            (-1, 1, -1), (-1, 1, 0), (-1, 1, 1),
+            (0, -1, -1), (0, -1, 0), (0, -1, 1),
+            (0, 0, -1), (0, 0, 1),
+            (0, 1, -1), (0, 1, 0), (0, 1, 1),
+            (1, -1, -1), (1, -1, 0), (1, -1, 1),
+            (1, 0, -1), (1, 0, 0), (1, 0, 1),
+            (1, 1, -1), (1, 1, 0), (1, 1, 1)]
+        >>> sorted(Point2D(0, 0).get_euclidean_offsets_of(2))
+        [(-2, -2), (-2, -1), (-2, 0), (-2, 1), (-2, 2),
+            (-1, -2), (-1, 2),
+            (0, -2), (0, 2),
+            (1, -2), (1, 2),
+            (2, -2), (2, -1), (2, 0), (2, 1), (2, 2)]
+        """
+        return cls.get_euclidean_offsets_between(distance, distance)
+
+    @classmethod
+    def get_euclidean_offsets_between(cls, min_distance: int, max_distance):
+        """
+        >>> sorted(Point2D(0, 0).get_euclidean_offsets_between(1, 1))
+        [(-1, -1), (-1, 0), (-1, 1),
+            (0, -1), (0, 1),
+            (1, -1), (1, 0), (1, 1)]
+        >>> sorted(Point2D(0, 0).get_euclidean_offsets_between(0, 1))
+        [(-1, -1), (-1, 0), (-1, 1),
+            (0, -1), (0, 0), (0, 1),
+            (1, -1), (1, 0), (1, 1)]
+        >>> sorted(Point2D(0, 0).get_euclidean_offsets_between(1, 2))
+        [(-2, -2), (-2, -1), (-2, 0), (-2, 1), (-2, 2),
+            (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2),
+            (0, -2), (0, -1), (0, 1), (0, 2),
+            (1, -2), (1, -1), (1, 0), (1, 1), (1, 2),
+            (2, -2), (2, -1), (2, 0), (2, 1), (2, 2)]
+        >>> sorted(Point2D(0, 0).get_euclidean_offsets_between(0, 2))
+        [(-2, -2), (-2, -1), (-2, 0), (-2, 1), (-2, 2),
+            (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2),
+            (0, -2), (0, -1), (0, 0), (0, 1), (0, 2),
+            (1, -2), (1, -1), (1, 0), (1, 1), (1, 2),
+            (2, -2), (2, -1), (2, 0), (2, 1), (2, 2)]
+        """
         coordinate_count = len(cls.coordinates_names)
+        coordinate_range = tuple(range(-max_distance, max_distance + 1))
         return [
             offsets
             for offsets
-            in itertools.product((-1, 0, 1), repeat=coordinate_count)
-            if any(offsets)
+            in itertools.product(coordinate_range, repeat=coordinate_count)
+            if min_distance <= max(map(abs, offsets)) <= max_distance
         ]
 
     def get_euclidean_neighbourhood(self, size):
