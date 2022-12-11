@@ -236,8 +236,8 @@ def resolve_type_argument(cls: Type['Generic'], type_or_var: TypeArgument,
         _type = type_or_ref
     if not isinstance(_type, type):
         raise Exception(
-            f"Could not get instruction class for {cls.__name__}, got "
-            f"{_type}")
+            f"Could not get argument class for {cls.__name__}, got "
+            f"{_type} (of type {type(_type)})")
 
     return _type
 

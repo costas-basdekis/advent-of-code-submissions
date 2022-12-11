@@ -1,3 +1,5 @@
+import functools
+
 import math
 from typing import Any, TypeVar, Iterable, Tuple, Optional, Callable
 
@@ -146,11 +148,24 @@ def product(values: Iterable[T], default=1) -> T:
     return result
 
 
-def lcm(a: int, b: int) -> int:
+def lcm(*items: int) -> int:
     """
     >>> lcm(2, 3)
     6
     >>> lcm(4, 6)
     12
+    >>> lcm(2, 5)
+    10
+    >>> lcm(6, 5)
+    30
+    >>> lcm(2, 15)
+    30
+    >>> lcm(6, 15)
+    30
     """
-    return abs(a * b) // math.gcd(a, b)
+    if hasattr(math, "lcm"):
+        return math.lcm(*items)
+    return (
+        functools.reduce(lambda a, b: a * b, items)
+        // functools.reduce(lambda a, b: math.gcd(a, b), items)
+    )

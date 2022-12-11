@@ -2,10 +2,12 @@
 from abc import ABC
 from dataclasses import dataclass
 import re
-from typing import ClassVar, Dict, Optional, Tuple, Union, Pattern
+from typing import ClassVar, Dict, Optional, Tuple, Union, Pattern, Generic, \
+    Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Cls, Self, PolymorphicParser
+from utils import BaseChallenge, Cls, Self, PolymorphicParser, TV, \
+    get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -20,9 +22,16 @@ class Challenge(BaseChallenge):
             .get_monkey_business()
 
 
+MonkeyT = TV["Monkey"]
+
+
 @dataclass
-class MonkeySet:
-    monkeys_by_id: Dict[str, "Monkey"]
+class MonkeySet(Generic[MonkeyT]):
+    monkeys_by_id: Dict[str, MonkeyT]
+
+    @classmethod
+    def get_monkey_class(cls) -> Type[MonkeyT]:
+        return get_type_argument_class(cls, MonkeyT)
 
     @classmethod
     def from_monkeys_text(cls, monkeys_text: str) -> "MonkeySet":
@@ -34,11 +43,12 @@ class MonkeySet:
             monkey_id_if_test_true='2', monkey_id_if_test_false='3',
             inspection_count=0), ...})
         """
+        monkey_class = cls.get_monkey_class()
         return cls(
             monkeys_by_id={
                 monkey.id: monkey
                 for monkey in map(
-                    Monkey.from_monkey_text,
+                    monkey_class.from_monkey_text,
                     monkeys_text.split("\n\n"),
                 )
             },
@@ -63,8 +73,9 @@ class MonkeySet:
     def apply_rounds(
         self, amount: int, debugger: Debugger = Debugger(enabled=False),
     ) -> "MonkeySet":
-        for _ in range(amount):
+        for _ in debugger.stepping(range(amount)):
             self.apply_round(debugger)
+            debugger.default_report_if(f"Applying...")
         return self
 
     def apply_round(
@@ -91,11 +102,6 @@ class MonkeySet:
                 next_monkey_id, item = result
                 next_monkey = self.monkeys_by_id[next_monkey_id]
                 next_monkey.take(item)
-                if debugger:
-                    debugger.report(
-                        f"{monkey.id} gives {item.worry_level} to "
-                        f"{next_monkey_id}"
-                    )
         return self
 
     def __str__(self) -> str:
@@ -198,12 +204,15 @@ class Monkey:
         self.inspection_count += 1
         item: Item = self.items.pop(0)
         self.worry_level_operation.apply_to(item)
-        item.worry_level //= 3
+        self.relief_worry(item)
         test_succeeded = item.worry_level % self.test_divisor == 0
         if test_succeeded:
             return self.monkey_id_if_test_true, item
         else:
             return self.monkey_id_if_test_false, item
+
+    def relief_worry(self, item: "Item") -> None:
+        item.worry_level //= 3
 
     def take(self, item: "Item") -> "Monkey":
         self.items.append(item)
