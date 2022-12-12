@@ -4,7 +4,7 @@ from string import ascii_lowercase
 from typing import ClassVar, Dict, Optional, Union
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D
+from utils import BaseChallenge, Point2D, Cls, Self
 
 
 class Challenge(BaseChallenge):
@@ -34,7 +34,9 @@ class DistanceMap:
     }
 
     @classmethod
-    def from_map_text(cls, map_text: str) -> "DistanceMap":
+    def from_map_text(
+        cls: Cls["DistanceMap"], map_text: str,
+    ) -> Self["DistanceMap"]:
         """
         >>> print(DistanceMap.from_map_text(
         ...     "Sabqponm\\n"
@@ -52,7 +54,9 @@ class DistanceMap:
         return cls.from_elevation_map(ElevationMap.from_map_text(map_text))
 
     @classmethod
-    def from_elevation_map(cls, elevation_map: "ElevationMap") -> "DistanceMap":
+    def from_elevation_map(
+        cls: Cls["DistanceMap"], elevation_map: "ElevationMap",
+    ) -> Self["DistanceMap"]:
         return cls(
             distances=cls.get_initial_distances(elevation_map),
             elevation_map=elevation_map,
@@ -81,7 +85,7 @@ class DistanceMap:
             raise Exception(f"Target is unreachable")
         return steps
 
-    def fill_map(self) -> "DistanceMap":
+    def fill_map(self: Self["DistanceMap"]) -> Self["DistanceMap"]:
         """
         >>> print(DistanceMap.from_map_text(
         ...     "Sabqponm\\n"
@@ -96,29 +100,49 @@ class DistanceMap:
         345mnopc
         456789ab
         """
-        target = self.elevation_map.target
         self.distances = \
             self.get_initial_distances(elevation_map=self.elevation_map)
-        queue = [self.elevation_map.start]
-        self[self.elevation_map.start] = 0
+        start = self.get_fill_start()
+        queue = [start]
+        self[start] = 0
         while queue:
             item = queue.pop(0)
-            distance = self[item]
-            height = self.elevation_map[item]
             next_neighbours = [
                 neighbour
                 for neighbour in item.get_manhattan_neighbours()
-                for neighbour_distance in [self.get(neighbour)]
-                if neighbour_distance is not None
-                and neighbour_distance == -1
-                and self.elevation_map[neighbour] <= (height + 1)
+                if self.is_neighbour_valid(item, neighbour)
             ]
+            distance = self[item]
             for neighbour in next_neighbours:
                 self[neighbour] = distance + 1
             queue.extend(next_neighbours)
-            if self[target] > -1:
+            if self.should_stop_filling():
                 break
         return self
+
+    def get_fill_start(self):
+        start = self.elevation_map.start
+        return start
+
+    def should_stop_filling(self) -> bool:
+        return self[self.elevation_map.target] > -1
+
+    def is_neighbour_valid(self, current: Point2D, neighbour: Point2D) -> bool:
+        neighbour_distance = self.get(neighbour)
+        if neighbour_distance is None:
+            return False
+        if neighbour_distance != -1:
+            return False
+        if not self.can_move_to_neighbour(current, neighbour):
+            return False
+        return True
+
+    def can_move_to_neighbour(
+        self, current: Point2D, neighbour: Point2D,
+    ) -> bool:
+        return (
+            self.elevation_map[neighbour] <= (self.elevation_map[current] + 1)
+        )
 
     def __str__(self) -> "str":
         return "\n".join(
