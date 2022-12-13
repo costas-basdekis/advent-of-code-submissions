@@ -193,6 +193,15 @@ class Signal:
     def compare(self, other: "Signal") -> SignalComparison:
         raise NotImplementedError()
 
+    def __lt__(self, other: "Signal") -> bool:
+        if other is None:
+            return False
+        if not isinstance(other, Signal):
+            raise Exception(
+                f"Can't compare {type(self).__name__} to {type(other).__name__}"
+            )
+        return self.compare(other) == SignalComparison.Before
+
 
 @dataclass
 class SignalNumber(Signal):
@@ -264,6 +273,8 @@ class SignalList(Signal):
         """
         >>> print(str(SignalList.from_signal_text("[[[]]]")))
         [[[]]]
+        >>> print(str(SignalList.from_signal_text("[[2]]")))
+        [[2]]
         >>> print(str(SignalList.from_signal_text(
         ...     "[1,[2,[3,[4,[5,6,7]]]],8,9]")))
         [1,[2,[3,[4,[5,6,7]]]],8,9]
