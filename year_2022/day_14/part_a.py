@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar, Iterable, List, Optional, Set, Tuple, Union
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D,  min_and_max_tuples
+from utils import BaseChallenge, Point2D, min_and_max_tuples, Cls, Self
 
 
 class Challenge(BaseChallenge):
@@ -20,6 +20,10 @@ class Challenge(BaseChallenge):
         return drop_count
 
 
+class FilledUpException(Exception):
+    pass
+
+
 @dataclass
 class WallMap:
     walls: Set[Point2D]
@@ -29,7 +33,9 @@ class WallMap:
     center: Point2D = field(default=default_center)
 
     @classmethod
-    def from_walls_text(cls, walls_text: str) -> "WallMap":
+    def from_walls_text(
+        cls: Cls["WallMap"], walls_text: str,
+    ) -> Self["WallMap"]:
         """
         >>> print(":" + str(WallMap.from_walls_text(
         ...     "498,4 -> 498,6 -> 496,6\\n"
@@ -69,7 +75,7 @@ class WallMap:
         return cls.from_walls(walls)
 
     @classmethod
-    def from_walls(cls, walls: Set[Point2D]) -> "WallMap":
+    def from_walls(cls: Cls["WallMap"], walls: Set[Point2D]) -> Self["WallMap"]:
         return cls(
             walls=walls,
             min_and_max_walls=min_and_max_tuples(walls | {cls.default_center}),
@@ -98,19 +104,24 @@ class WallMap:
             (min_x, min_y), (max_x, max_y) = self.min_and_max_walls
         return "\n".join(
             "".join(
-                "+"
-                if point == self.center else
-                "~"
-                if point in next_path else
-                "#"
-                if point in self.walls else
-                "o"
-                if point in self.sand else
-                "."
+                self.render_point(point, next_path)
                 for x in range(min_x, max_x + 1)
                 for point in [Point2D(x, y)]
             )
             for y in range(min_y, max_y + 1)
+        )
+
+    def render_point(self, point: Point2D, next_path: Set[Point2D]) -> str:
+        return (
+            "o"
+            if point in self.sand else
+            "+"
+            if point == self.center else
+            "#"
+            if point in self.walls else
+            "~"
+            if point in next_path else
+            "."
         )
 
     def render_with_next_path(self) -> str:
@@ -270,7 +281,7 @@ class WallMap:
             if position.y > max_y:
                 break
         if position == self.center:
-            raise Exception(f"Sand has nowhere to go")
+            raise FilledUpException(f"Sand has nowhere to go")
 
     def __getitem__(self, item: Point2D) -> bool:
         return item in self.walls or item in self.sand
