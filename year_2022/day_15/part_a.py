@@ -54,6 +54,7 @@ class SensorSet:
     def get_impossible_y_positions_at_row_including_beacons(
         self, y: int,
     ) -> range:
+        # TODO: This is wrong!
         ranges = filter(None, (
             sensor.get_impossible_x_position_range_at_row(y)
             for sensor in self.sensors
@@ -101,6 +102,15 @@ class Sensor:
             closest_beacon_position=Point2D(beacon_x, beacon_y),
         )
 
+    def get_impossible_positions(self) -> Iterable[Point2D]:
+        closest_beacon_distance = self.closest_beacon_distance
+        ys = range(
+            self.position.y - closest_beacon_distance,
+            self.position.y + closest_beacon_distance + 1,
+        )
+        for y in ys:
+            yield from self.get_impossible_positions_at_row(y)
+
     def get_impossible_positions_at_row(self, y: int) -> Iterable[Point2D]:
         """
         >>> sensor = Sensor.from_sensor_text(
@@ -131,6 +141,10 @@ class Sensor:
         range(7, 10)
         >>> sensor.get_impossible_x_position_range_at_row(17)
         range(0, -1)
+        >>> Sensor.from_sensor_text(
+        ...     "Sensor at x=14, y=3: closest beacon is at x=15, y=3"
+        ... ).get_impossible_x_position_range_at_row(3)
+        range(13, 16)
         """
         closest_beacon_distance = self.closest_beacon_distance
         row_distance = abs(self.position.y - y)
