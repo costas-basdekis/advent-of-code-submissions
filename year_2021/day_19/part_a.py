@@ -839,7 +839,7 @@ class Beacon(Generic[OrientationT], BasePoint, abstract=True):
 
         return value
 
-    def get_all_orientations(self) -> Iterable["Beacon"]:
+    def get_all_orientations(self) -> Iterable["Sensor"]:
         """
         >>> print(":", Scanner2D(list(Beacon2D(1, 2).get_all_orientations())))
         : ...B.
