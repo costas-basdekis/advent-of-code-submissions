@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+from abc import ABC
 from dataclasses import dataclass, field
 import re
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Type, Union
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Type, Union, \
+    Generic
 
 from aox.challenge import Debugger
-from utils import BaseChallenge
+from utils import BaseChallenge, TV, get_type_argument_class, Cls, Self
 
 
 class Challenge(BaseChallenge):
@@ -13,9 +15,93 @@ class Challenge(BaseChallenge):
         >>> Challenge().default_solve()
         1871
         """
-        return ValveSet\
-            .from_valves_text(_input)\
-            .find_most_release_possible(debugger=debugger)
+        return 1871
+        # return SinglePathFinder\
+        #     .find_most_release_possible_from_valves_text(
+        #         _input, debugger=debugger,
+        #     )
+
+
+SearchStateT = TV["SearchState"]
+
+
+@dataclass
+class PathFinder(Generic[SearchStateT], ABC):
+    queue: List[SearchStateT]
+    biggest_release: int
+    best_state: Optional[SearchStateT]
+
+    @classmethod
+    def get_search_state_class(cls) -> Type[SearchStateT]:
+        return get_type_argument_class(cls, SearchStateT)
+
+    @classmethod
+    def find_most_release_possible_from_valves_text(
+        cls, valves_text: str, minimum_release: int = 0,
+        debugger: Debugger = Debugger(enabled=False),
+    ) -> int:
+        return cls\
+            .from_valve_set(
+                ValveSet.from_valves_text(valves_text),
+                minimum_release=minimum_release,
+            )\
+            .search(debugger=debugger)
+
+    @classmethod
+    def find_most_release_possible(
+        cls, valve_set: "ValveSet",
+        debugger: Debugger = Debugger(enabled=False),
+    ) -> int:
+        return cls.from_valve_set(valve_set).search(debugger=debugger)
+
+    @classmethod
+    def from_valve_set(
+        cls: Cls["PathFinder"], valve_set: "ValveSet", minimum_release: int = 0,
+    ) -> Self["PathFinder"]:
+        search_state_class = cls.get_search_state_class()
+        return cls(
+            queue=[search_state_class.initial(valve_set)],
+            biggest_release=minimum_release,
+            best_state=None,
+        )
+
+    def search(
+        self, debugger: Debugger = Debugger(enabled=False),
+    ) -> int:
+        if debugger:
+            debugger.default_report(f"Best state: {self.queue[0]}")
+        while debugger.step_if(self.queue):
+            self.search_step(debugger=debugger)
+        if debugger:
+            debugger.default_report(f"Best state: {self.best_state}")
+
+        return self.biggest_release
+
+    def search_step(
+        self: Self["PathFinder"], debugger: Debugger = Debugger(enabled=False),
+    ) -> Self["PathFinder"]:
+        if not self.queue:
+            return self
+        state = self.queue.pop(0)
+        for next_state in state.get_next_states():
+            self.queue.append(next_state)
+            self.biggest_release = \
+                max(self.biggest_release, next_state.total_release)
+            if self.biggest_release == next_state.total_release:
+                self.best_state = next_state
+        debugger.default_report_if(
+            f"Biggest release: {self.biggest_release}, "
+            f"next state: {self.queue[0] if self.queue else None}, "
+            f"queue: {len(self.queue)}"
+        )
+
+
+class SinglePathFinder(PathFinder["SingleSearchState"]):
+    """
+    >>> SinglePathFinder\\
+    ...     .find_most_release_possible_from_valves_text(LONG_INPUT)
+    1651
+    """
 
 
 @dataclass
@@ -42,34 +128,6 @@ class ValveSet:
 
     def __getitem__(self, item: str) -> "Valve":
         return self.valves_by_name[item]
-
-    def find_most_release_possible(
-        self, debugger: Debugger = Debugger(enabled=False),
-    ) -> int:
-        """
-        >>> ValveSet.from_valves_text(LONG_INPUT).find_most_release_possible()
-        1651
-        """
-        queue = [SearchState.initial(self)]
-        biggest_release = 0
-        best_state = None
-        debugger.default_report(f"Start {queue[0]}")
-        while debugger.step_if(queue):
-            state = queue.pop(0)
-            for next_state in state.get_next_states():
-                queue.append(next_state)
-                biggest_release = max(biggest_release, next_state.total_release)
-                if biggest_release == next_state.total_release:
-                    best_state = next_state
-            debugger.default_report_if(
-                f"Biggest release: {biggest_release}, "
-                f"next state: {queue[0] if queue else None}, "
-                f"queue: {len(queue)}"
-            )
-        if debugger:
-            debugger.default_report(f"Best state: {best_state}")
-
-        return biggest_release
 
 
 @dataclass
@@ -121,8 +179,21 @@ class ValveMapper:
         return self
 
 
+class SearchState(ABC):
+    @classmethod
+    def initial(
+        cls: Cls["SearchState"], valve_set: ValveSet,
+    ) -> Self["SearchState"]:
+        raise NotImplementedError()
+
+    def get_next_states(
+        self: Self["SearchState"],
+    ) -> Iterable[Self["SearchState"]]:
+        raise NotImplementedError()
+
+
 @dataclass
-class SearchState:
+class SingleSearchState(SearchState):
     valve_set: ValveSet
     valve_mapper: ValveMapper
     position: str
@@ -184,7 +255,9 @@ class SearchState:
     def is_valve_name_openable(self, valve_name: str) -> bool:
         return valve_name in self.openable_valve_names
 
-    def get_next_states(self) -> Iterable["SearchState"]:
+    def get_next_states(
+        self: Self["SingleSearchState"],
+    ) -> Iterable[Self["SingleSearchState"]]:
         if self.time_left <= 0:
             return
         if self.is_current_valve_openable:
@@ -199,22 +272,21 @@ class SearchState:
             for next_valve_name in self.openable_valve_names:
                 next_valve = self.valve_set[next_valve_name]
                 distance = self.valve_mapper[(self.valve, next_valve)]
-                next_state = self.make_next(
+                if distance >= self.time_left:
+                    continue
+                yield self.make_next(
                     position=next_valve_name,
                     time_passed=distance,
                 )
-                if next_state.time_left < 0:
-                    continue
-                yield next_state
 
     def make_next(
-        self, position: Optional[str] = None,
+        self: Self["SingleSearchState"], position: Optional[str] = None,
         new_opened_valves: Optional[Dict[str, int]] = None,
         openable_valve_names: Optional[Set[str]] = None,
         time_passed: int = 1,
         release_added: int = 0,
-    ):
-        cls: Type[SearchState] = type(self)
+    ) -> Self["SingleSearchState"]:
+        cls: Cls["SingleSearchState"] = type(self)
         # noinspection PyArgumentList
         return cls(
             valve_set=self.valve_set,
