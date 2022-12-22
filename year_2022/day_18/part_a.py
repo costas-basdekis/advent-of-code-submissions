@@ -43,19 +43,23 @@ class Droplet:
         >>> Droplet.from_points_text(LONG_INPUT).get_surface_count()
         64
         """
-        return utils.iterable_length(self.iterate_surface_neighbours())
+        surface_neighbours = self.get_surface_neighbours()
+        return sum(
+            len(set(point.get_manhattan_neighbours()) & surface_neighbours)
+            for point in self.points
+        )
 
-    def iterate_surface_neighbours(self) -> Iterable[Point3D]:
+    def get_surface_neighbours(self) -> Set[Point3D]:
         """
         >>> sorted(Droplet.from_points_text(
-        ...     "2,2,2").iterate_surface_neighbours())
+        ...     "2,2,2").get_surface_neighbours())
         [Point3D(x=1, y=2, z=2), ...]
         """
-        for point in self.points:
-            for neighbour in point.get_manhattan_neighbours():
-                if neighbour in self.points:
-                    continue
-                yield neighbour
+        return {
+            neighbour
+            for point in self.points
+            for neighbour in point.get_manhattan_neighbours()
+        } - self.points
 
 
 Challenge.main()
