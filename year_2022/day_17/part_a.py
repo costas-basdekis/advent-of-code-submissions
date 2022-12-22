@@ -50,7 +50,9 @@ class Cave:
             active_rock=None,
         )
 
-    def process_many_new_rocks(self, count: int) -> "Cave":
+    def process_many_new_rocks(
+        self, count: int, debugger: Debugger = Debugger(enabled=False),
+    ) -> "Cave":
         """
         >>> cave = Cave\\
         ...     .from_winds_text(">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>")
@@ -125,8 +127,13 @@ class Cave:
         >>> cave.process_many_new_rocks(2022).locked_top_row
         3068
         """
-        for _ in range(count):
+        for step_index in debugger.stepping(range(count)):
             self.process_new_rock()
+            debugger.default_report_if(
+                f"Step: {step_index + 1}/{count}, "
+                f"locked top row: {self.locked_top_row}, "
+                f"point count: {len(self.points)}"
+            )
         return self
 
     def process_new_rock(self) -> "Cave":
