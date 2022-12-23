@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import contextlib
-import operator
+import operator as operators
 from abc import ABC
 from dataclasses import dataclass
 import re
@@ -73,7 +73,7 @@ class Monkey(PolymorphicParser, ABC, root=True):
     ConstantMonkey(id='dbpl', value=5)
     >>> Monkey.parse("root: pppw + sjmn")
     OperationMonkey(id='root', left_reference='pppw',
-        right_reference='sjmn', operand=<built-in function add>)    
+        right_reference='sjmn', operator=<built-in function add>)
     """
     id: str
 
@@ -108,7 +108,7 @@ class ConstantMonkey(Monkey):
         return self.value
 
 
-Operand = Callable[[int, int], int]
+Operator = Callable[[int, int], int]
 
 
 @Monkey.register
@@ -117,13 +117,13 @@ class OperationMonkey(Monkey):
     name = "operation"
     left_reference: str
     right_reference: str
-    operand: Operand
+    operator: Operator
 
-    operands_by_name: ClassVar[Dict[str, Operand]] = {
-        "+": operator.add,
-        "-": operator.sub,
-        "*": operator.mul,
-        "/": operator.floordiv,
+    operator_by_name: ClassVar[Dict[str, Operator]] = {
+        "+": operators.add,
+        "-": operators.sub,
+        "*": operators.mul,
+        "/": operators.floordiv,
     }
     re_monkey = re.compile(r"^(\w+): (\w+) ([-+/*]) (\w+)$")
 
@@ -132,21 +132,21 @@ class OperationMonkey(Monkey):
         """
         >>> OperationMonkey.try_parse("root: pppw + sjmn")
         OperationMonkey(id='root', left_reference='pppw',
-            right_reference='sjmn', operand=<built-in function add>)
+            right_reference='sjmn', operator=<built-in function add>)
         """
         match = cls.re_monkey.match(text)
         if not match:
             return None
-        _id, left_reference, operand_str, right_reference = match.groups()
+        _id, left_reference, operator_str, right_reference = match.groups()
         return cls(
             id=_id,
             left_reference=left_reference,
             right_reference=right_reference,
-            operand=cls.operands_by_name[operand_str],
+            operator=cls.operator_by_name[operator_str],
         )
 
     def calculate(self, monkeys: MonkeySet) -> int:
-        return self.operand(
+        return self.operator(
             monkeys.get(self.left_reference),
             monkeys.get(self.right_reference),
         )
