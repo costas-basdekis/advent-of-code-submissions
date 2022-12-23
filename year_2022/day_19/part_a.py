@@ -121,7 +121,7 @@ class GeodeFinder:
             queue=[initial_state],
             seen={initial_state},
             max_time=max_time,
-            best_geode_count=initial_state.get_total_geodes(max_time),
+            best_geode_count=initial_state.get_total_geodes(max_time=max_time),
         )
 
     def search(self, debugger: Debugger = Debugger(enabled=True)) -> int:
@@ -152,13 +152,14 @@ class GeodeFinder:
         for next_state in state.iterate_next_states():
             if next_state in self.seen:
                 continue
-            if next_state.get_max_possible_geodes() <= self.best_geode_count:
+            if next_state.get_max_possible_geodes(max_time=self.max_time) \
+                    <= self.best_geode_count:
                 continue
             self.queue.append(next_state)
             self.seen.add(next_state)
             self.best_geode_count = max(
                 self.best_geode_count,
-                next_state.get_total_geodes(self.max_time),
+                next_state.get_total_geodes(max_time=self.max_time),
             )
 
         return True
