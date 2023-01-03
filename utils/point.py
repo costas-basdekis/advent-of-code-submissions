@@ -4,8 +4,8 @@ import itertools
 import math
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import Tuple, List
-
+from typing import Tuple, List, Union, Iterable, Dict, ClassVar
+from .typing_utils import Self, Cls
 
 __all__ = ['BasePoint', 'Point2D', 'Point3D', 'Point4D', 'PointHex']
 
@@ -41,12 +41,16 @@ class BasePointMeta(type):
             setattr(Point, auto_assign_to, attribute())
 
 
+ClsBP = Cls["BasePoint"]
+SelfBP = Self["BasePoint"]
+
+
 class BasePoint(metaclass=BasePointMeta, abstract=True):
     _fields: Tuple[str, ...]
     coordinates_names: Tuple[str, ...]
 
     @classmethod
-    def from_comma_delimited_text(cls, point_text):
+    def from_comma_delimited_text(cls: ClsBP, point_text: str) -> SelfBP:
         """
         >>> Point4D.from_comma_delimited_text("0,-8,-4,-6")
         Point4D(x=0, y=-8, z=-4, t=-6)
@@ -55,7 +59,10 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         return cls.from_int_texts(*parts)
 
     @classmethod
-    def from_int_texts(cls, *coordinate_strs, **named_coordinate_strs):
+    def from_int_texts(
+        cls: ClsBP, *coordinate_strs: str,
+        **named_coordinate_strs: str,
+    ) -> SelfBP:
         """
         >>> Point3D.from_int_texts("1", "2", "3")
         Point3D(x=1, y=2, z=3)
@@ -80,11 +87,22 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         # noinspection PyArgumentList
         return cls(*map(int, coordinate_strs))
 
+    @classmethod
+    def for_new(cls: ClsBP, new_method, args, kwargs) -> SelfBP:
+        if len(args) == 1:
+            if isinstance(args[0], cls):
+                if not kwargs:
+                    return args[0]
+                args = args[0]
+            if isinstance(args[0], tuple):
+                args = args[0]
+        return new_method(cls, *args, **kwargs)
+
     ZERO_POINT: 'BasePoint'
 
     @classmethod
     @BasePointMeta.auto_assign_to('ZERO_POINT')
-    def get_zero_point(cls):
+    def get_zero_point(cls: ClsBP) -> SelfBP:
         """
         >>> Point2D.get_zero_point()
         Point2D(x=0, y=0)
@@ -97,7 +115,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         return cls(*(0,) * len(cls.coordinates_names))
 
     @property
-    def coordinates(self):
+    def coordinates(self: SelfBP) -> SelfBP:
         """
         >>> Point3D(1, 2, 3).coordinates
         Point3D(x=1, y=2, z=3)
@@ -117,7 +135,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for coordinate_name in self.coordinates_names
         )
 
-    def distance(self, other):
+    def distance(self: SelfBP, other: SelfBP) -> float:
         """
         >>> Point3D(0, 0, 0).distance(Point3D(0, 0, 0))
         0.0
@@ -132,7 +150,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             in zip(self.coordinates, other.coordinates)
         ))
 
-    def manhattan_length(self):
+    def manhattan_length(self) -> float:
         """
         >>> Point3D(0, 0, 0).manhattan_length()
         0
@@ -141,7 +159,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         """
         return self.manhattan_distance(self.ZERO_POINT)
 
-    def manhattan_distance(self, other):
+    def manhattan_distance(self: SelfBP, other: SelfBP) -> float:
         """
         >>> Point3D(0, 0, 0).manhattan_distance(Point3D(0, 0, 0))
         0
@@ -154,7 +172,10 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             in zip(self.coordinates, other.coordinates)
         )
 
-    def offset(self, offsets, factor=1):
+    def offset(
+        self: SelfBP, offsets: Union[SelfBP, Tuple[float, ...]],
+        factor: float = 1,
+    ) -> SelfBP:
         """
         >>> Point3D(3, -2, 4).offset((-2, -5, 3))
         Point3D(x=1, y=-7, z=7)
@@ -171,24 +192,24 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             in zip(self.coordinates_names, self.coordinates, offsets)
         })
 
-    def resize(self, factor):
+    def resize(self: SelfBP, factor: float) -> SelfBP:
         return self.ZERO_POINT.offset(self, factor)
 
-    def difference(self, other):
+    def difference(self: SelfBP, other: SelfBP) -> SelfBP:
         """
         >>> Point3D(3, -2, 4).difference(Point3D(-2, -5, 3))
         Point3D(x=5, y=3, z=1)
         """
         return self.offset(other, factor=-1)
 
-    def difference_sign(self, other):
+    def difference_sign(self: SelfBP, other: SelfBP) -> SelfBP:
         """
         >>> Point3D(4, -2, 5).difference_sign(Point3D(1, 1, 1))
         Point3D(x=1, y=-1, z=1)
         """
         return self.difference(other).sign()
 
-    def sign(self):
+    def sign(self: SelfBP) -> SelfBP:
         """
         >>> Point3D(0, 0, 0).sign()
         Point3D(x=0, y=0, z=0)
@@ -204,7 +225,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         # noinspection PyArgumentList
         return cls(coordinates)
 
-    def get_manhattan_neighbours(self):
+    def get_manhattan_neighbours(self: SelfBP) -> Iterable[SelfBP]:
         """
         >>> sorted(Point2D(0, 0).get_manhattan_neighbours())
         [Point2D(x=-1, y=0), Point2D(x=0, y=-1), Point2D(x=0, y=1),
@@ -215,11 +236,11 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for offset in self.MANHATTAN_OFFSETS
         )
 
-    MANHATTAN_OFFSETS: List[Tuple[int, ...]]
+    MANHATTAN_OFFSETS: List[Tuple[float, ...]]
 
     @classmethod
     @BasePointMeta.auto_assign_to('MANHATTAN_OFFSETS')
-    def get_manhattan_offsets(cls):
+    def get_manhattan_offsets(cls) -> List[Tuple[float, ...]]:
         """
         >>> sorted(Point2D.MANHATTAN_OFFSETS)
         [(-1, 0), (0, -1), (0, 1), (1, 0)]
@@ -236,7 +257,9 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for delta in (-1, 1)
         ]
 
-    def get_manhattan_neighbourhood(self, size):
+    def get_manhattan_neighbourhood(
+        self: SelfBP, size: int,
+    ) -> Iterable[SelfBP]:
         """
         >>> sorted(Point2D(0, 0).get_manhattan_neighbourhood(0))
         [Point2D(x=0, y=0)]
@@ -249,9 +272,11 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for offset in self.get_manhattan_neighbourhood_offsets(size)
         )
 
-    MANHATTAN_NEIGHBOUR_OFFSETS = {}
+    MANHATTAN_NEIGHBOUR_OFFSETS: Dict[int, Tuple[Tuple[float, ...], ...]] = {}
 
-    def get_manhattan_neighbourhood_offsets(self, size):
+    def get_manhattan_neighbourhood_offsets(
+        self, size: int,
+    ) -> Tuple[Tuple[float, ...], ...]:
         """
         >>> sorted(Point2D(0, 0).get_manhattan_neighbourhood_offsets(0))
         [(0, 0)]
@@ -277,7 +302,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
 
         return self.MANHATTAN_NEIGHBOUR_OFFSETS[size]
 
-    def get_euclidean_neighbours(self):
+    def get_euclidean_neighbours(self: SelfBP) -> Iterable[SelfBP]:
         """
         >>> sorted(Point2D(0, 0).get_euclidean_neighbours())
         [Point2D(x=-1, y=-1), Point2D(x=-1, y=0), Point2D(x=-1, y=1),
@@ -289,11 +314,11 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for offset in self.EUCLIDEAN_OFFSETS
         )
 
-    EUCLIDEAN_OFFSETS: List[Tuple[int, ...]]
+    EUCLIDEAN_OFFSETS: List[Tuple[float, ...]]
 
     @classmethod
     @BasePointMeta.auto_assign_to('EUCLIDEAN_OFFSETS')
-    def get_euclidean_offsets(cls):
+    def get_euclidean_offsets(cls) -> List[Tuple[int, ...]]:
         """
         >>> sorted(Point2D.EUCLIDEAN_OFFSETS)
         [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -306,7 +331,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         return cls.get_euclidean_offsets_of(1)
 
     @classmethod
-    def get_euclidean_offsets_of(cls, distance: int):
+    def get_euclidean_offsets_of(cls, distance: int) -> List[Tuple[int, ...]]:
         """
         >>> sorted(Point2D(0, 0).get_euclidean_offsets_of(1))
         [(-1, -1), (-1, 0), (-1, 1),
@@ -332,7 +357,9 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         return cls.get_euclidean_offsets_between(distance, distance)
 
     @classmethod
-    def get_euclidean_offsets_between(cls, min_distance: int, max_distance):
+    def get_euclidean_offsets_between(
+        cls, min_distance: int, max_distance: int,
+    ) -> List[Tuple[int, ...]]:
         """
         >>> sorted(Point2D(0, 0).get_euclidean_offsets_between(1, 1))
         [(-1, -1), (-1, 0), (-1, 1),
@@ -364,7 +391,9 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             if min_distance <= max(map(abs, offsets)) <= max_distance
         ]
 
-    def get_euclidean_neighbourhood(self, size):
+    def get_euclidean_neighbourhood(
+        self: SelfBP, size: int,
+    ) -> Iterable[SelfBP]:
         """
         >>> sorted(Point2D(0, 0).get_euclidean_neighbourhood(0))
         [Point2D(x=0, y=0)]
@@ -378,9 +407,11 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for offset in self.get_euclidean_neighbourhood_offsets(size)
         )
 
-    EUCLIDEAN_NEIGHBOUR_OFFSETS = {}
+    EUCLIDEAN_NEIGHBOUR_OFFSETS: Dict[int, Tuple[Tuple[float, ...], ...]] = {}
 
-    def get_euclidean_neighbourhood_offsets(self, size):
+    def get_euclidean_neighbourhood_offsets(
+        self, size: int,
+    ) -> Tuple[Tuple[float, ...], ...]:
         """
         >>> sorted(Point2D(0, 0).get_euclidean_neighbourhood_offsets(0))
         [(0, 0)]
@@ -409,7 +440,7 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         return self.EUCLIDEAN_NEIGHBOUR_OFFSETS[size]
 
     def is_bound(
-        self, min_value: "BasePoint", max_value: "BasePoint",
+        self: SelfBP, min_value: SelfBP, max_value: SelfBP,
         min_inclusive: bool = True, max_inclusive: bool = True,
     ) -> bool:
         """
@@ -461,39 +492,21 @@ class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
     coordinates_names = ("x", "y")
 
     def __new__(cls, *args, **kwargs):
-        if len(args) == 1:
-            if isinstance(args[0], cls):
-                return args[0]
-            if isinstance(args[0], tuple):
-                args = args[0]
-        # noinspection PyTypeChecker
-        return super().__new__(cls, *args, **kwargs)
+        return cls.for_new(super().__new__, args, kwargs)
 
 
 class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
     coordinates_names = ("x", "y", "z")
 
     def __new__(cls, *args, **kwargs):
-        if len(args) == 1:
-            if isinstance(args[0], cls):
-                return args[0]
-            if isinstance(args[0], tuple):
-                args = args[0]
-        # noinspection PyTypeChecker
-        return super().__new__(cls, *args, **kwargs)
+        return cls.for_new(super().__new__, args, kwargs)
 
 
 class Point4D(namedtuple("Point4D", ("x", "y", "z", "t")), BasePoint):
     coordinates_names = ("x", "y", "z", "t")
 
     def __new__(cls, *args, **kwargs):
-        if len(args) == 1:
-            if isinstance(args[0], cls):
-                return args[0]
-            if isinstance(args[0], tuple):
-                args = args[0]
-        # noinspection PyTypeChecker
-        return super().__new__(cls, *args, **kwargs)
+        return cls.for_new(super().__new__, args, kwargs)
 
 
 @dataclass(order=True, frozen=True)
@@ -508,9 +521,9 @@ class PointHex:
     NW = 'nw'
     SW = 'sw'
 
-    DIRECTIONS = [E, NE, SE, W, NW, SW]
+    DIRECTIONS: ClassVar[List[str]] = [E, NE, SE, W, NW, SW]
 
-    DIRECTION_OFFSETS = {
+    DIRECTION_OFFSETS: ClassVar[Dict[int, Dict[str, Tuple[int, int]]]] = {
         0: {
             E: (1, 0),
             SE: (0, 1),
@@ -529,14 +542,16 @@ class PointHex:
         },
     }
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[int]:
         """
         >>> tuple(PointHex(2, 5))
         (2, 5)
         """
         return iter((self.x, self.y))
 
-    def move_many(self, directions):
+    def move_many(
+        self: Self["PointHex"], directions: Iterable[str],
+    ) -> Self["PointHex"]:
         """
         >>> PointHex(0, 0).move_many([PointHex.NE, PointHex.NE, PointHex.NE])
         PointHex(x=1, y=-3)
@@ -559,7 +574,7 @@ class PointHex:
         # noinspection PyArgumentList
         return cls(x, y)
 
-    def move(self, direction):
+    def move(self: Self["PointHex"], direction: str)-> Self["PointHex"]:
         """
         >>> PointHex(0, 0).move(PointHex.E)
         PointHex(x=1, y=0)
@@ -574,7 +589,7 @@ class PointHex:
         """
         return self.move_many((direction,))
 
-    def step_distance(self, other):
+    def step_distance(self: Self["PointHex"], other: Self["PointHex"]) -> int:
         """
         >>> PointHex(0, 0).step_distance(PointHex(0, 0).move_many(
         ...     [PointHex.NE] * 10))
