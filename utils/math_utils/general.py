@@ -90,7 +90,7 @@ def min_and_max_tuples(tuples: Iterable[TupleT],
     >>> from utils.point import Point2D
     >>> # noinspection PyUnresolvedReferences
     >>> min_and_max_tuples(Point2D(x, x + 10) for x in range(5))
-    ((0, 10), (4, 14))
+    (Point2D(x=0, y=10), Point2D(x=4, y=14))
     """
     tuples = iter(tuples)
     if default is NotImplemented:
@@ -125,7 +125,8 @@ def min_and_max_tuples(tuples: Iterable[TupleT],
             for index, (value, max_value) in enumerate(zip(_tuple, max_values))
         )
 
-    return tuple(min_values), tuple(max_values)
+    tuple_type = type(first_tuple)
+    return tuple_type(min_values), tuple_type(max_values)
 
 
 def product(values: Iterable[T], default=1) -> T:
