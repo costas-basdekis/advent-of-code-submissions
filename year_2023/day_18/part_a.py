@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 import re
-from typing import ClassVar, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import ClassVar, Dict, Iterable, List, Optional, Set, Tuple, Union, Generic, TypeVar, Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D, Cls, Self, Direction, min_and_max_tuples
+from utils import BaseChallenge, Point2D, Cls, Self, Direction, min_and_max_tuples, get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -46,7 +46,7 @@ class Lagoon:
         self.holes.update(positions)
         return self
 
-    def extend_with_internal(self) -> "Lagoon":
+    def extend_with_internal(self, debugger: Debugger = Debugger(enabled=False)) -> "Lagoon":
         """
         >>> print(DigInstructionSet.from_instructions_text('''
         ...     R 6 (#70c710)
@@ -75,7 +75,7 @@ class Lagoon:
         .######
         .######
         """
-        return self.extend(LagoonFiller.from_lagoon(self).get_enclosed_positions())
+        return self.extend(LagoonFiller.from_lagoon(self).get_enclosed_positions(debugger=debugger))
 
     @property
     def hole_count(self) -> int:
@@ -120,7 +120,7 @@ class LagoonFiller:
             boundaries=min_and_max_tuples(lagoon.holes),
         )
 
-    def get_enclosed_positions(self) -> Set[Point2D]:
+    def get_enclosed_positions(self, debugger: Debugger = Debugger(enabled=False)) -> Set[Point2D]:
         """
         >>> len(LagoonFiller.from_lagoon(DigInstructionSet.from_instructions_text('''
         ...     R 6 (#70c710)
@@ -140,9 +140,11 @@ class LagoonFiller:
         ... ''').dig()).get_enclosed_positions())
         24
         """
-        for position in self.lagoon.holes:
+        for position in debugger.stepping(self.lagoon.holes):
             for neighbour in position.get_euclidean_neighbours():
                 self.flood(neighbour)
+            if debugger.should_report():
+                debugger.default_report_if(f"Found {len(self.inside)} inside points and {len(self.outside)} outside points")
         return self.inside
 
     def flood(self, start: Point2D) -> "LagoonFiller":
@@ -215,9 +217,16 @@ class LagoonFiller:
         return False
 
 
+DigInstructionT = TypeVar("DigInstructionT", bound="TypeVar")
+
+
 @dataclass
-class DigInstructionSet:
-    instructions: List["DigInstruction"]
+class DigInstructionSet(Generic[DigInstructionT]):
+    instructions: List[DigInstructionT]
+
+    @classmethod
+    def get_dig_instruction_class(cls) -> Type[DigInstructionT]:
+        return get_type_argument_class(cls, DigInstructionT)
 
     @classmethod
     def from_instructions_text(cls: "DigInstructionSet", text: str) -> "DigInstructionSet":
@@ -253,7 +262,8 @@ class DigInstructionSet:
         L 2 (#015232)
         U 2 (#7a21e3)
         """
-        return cls(instructions=list(map(DigInstruction.from_instruction_text, text.strip().splitlines())))
+        dig_instruction_class = cls.get_dig_instruction_class()
+        return cls(instructions=list(map(dig_instruction_class.from_instruction_text, text.strip().splitlines())))
 
     def __str__(self) -> str:
         return "\n".join(map(str, self.instructions))
