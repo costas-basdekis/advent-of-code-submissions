@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import string
 from dataclasses import dataclass, field
+from functools import cached_property
 from itertools import product
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
@@ -22,7 +23,11 @@ class KeypadChain:
     keypads: List["Keypad"] = field(default_factory=list)
 
     @classmethod
-    def get_codes_min_total_complexity_from_text(cls, text: str) -> int:
+    def parse_codes(cls, text: str) -> List[str]:
+        return list(map(str.strip, text.strip().splitlines()))
+
+    @classmethod
+    def get_codes_min_total_complexity_from_text(cls, text: str, small_count: int = 2) -> int:
         """
         >>> KeypadChain.get_codes_min_total_complexity_from_text('''
         ...     029A
@@ -33,11 +38,11 @@ class KeypadChain:
         ... ''')
         126384
         """
-        return cls.default().get_codes_min_total_complexity(list(map(str.strip, text.strip().splitlines())))
+        return cls.default(small_count).get_codes_min_total_complexity(cls.parse_codes(text))
 
     @classmethod
-    def default(cls) -> "KeypadChain":
-        return cls().add_large(1).add_small(2)
+    def default(cls, small_count: int = 2) -> "KeypadChain":
+        return cls().add_large(1).add_small(small_count)
 
     def add_small(self, count: int = 1) -> "KeypadChain":
         return self.add(*(Keypad.small() for _ in range(count)))
@@ -133,7 +138,7 @@ class KeypadChain:
         >>> KeypadChain.default().get_shortest_code_complexity("379A")
         24256
         """
-        return self.get_code_complexity(buttons, keypresses=self.get_shortest_keypresses(buttons))
+        return self.get_code_complexity(buttons)
 
     def get_code_complexity(self, buttons: str, keypresses: Optional[str] = None) -> int:
         """
@@ -151,7 +156,7 @@ class KeypadChain:
         24256
         """
         if keypresses is None:
-            keypresses = self.get_keypresses(buttons)
+            keypresses = self.get_shortest_keypresses(buttons)
         length = len(keypresses)
         numeric_part = int("".join(char for char in buttons if char in string.digits))
         return length * numeric_part
@@ -196,9 +201,12 @@ class Keypad:
     def show_point(self, point: Point2D) -> Any:
         return self.buttons.get(point, "")
 
-    def get_button_position(self, target: str) -> Point2D:
-        position, = [position for position, button in self.buttons.items() if button == target]
-        return position
+    @cached_property
+    def positions(self) -> Dict[str, Point2D]:
+        return {
+            button: position
+            for position, button in self.buttons.items()
+        }
 
     def press(self, keypresses: str) -> str:
         """
@@ -213,7 +221,7 @@ class Keypad:
         >>> Keypad.small().press('<vA<AA>>^AvAA<^A>Av<<A>>^AvA^A<vA>^Av<<A>^A>AAvA^Av<<A>A>^AAAvA<^A>A')
         'v<<A>>^A<A>AvA<^AA>A<vAAA>^A'
         """
-        position = self.get_button_position("A")
+        position = self.positions["A"]
         result = ""
         for index, keypress in enumerate(keypresses):
             if keypress == "A":
@@ -275,8 +283,8 @@ class Keypad:
         >>> list(Keypad.large().get_possible_keypress_paths_list("A", "029A"))
         [[[Direction.Left], [Direction.Up], [Direction.Right, Direction.Up, Direction.Up], [Direction.Down, Direction.Down, Direction.Down]], ...]
         """
-        start_position = self.get_button_position(start)
-        targets = [self.get_button_position(button) for button in buttons]
+        start_position = self.positions[start]
+        targets = [self.positions[button] for button in buttons]
         point_paths_list = filter(None, [
             list(self.get_possible_point_paths(source, target))
             for source, target in zip([start_position] + targets, targets)
@@ -289,10 +297,38 @@ class Keypad:
             return path
         raise Exception(f"No path from {source} to {target}")
 
+    def get_possible_point_keypresses(self, source_button: str, target_button: str) -> List[str]:
+        source = self.positions[source_button]
+        target = self.positions[target_button]
+        directions_and_counts_lists = self.get_directions_and_counts_list(source, target)
+        paths = []
+        for directions_and_counts in directions_and_counts_lists:
+            path = "".join(map(str, (
+                str(direction) * count
+                for direction, count in directions_and_counts
+            ))) + "A"
+            paths.append(path)
+        return paths
+
     def get_possible_point_paths(self, source: Point2D, target: Point2D) -> Iterable[List[Direction]]:
+        directions_and_counts_lists = self.get_directions_and_counts_list(source, target)
+        for directions_and_counts in directions_and_counts_lists:
+            path = [
+                direction
+                for direction, count in directions_and_counts
+                for _ in range(count)
+            ]
+            position = source
+            for direction in path:
+                position = position.offset(direction.offset)
+                if position not in self.buttons:
+                    raise Exception(f"Path {path} is not possible")
+
+            yield path
+
+    def get_directions_and_counts_list(self, source: Point2D, target: Point2D) -> List[List[Tuple[Direction, int]]]:
         if source == target:
-            yield []
-            return
+            return [[]]
         diff = target.difference(source)
         horizontal_directions_and_counts: List[Tuple[Direction, int]]
         if diff.x != 0:
@@ -319,19 +355,7 @@ class Keypad:
         directions_and_counts_lists = horizontal_first_directions_and_counts_lists + vertical_first_directions_and_counts_lists
         if not directions_and_counts_lists:
             raise Exception(f"No possible paths between {source} and {target}")
-        for directions_and_counts in directions_and_counts_lists:
-            path = [
-                direction
-                for direction, count in directions_and_counts
-                for _ in range(count)
-            ]
-            position = source
-            for direction in path:
-                position = position.offset(direction.offset)
-                if position not in self.buttons:
-                    raise Exception(f"Path {path} is not possible")
-
-            yield path
+        return directions_and_counts_lists
 
 
 Challenge.main()
