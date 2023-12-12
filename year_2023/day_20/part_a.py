@@ -357,9 +357,14 @@ class NetworkTemplate:
 
     @classmethod
     def from_text(cls, text: str) -> "NetworkTemplate":
+        module_templates = map(ModuleTemplate.parse, map(str.strip, text.strip().splitlines()))
+        return cls.from_module_templates(module_templates)
+
+    @classmethod
+    def from_module_templates(cls, module_templates: Iterable["ModuleTemplate"]) -> "NetworkTemplate":
         module_templates_by_name: Dict[str, ModuleTemplate] = {
             module_template.module_name: module_template
-            for module_template in map(ModuleTemplate.parse, map(str.strip, text.strip().splitlines()))
+            for module_template in module_templates
         }
         input_names_by_name: Dict[str, List[str]] = {
             module_template_name: []
@@ -419,6 +424,9 @@ class ModuleTemplate(PolymorphicParser, ABC, root=True):
     def set_input_names(self: Self["ModuleTemplate"], input_names: List[str]) -> Self["ModuleTemplate"]:
         raise NotImplementedError()
 
+    def set_output_names(self: Self["ModuleTemplate"], input_names: List[str]) -> Self["ModuleTemplate"]:
+        raise NotImplementedError()
+
 
 @ModuleTemplate.register
 @dataclass
@@ -441,6 +449,10 @@ class FlipFlopModuleTemplate(ModuleTemplate):
         cls = type(self)
         return cls(module_name=self.module_name, input_names=input_names, output_names=self.output_names)
 
+    def set_output_names(self, output_names: List[str]) -> "FlipFlopModuleTemplate":
+        cls = type(self)
+        return cls(module_name=self.module_name, input_names=self.input_names, output_names=output_names)
+
 
 @ModuleTemplate.register
 @dataclass
@@ -462,6 +474,10 @@ class ConjunctionModuleTemplate(ModuleTemplate):
     def set_input_names(self, input_names: List[str]) -> "ConjunctionModuleTemplate":
         cls = type(self)
         return cls(module_name=self.module_name, input_names=input_names, output_names=self.output_names)
+
+    def set_output_names(self, output_names: List[str]) -> "ConjunctionModuleTemplate":
+        cls = type(self)
+        return cls(module_name=self.module_name, input_names=self.input_names, output_names=output_names)
 
 
 @ModuleTemplate.register
@@ -488,6 +504,10 @@ class CopierModuleTemplate(ModuleTemplate):
     def set_input_names(self, input_names: List[str]) -> "CopierModuleTemplate":
         cls = type(self)
         return cls(module_name=self.module_name, input_names=input_names, output_names=self.output_names)
+
+    def set_output_names(self, output_names: List[str]) -> "CopierModuleTemplate":
+        cls = type(self)
+        return cls(module_name=self.module_name, input_names=self.input_names, output_names=output_names)
 
 
 ModuleTemplateT = TypeVar("ModuleTemplateT", bound=ModuleTemplate)
