@@ -8,6 +8,7 @@ __all__ = [
     'min_and_max_tuples',
     'product',
     'lcm',
+    'sign',
 ]
 
 T = TypeVar('T', bound=Any)
@@ -171,3 +172,34 @@ def lcm(*items: int) -> int:
     for item in items:
         result = result * item // math.gcd(result, item)
     return result
+
+
+def sign(value):
+    """
+    >>> sign(-5)
+    -1
+    >>> sign(-5000)
+    -1
+    >>> sign(-0.0001)
+    -1
+    >>> sign(0)
+    0
+    >>> sign(0.0)
+    0
+    >>> sign(+0)
+    0
+    >>> sign(-0)
+    0
+    >>> sign(5)
+    1
+    >>> sign(5000)
+    1
+    >>> sign(0.0001)
+    1
+    """
+    if value < 0:
+        return -1
+    elif value == 0:
+        return 0
+    else:
+        return 1

@@ -268,41 +268,10 @@ def get_pair_gravity(moon, other):
     """
     if moon == other:
         return 0, 0, 0
-    delta_x = sign(other["position"]["x"] - moon["position"]["x"])
-    delta_y = sign(other["position"]["y"] - moon["position"]["y"])
-    delta_z = sign(other["position"]["z"] - moon["position"]["z"])
+    delta_x = utils.sign(other["position"]["x"] - moon["position"]["x"])
+    delta_y = utils.sign(other["position"]["y"] - moon["position"]["y"])
+    delta_z = utils.sign(other["position"]["z"] - moon["position"]["z"])
     return delta_x, delta_y, delta_z
-
-
-def sign(value):
-    """
-    >>> sign(-5)
-    -1
-    >>> sign(-5000)
-    -1
-    >>> sign(-0.0001)
-    -1
-    >>> sign(0)
-    0
-    >>> sign(0.0)
-    0
-    >>> sign(+0)
-    0
-    >>> sign(-0)
-    0
-    >>> sign(5)
-    1
-    >>> sign(5000)
-    1
-    >>> sign(0.0001)
-    1
-    """
-    if value < 0:
-        return -1
-    elif value == 0:
-        return 0
-    else:
-        return 1
 
 
 re_scan_line = re.compile(r"^<x=(-?\d+), y=(-?\d+), z=(-?\d+)>$")
