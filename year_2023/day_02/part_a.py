@@ -17,12 +17,13 @@ class Challenge(BaseChallenge):
             .get_sum_of_possible_ids()
 
 
+CubesT = TV["Cubes"]
 GameT = TV["Game"]
 
 
 @dataclass
 class GameSet(Generic[GameT]):
-    games: List["Game"]
+    games: List[GameT]
 
     @classmethod
     def get_game_class(cls) -> Type[GameT]:
@@ -59,15 +60,19 @@ class GameSet(Generic[GameT]):
 
 
 @dataclass
-class Game:
+class Game(Generic[CubesT]):
     id: int
-    configuration: "Cubes"
-    reveals: List["Cubes"]
+    configuration: CubesT
+    reveals: List[CubesT]
 
     re_game = re.compile(r"Game (\d+): (.+)")
 
     @classmethod
-    def from_game_text(cls, game_text: str, configuration: "Cubes") -> "Game":
+    def get_cubes_class(cls) -> Type[CubesT]:
+        return get_type_argument_class(cls, CubesT)
+
+    @classmethod
+    def from_game_text(cls, game_text: str, configuration: CubesT) -> "Game":
         """
         >>> Game.from_game_text(
         ...     "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green",
@@ -80,10 +85,11 @@ class Game:
         if not match:
             raise Exception(f"Could not parse '{game_text}'")
         id_str, rest = match.groups()
+        cubes_cls = cls.get_cubes_class()
         return cls(
             int(id_str),
             configuration,
-            list(map(Cubes.from_reveal_text, rest.split("; "))),
+            list(map(cubes_cls.from_reveal_text, rest.split("; "))),
         )
 
     def are_reveals_possible(self) -> bool:
