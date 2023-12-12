@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from typing import List, Set, Tuple, Union
+from typing import List, Set, Tuple, Union, Generic, Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D
+from utils import BaseChallenge, Point2D, TV, get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -15,9 +15,17 @@ class Challenge(BaseChallenge):
         return MirrorValleySet.from_map(_input).summarize()
 
 
+MirrorValleyT = TV["MirrorValley"]
+
+
 @dataclass
-class MirrorValleySet:
-    valleys: List["MirrorValley"]
+class MirrorValleySet(Generic[MirrorValleyT]):
+    valleys: List[MirrorValleyT]
+
+    @classmethod
+    def get_valley_class(cls) -> Type[MirrorValleyT]:
+        # noinspection PyTypeChecker
+        return get_type_argument_class(cls, MirrorValleyT)
 
     @classmethod
     def from_map(cls, text: str) -> "MirrorValleySet":
@@ -55,7 +63,8 @@ class MirrorValleySet:
         ..##..###
         #....#..#
         """
-        valleys = list(map(MirrorValley.from_map, text.strip().split("\n\n")))
+        valley_class = cls.get_valley_class()
+        valleys = list(map(valley_class.from_map, text.strip().split("\n\n")))
         return cls(valleys=valleys)
 
     def __str__(self) -> str:
