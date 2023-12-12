@@ -5,6 +5,8 @@ import math
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Tuple, List, Union, Iterable, Dict, ClassVar
+
+from .math_utils import sign
 from .typing_utils import Self, Cls
 
 __all__ = ['BasePoint', 'Point2D', 'Point3D', 'Point4D', 'PointHex']
@@ -216,6 +218,24 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
 
     def resize(self: SelfBP, factor: float) -> SelfBP:
         return self.ZERO_POINT.offset(self, factor)
+
+    def to_unit(self: SelfBP) -> SelfBP:
+        """
+        >>> Point3D(0, 0, 0).to_unit()
+        Point3D(x=0, y=0, z=0)
+        >>> Point3D(2, 0, -3).to_unit()
+        Point3D(x=1, y=0, z=-1)
+        """
+        cls = type(self)
+        # noinspection PyArgumentList
+        new_value = cls(**{
+            name: sign(coordinate)
+            for name, coordinate
+            in zip(self.coordinates_names, self.coordinates)
+        })
+        if new_value == self:
+            return self
+        return new_value
 
     def difference(self: SelfBP, other: SelfBP) -> SelfBP:
         """
