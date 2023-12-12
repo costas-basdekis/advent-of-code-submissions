@@ -94,6 +94,7 @@ class PathFinder(Generic[SearchStateT], ABC):
             f"next state: {self.queue[0] if self.queue else None}, "
             f"queue: {len(self.queue)}"
         )
+        return self
 
 
 class SinglePathFinder(PathFinder["SingleSearchState"]):
@@ -335,6 +336,9 @@ class Valve:
             cls(name=name, flow=int(flow_str), neighbours=set()),
             neighbour_names,
         )
+
+    def __repr__(self) -> "str":
+        return f"Valve(name={self.name}, flow={self.flow}, neighbours={set(self.neighbours)})"
 
     def __hash__(self) -> int:
         return hash(self.name)

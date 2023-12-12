@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import itertools
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional, Set, Union
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, Cls, Self
 from year_2022.day_16 import part_a
+from year_2022.day_16.part_a import Valve
 
 
 class Challenge(BaseChallenge):
@@ -13,21 +13,14 @@ class Challenge(BaseChallenge):
 
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
-        >>> solution = Challenge().default_solve()
-        >>> 1651 > solution > 2350
-        True
-        >>> solution
-        42
+        >>> Challenge().default_solve()
+        2416
         """
         return DoublePathFinder\
             .find_most_release_possible_from_valves_text(
-                _input, minimum_release=1651,
+                _input, minimum_release=2350,
                 debugger=debugger,
             )
-        # return DoublePathFinder\
-        #     .find_most_release_possible_from_valves_text(
-        #         _input, minimum_release=1871 * 0 + 2350, debugger=debugger
-        #     )
 
     def play(self):
         # E: DD
@@ -39,7 +32,7 @@ class Challenge(BaseChallenge):
         # {'DD': ('y', 24), 'JJ': ('e', 23), 'BB': ('y', 19),
         return DoublePathFinder\
             .find_most_release_possible_from_valves_text_interactive(
-                part_a.LONG_INPUT,
+                self.input,
                 minimum_release=1651,
             )
 
@@ -55,7 +48,11 @@ class DoublePathFinder(part_a.PathFinder["DoubleSearchState"]):
     ...         part_a.LONG_INPUT, minimum_release=1651)
     1707
     """
-    seen_states: Set["DoubleSearchState"] = field(default_factory=set)
+    # seen_states: Set["DoubleSearchState"] = field(default_factory=set)
+    best_seen_total_release: Dict[str, int] = field(default_factory=dict)
+    best_seen_time_left: Dict[str, int] = field(default_factory=dict)
+    step_count: int = 0
+    pruned_count: int = 0
 
     @classmethod
     def find_most_release_possible_from_valves_text_interactive(
@@ -112,35 +109,65 @@ class DoublePathFinder(part_a.PathFinder["DoubleSearchState"]):
     ) -> Self["DoublePathFinder"]:
         if not self.queue:
             return self
+        self.step_count += 1
+        if self.step_count % 1000 == 0:
+            self.queue = sorted(self.queue, key=lambda _state: _state.time_left)
         state = self.queue.pop(0)
         for next_state in state.get_next_states():
             next_state: DoubleSearchState
-            if next_state in self.seen_states:
-                continue
             if next_state.get_max_possible_total_release() \
                     <= self.biggest_release:
+                self.pruned_count += 1
                 continue
-            self.seen_states.add(next_state)
-            self.queue.append(next_state)
-            self.biggest_release = max(
-                self.biggest_release,
-                next_state.total_release,
-                next_state.get_min_naive_total_release() - 1,
-            )
-            if self.biggest_release == next_state.total_release:
+            cache_key = next_state.get_cache_key()
+            if self.has_seen_better_cache_key(cache_key):
+                self.pruned_count += 1
+                continue
+            # if next_state in self.seen_states:
+            #     continue
+            # self.seen_states.add(next_state)
+            self.see_cache_key(cache_key)
+            if next_state.total_release > self.biggest_release:
+                self.biggest_release = next_state.total_release
                 self.best_state = next_state
+                self.queue.insert(0, next_state)
+            else:
+                self.queue.append(next_state)
         if debugger.should_report():
-            openable_valve_count = (
-                len(self.best_state.openable_valve_names)
-                if self.best_state else
-                'N/A'
-            )
+            if self.best_state:
+                biggest_release_info = (
+                    f"{len(self.best_state.openable_valve_names)} valves left, "
+                    f"{self.best_state.time_left} time left, "
+                    f"{self.best_state.cooldown}/{self.best_state.elephant_cooldown} cooldown, "
+                    f"{self.best_state.get_max_possible_total_release()} max possible"
+                )
+            else:
+                biggest_release_info = "initial"
             debugger.default_report_if(
-                f"Biggest release: {self.biggest_release} "
-                f"({openable_valve_count} valves left), "
+                f"Biggest release: {self.biggest_release} ({biggest_release_info}), "
                 f"next state: {self.queue[0] if self.queue else None}, "
-                f"queue: {len(self.queue)}, seen: {len(self.seen_states)}"
+                f"queue: {len(self.queue)}, seen: {len(self.best_seen_total_release)}, "
+                f"pruned: {self.pruned_count}"
             )
+        return self
+
+    def has_seen_better_cache_key(self, cache_key: Tuple[str, int, int]) -> bool:
+        cache_key, total_release, time_left = cache_key
+        if cache_key not in self.best_seen_total_release:
+            return False
+        if total_release > self.best_seen_total_release[cache_key]:
+            return False
+        if time_left > self.best_seen_time_left[cache_key]:
+            return False
+
+        return True
+
+    def see_cache_key(self, cache_key: Tuple[str, int, int]):
+        cache_key, total_release, time_left = cache_key
+        if cache_key not in self.best_seen_total_release or total_release > self.best_seen_total_release[cache_key]:
+            self.best_seen_total_release[cache_key] = total_release
+        if cache_key not in self.best_seen_time_left or time_left > self.best_seen_time_left[cache_key]:
+            self.best_seen_time_left[cache_key] = time_left
 
 
 @dataclass
@@ -194,50 +221,55 @@ class DoubleSearchState(part_a.SearchState):
             f"can_open={self.is_current_valve_openable}, "
             f"elephant_position='{self.elephant_position}', "
             f"can_elephant_open={self.is_current_elephant_valve_openable}, "
-            f"cooldown='{self.cooldown}', "
-            f"elephant_cooldown='{self.elephant_cooldown}', "
+            f"cooldown={self.cooldown}, "
+            f"elephant_cooldown={self.elephant_cooldown}, "
             f"opened_valves={self.opened_valves}, "
-            f"openable_valve_names={openable_valve_names_with_distances}, "
+            f"openable_valves_with_distances={openable_valve_names_with_distances}, "
             f"time_left={self.time_left}, "
             f"total_release={self.total_release}, "
             f"min_naive_total_release"
-            f"={self.get_min_naive_total_release()}, "
             f"max_possible_total_release"
             f"={self.get_max_possible_total_release()})"
         )
 
-    def __hash__(self):
-        return hash((
-            *sorted([
-                (self.position, self.cooldown),
-                (self.elephant_position, self.elephant_cooldown),
-            ]),
-            self.time_left,
-            self.total_release,
-            tuple(sorted(self.openable_valve_names)),
-        ))
+    # def __hash__(self):
+    #     return hash((
+    #         *sorted([
+    #             (self.position, self.cooldown),
+    #             (self.elephant_position, self.elephant_cooldown),
+    #         ]),
+    #         self.time_left,
+    #         self.total_release,
+    #         tuple(sorted(self.openable_valve_names)),
+    #     ))
 
     def __eq__(self, other: "DoubleSearchState") -> bool:
-        return hash(self) == hash(other)
+        return self.get_cache_key() == other.get_cache_key()
+
+    def get_cache_key(self) -> Tuple[str, int, int]:
+        return ",".join([
+            ":".join(sorted([
+                f"{self.position}|{self.cooldown}",
+                f"{self.elephant_position}|{self.elephant_cooldown}",
+            ])),
+            str(self.is_current_valve_openable),
+            "|".join(sorted(self.opened_valves)),
+        ]), self.total_release, self.time_left
 
     def get_max_possible_total_release(self) -> int:
-        return self.total_release + self.time_left * sum(
-            valve.flow
-            for valve_name in self.openable_valve_names
-            for valve in [self.valve_set[valve_name]]
+        return self.total_release + sum(
+            (self.time_left - index // 2 * 2) * flow
+            for index, flow in enumerate(sorted((
+                self.valve_set[valve_name].flow
+                for valve_name in self.openable_valve_names
+            ), reverse=True), start=min(
+                self.valve_mapper[(self.valve_set[position], self.valve_set[valve_name])]
+                if valve_name != position else
+                0
+                for valve_name in self.openable_valve_names
+                for position in (self.position, self.elephant_position)
+            ))
         )
-
-    def get_min_naive_total_release(self) -> int:
-        state: DoubleSearchState = self
-        min_total_release = state.total_release
-        while state:
-            min_total_release = state.total_release
-            state = max(
-                state.get_next_states(),
-                key=lambda next_state: next_state.total_release,
-                default=None,
-            )
-        return min_total_release
 
     @property
     def valve(self) -> part_a.Valve:
@@ -268,159 +300,61 @@ class DoubleSearchState(part_a.SearchState):
         )
 
     def get_next_states(self) -> Iterable["DoubleSearchState"]:
-        if self.time_left <= 0:
+        if self.time_left <= 1:
             return
-        can_open_valve = self.is_current_valve_openable
-        can_open_elephant_valve = self.is_current_elephant_valve_openable
-        can_open_any_valve = can_open_valve or can_open_elephant_valve
-        if can_open_any_valve:
-            next_state = self
-            if can_open_valve:
-                next_state = next_state.make_next(
-                    new_opened_valves={
-                        next_state.position: ('y', next_state.time_left - 1)
-                    },
-                    openable_valve_names=(
-                        next_state.openable_valve_names - {next_state.position}
-                    ),
-                    release_added=(
-                        (next_state.time_left - 1) * next_state.valve.flow
-                    ),
-                    time_passed=0,
-                )
-            if can_open_elephant_valve:
-                next_state = next_state.make_next(
-                    new_opened_valves={
-                        next_state.elephant_position:
-                        ('e', next_state.time_left - 1)
-                    },
-                    openable_valve_names=(
-                        next_state.openable_valve_names
-                        - {next_state.elephant_position}
-                    ),
-                    release_added=(
-                        (next_state.time_left - 1)
-                        * next_state.elephant_valve.flow
-                    ),
-                    time_passed=0,
-                )
-            travelable_positions = next_state.get_travelable_valve_names()
-            can_move = (
-                not can_open_valve
-                and not self.cooldown
-                and travelable_positions
-            )
-            can_elephant_move = (
-                not can_open_elephant_valve
-                and not self.elephant_cooldown
-                and travelable_positions
-            )
-            if can_move:
-                for next_valve_name in travelable_positions:
-                    next_valve = next_state.valve_set[next_valve_name]
-                    distance = next_state.valve_mapper[(
-                        next_state.valve, next_valve,
-                    )]
-                    if distance >= next_state.time_left:
-                        continue
-                    yield next_state.make_next(
-                        position=next_valve_name,
-                        cooldown=distance - 1,
-                        time_passed=1,
-                    )
-            elif can_elephant_move:
-                for next_elephant_valve_name in travelable_positions:
-                    next_elephant_valve = \
-                        next_state.valve_set[next_elephant_valve_name]
-                    elephant_distance = next_state.valve_mapper[(
-                        next_state.elephant_valve, next_elephant_valve,
-                    )]
-                    if elephant_distance >= next_state.time_left:
-                        continue
-                    yield next_state.make_next(
-                        elephant_position=next_elephant_valve_name,
-                        elephant_cooldown=elephant_distance - 1,
-                        time_passed=1,
-                    )
-            else:
-                yield next_state.make_next(time_passed=1)
-        else:
-            travelable_positions = self.get_travelable_valve_names()
-            if not self.cooldown and not self.elephant_cooldown \
-                    and len(travelable_positions) >= 2:
-                next_valve_names = set(itertools.chain(
-                    itertools.combinations(travelable_positions, 2),
-                    itertools.combinations(
-                        list(reversed(travelable_positions)), 2,
-                    ),
-                ))
+        for next_state in self.get_next_states_for('y'):
+            for next_elephant_state in next_state.get_next_states_for('e'):
+                time_passed = max(1, min(next_elephant_state.cooldown, next_elephant_state.elephant_cooldown))
+                yield next_elephant_state.make_next(time_passed=time_passed)
 
-                for next_valve_name, next_elephant_valve_name \
-                        in next_valve_names:
-                    next_valve = self.valve_set[next_valve_name]
-                    distance = self.valve_mapper[(self.valve, next_valve)]
-                    next_elephant_valve = \
-                        self.valve_set[next_elephant_valve_name]
-                    elephant_distance = self.valve_mapper[(
-                        self.elephant_valve, next_elephant_valve,
-                    )]
-                    if distance < self.time_left \
-                            and elephant_distance < self.time_left:
-                        time_passed = min(distance, elephant_distance)
-                        yield self.make_next(
-                            position=next_valve_name,
-                            elephant_position=next_elephant_valve_name,
-                            cooldown=distance - time_passed,
-                            elephant_cooldown=elephant_distance - time_passed,
-                            time_passed=time_passed,
-                        )
-                    elif distance < self.time_left:
-                        yield self.make_next(
-                            position=next_valve_name,
-                            time_passed=distance,
-                        )
-                    elif elephant_distance < self.time_left:
-                        yield self.make_next(
-                            elephant_position=next_elephant_valve_name,
-                            time_passed=elephant_distance,
-                        )
-            elif not self.cooldown and travelable_positions:
-                for next_valve_name in travelable_positions:
-                    next_valve = self.valve_set[next_valve_name]
-                    distance = self.valve_mapper[(self.valve, next_valve)]
-                    if distance >= self.time_left:
-                        continue
-                    yield self.make_next(
-                        position=next_valve_name,
-                        time_passed=distance,
-                    )
-            elif not self.elephant_cooldown and travelable_positions:
-                for next_elephant_valve_name in travelable_positions:
-                    next_elephant_valve = \
-                        self.valve_set[next_elephant_valve_name]
-                    elephant_distance = self.valve_mapper[(
-                        self.elephant_valve, next_elephant_valve,
-                    )]
-                    if elephant_distance >= self.time_left:
-                        continue
-                    yield self.make_next(
-                        elephant_position=next_elephant_valve_name,
-                        time_passed=elephant_distance,
-                    )
-            elif self.cooldown and not travelable_positions:
-                yield self.make_next(
-                    time_passed=self.cooldown,
-                )
-            elif self.elephant_cooldown and not travelable_positions:
-                yield self.make_next(
-                    time_passed=self.elephant_cooldown,
-                )
-            else:
-                if travelable_positions or self.cooldown \
-                        or self.elephant_cooldown:
-                    raise Exception(
-                        f"There are openable positions or cool-downs: {self}"
-                    )
+    def get_next_states_for(self, target: str) -> Iterable["DoubleSearchState"]:
+        if target == "y" and self.cooldown:
+            yield self
+            return
+        elif target == "e" and self.elephant_cooldown:
+            yield self
+            return
+        position = self.position if target == "y" else self.elephant_position
+        valve = self.valve_set[position]
+        next_positions_and_distances = [
+            (next_valve_name, distance)
+            for next_valve_name in self.get_travelable_valve_names()
+            for distance in [self.valve_mapper[(
+                valve, self.valve_set[next_valve_name],
+            )]]
+            if distance + 1 < self.time_left
+        ]
+        if not next_positions_and_distances:
+            yield self
+            return
+
+        for next_valve_name, distance in next_positions_and_distances:
+            yield self.make_next(
+                position=next_valve_name if target == "y" else None,
+                cooldown=distance + 1 if target == "y" else None,
+                elephant_position=next_valve_name if target == "e" else None,
+                elephant_cooldown=distance + 1 if target == "e" else None,
+                new_opened_valves={
+                    position: (target, self.time_left - 1 - distance)
+                },
+                openable_valve_names=(
+                    self.openable_valve_names - {next_valve_name}
+                ),
+                release_added=(
+                    (self.time_left - 1 - distance) * self.valve_set[next_valve_name].flow
+                ),
+                time_passed=0,
+            )
+
+    def get_next_positions_and_distances(self, valve: Valve) -> List[Tuple[str, int]]:
+        return [
+            (next_valve_name, distance)
+            for next_valve_name in self.get_travelable_valve_names()
+            for distance in [self.valve_mapper[(
+                valve, self.valve_set[next_valve_name],
+            )]]
+            if distance + 1 < self.time_left
+        ]
 
     def make_next(
         self,
@@ -428,7 +362,7 @@ class DoubleSearchState(part_a.SearchState):
         elephant_position: Optional[str] = None,
         cooldown: Optional[int] = None,
         elephant_cooldown: Optional[int] = None,
-        new_opened_valves: Optional[Dict[str, int]] = None,
+        new_opened_valves: Optional[Dict[str, Tuple[str, int]]] = None,
         openable_valve_names: Optional[Set[str]] = None,
         time_passed: int = 1,
         release_added: int = 0,
