@@ -23,6 +23,9 @@ class Direction(Enum):
     Left = "left"
     Right = "right"
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}.{self.name}"
+
 
 @dataclass
 class Cave:
@@ -102,19 +105,19 @@ class Cave:
             for y in range(self.height)
         )
 
-    def show_visitation_map(self, visitation_map: Optional[Dict[Point2D, Set[Direction]]] = None) -> str:
+    def show_visitation_map(self, visitation_map: Optional[Dict[Point2D, Set[Direction]]] = None, entry_point: Optional[Tuple[Point2D, Direction]] = None) -> str:
         if visitation_map is None:
-            visitation_map = self.get_visitation_map()
+            visitation_map = self.get_visitation_map(entry_point=entry_point)
         return self.__str__(visitation_map=visitation_map)
 
-    def show_energization_map(self, visitation_map: Optional[Dict[Point2D, Set[Direction]]] = None) -> str:
+    def show_energization_map(self, visitation_map: Optional[Dict[Point2D, Set[Direction]]] = None, entry_point: Optional[Tuple[Point2D, Direction]] = None) -> str:
         if visitation_map is None:
-            visitation_map = self.get_visitation_map()
+            visitation_map = self.get_visitation_map(entry_point=entry_point)
         return self.__str__(visitation_map=visitation_map, show_energization=True)
 
-    def get_energization_level(self, visitation_map: Optional[Dict[Point2D, Set[Direction]]] = None) -> int:
+    def get_energization_level(self, visitation_map: Optional[Dict[Point2D, Set[Direction]]] = None, entry_point: Optional[Tuple[Point2D, Direction]] = None) -> int:
         """
-        >>> Cave.from_map('''
+        >>> _cave = Cave.from_map('''
         ...     .|...*....
         ...     |.-.*.....
         ...     .....|-...
@@ -125,16 +128,19 @@ class Cave:
         ...     .-.-/..|..
         ...     .|....-|.*
         ...     ..//.|....
-        ... ''').get_energization_level()
+        ... ''')
+        >>> _cave.get_energization_level()
         46
+        >>> _cave.get_energization_level(entry_point=(Point2D(3, -1), Direction.Down))
+        51
         """
         if visitation_map is None:
-            visitation_map = self.get_visitation_map()
+            visitation_map = self.get_visitation_map(entry_point=entry_point)
         return len(visitation_map)
 
-    def get_visitation_map(self) -> Dict[Point2D, Set[Direction]]:
+    def get_visitation_map(self, entry_point: Optional[Tuple[Point2D, Direction]] = None) -> Dict[Point2D, Set[Direction]]:
         """
-        >>> print(Cave.from_map('''
+        >>> _cave = Cave.from_map('''
         ...     .|...*....
         ...     |.-.*.....
         ...     .....|-...
@@ -145,7 +151,8 @@ class Cave:
         ...     .-.-/..|..
         ...     .|....-|.*
         ...     ..//.|....
-        ... ''').show_visitation_map())
+        ... ''')
+        >>> print(_cave.show_visitation_map())
         >|<<<*....
         |v-.*^....
         .v...|->>>
@@ -156,18 +163,7 @@ class Cave:
         <->-/vv|..
         .|<<<2-|.*
         .v//.|.v..
-        >>> print(Cave.from_map('''
-        ...     .|...*....
-        ...     |.-.*.....
-        ...     .....|-...
-        ...     ........|.
-        ...     ..........
-        ...     .........*
-        ...     ..../.**..
-        ...     .-.-/..|..
-        ...     .|....-|.*
-        ...     ..//.|....
-        ... ''').show_energization_map())
+        >>> print(_cave.show_energization_map())
         ######....
         .#...#....
         .#...#####
@@ -178,8 +174,32 @@ class Cave:
         ########..
         .#######..
         .#...#.#..
+        >>> print(_cave.show_visitation_map(entry_point=(Point2D(3, -1), Direction.Down)))
+        .|<2<*....
+        |v-v*^....
+        .v.v.|->>>
+        .v.v.v^.|.
+        .v.v.v^...
+        .v.v.v^..*
+        .v.v/2**..
+        <-2-/vv|..
+        .|<<<2-|.*
+        .v//.|.v..
+        >>> print(_cave.show_energization_map(entry_point=(Point2D(3, -1), Direction.Down)))
+        .#####....
+        .#.#.#....
+        .#.#.#####
+        .#.#.##...
+        .#.#.##...
+        .#.#.##...
+        .#.#####..
+        ########..
+        .#######..
+        .#...#.#..
         """
-        stack: List[Tuple[Point2D, Direction]] = [(Point2D(-1, 0), Direction.Right)]
+        if entry_point is None:
+            entry_point = (Point2D(-1, 0), Direction.Right)
+        stack: List[Tuple[Point2D, Direction]] = [entry_point]
         visitation_map: Dict[Point2D, Set[Direction]] = {}
         while stack:
             item = stack.pop(0)
