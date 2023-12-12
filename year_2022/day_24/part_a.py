@@ -155,7 +155,7 @@ class Valley:
             in groupby(sorted(blizzards, key=lambda blizzard: blizzard.position), lambda blizzard: blizzard.position)
         }
 
-    def get_min_steps_to_exit(self, debugger: Debugger = Debugger(enabled=False)) -> int:
+    def get_min_steps_to_exit(self, target: Optional[Point2D] = None, debugger: Debugger = Debugger(enabled=False)) -> int:
         """
         >>> _valley = Valley.from_valley_map('''
         ... #E######
@@ -168,9 +168,10 @@ class Valley:
         >>> _valley.get_min_steps_to_exit()
         18
         """
-        return len(self.find_shortest_exit_path(debugger))
+        path, _ = self.find_shortest_exit_path(target, debugger)
+        return len(path)
 
-    def find_shortest_exit_path(self, debugger: Debugger = Debugger(enabled=False)) -> List[Optional[Direction]]:
+    def find_shortest_exit_path(self, target: Optional[Point2D] = None, debugger: Debugger = Debugger(enabled=False)) -> Tuple[List[Optional[Direction]], "Valley"]:
         """
         >>> _valley = Valley.from_valley_map('''
         ... #E######
@@ -180,7 +181,14 @@ class Valley:
         ... #<^v^^>#
         ... ######.#
         ... ''')
-        >>> _path = _valley.find_shortest_exit_path()
+        >>> _path, end_valley = _valley.find_shortest_exit_path()
+        >>> print(end_valley)
+        #.######
+        #>2.<.<#
+        #.2v^2<#
+        #>..>2>#
+        #<....>#
+        ######E#
         >>> print(_valley.make_moves(_path))
         #.######
         #>2.<.<#
@@ -189,7 +197,8 @@ class Valley:
         #<....>#
         ######E#
         """
-        target = Point2D(self.width -  2, self.height - 1)
+        if target is None:
+            target = Point2D(self.width -  2, self.height - 1)
         queue: List[Tuple[List[Optional[Direction]], Valley]] = [([], self)]
         seen_by_step_count: Dict[int, Set[Point2D]] = {0: {self.position}}
         just_blizzards_cache: Dict[int, Valley] = {}
@@ -201,7 +210,7 @@ class Valley:
             for direction, next_valley in valley.get_next_moves(just_blizzards=just_blizzards_cache[step_count]):
                 next_path = path + [direction]
                 if next_valley.position == target:
-                    return next_path
+                    return next_path, next_valley
                 seen = seen_by_step_count.setdefault(len(next_path), set())
                 if next_valley.position in seen:
                     continue
