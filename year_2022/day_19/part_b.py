@@ -18,7 +18,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        10336
         """
         return BlueprintSetExtended\
             .get_product_of_first_3_blueprints_for_longer_from_blueprints_text(

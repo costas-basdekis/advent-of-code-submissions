@@ -38,7 +38,7 @@ class Challenge(BaseChallenge):
 
 
 Stockpile = Dict["Resource", int]
-Robot = "Robot"
+Robot = "Resource"
 Robots = Dict[Robot, int]
 
 
@@ -234,7 +234,7 @@ class SearchState:
         [SearchState(time=1, blueprint=Blueprint(...),
             stockpile={Resource.Ore: 1, Resource.Clay: 0, Resource.Obsidian: 0,
             Resource.Geode: 0}, robots={Resource.Ore: 1, Resource.Clay: 0,
-            Resource.Obsidian: 0, Resource.Geode: 0})]
+            Resource.Obsidian: 0, Resource.Geode: 0}, action='')]
         """
         robots_that_can_be_built = self.get_robots_that_can_be_built()
         if not robots_that_can_be_built or robots_that_can_be_built \
@@ -286,22 +286,33 @@ class SearchState:
             # action=action,
         )
 
-    def get_robots_that_can_be_built(self):
-        return self.blueprint \
-            .get_robots_that_can_be_built(self.stockpile)
+    def get_robots_that_can_be_built(self) -> Set[Robot]:
+        robots = self.blueprint.get_robots_that_can_be_built(self.stockpile)
+        return self.filter_robots_for_max(robots)
 
     def get_robots_that_could_be_built(self):
-        return self.blueprint \
+        robots = self.blueprint \
             .get_robots_that_can_be_built({
                 resource: 1000 if quantity else 0
-                for resource, quantity in self.stockpile.items()
+                for resource, quantity in self.robots.items()
             })
+        return self.filter_robots_for_max(robots)
+
+    def filter_robots_for_max(self, robots: Set[Robot]) -> Set[Robot]:
+        return {
+            robot
+            for robot
+            in robots
+            if robot not in self.blueprint.max_robot_count
+            or self.robots[robot] < self.blueprint.max_robot_count[robot]
+        }
 
 
 @dataclass
 class Blueprint:
     id: int
     robot_costs: Dict[Robot, Stockpile]
+    max_robot_count: Dict[Robot, int]
 
     re_blueprint = re.compile(
         r"^Blueprint (\d+):\s+"
@@ -318,26 +329,39 @@ class Blueprint:
         Blueprint(id=1, robot_costs={Resource.Ore: {Resource.Ore: 4},
             Resource.Clay: {Resource.Ore: 2},
             Resource.Obsidian: {Resource.Ore: 3, Resource.Clay: 14},
-            Resource.Geode: {Resource.Ore: 2, Resource.Obsidian: 7}})
+            Resource.Geode: {Resource.Ore: 2, Resource.Obsidian: 7}},
+            max_robot_count={Resource.Ore: 4, Resource.Clay: 14, Resource.Obsidian: 7})
         """
         (
             _id, ore_ore, clay_ore, obsidian_ore,
             obsidian_clay, geode_ore, geode_obsidian,
         ) = map(int, cls.re_blueprint.match(blueprint_text).groups())
+        return cls.from_robot_costs(_id, {
+            Resource.Ore: {Resource.Ore: ore_ore},
+            Resource.Clay: {Resource.Ore: clay_ore},
+            Resource.Obsidian: {
+                Resource.Ore: obsidian_ore,
+                Resource.Clay: obsidian_clay,
+            },
+            Resource.Geode: {
+                Resource.Ore: geode_ore,
+                Resource.Obsidian: geode_obsidian,
+            },
+        })
+
+    @classmethod
+    def from_robot_costs(cls, _id: int, robot_costs: Dict[Robot, Stockpile]) -> "Blueprint":
         return cls(
             id=_id,
-            robot_costs={
-                Resource.Ore: {Resource.Ore: ore_ore},
-                Resource.Clay: {Resource.Ore: clay_ore},
-                Resource.Obsidian: {
-                    Resource.Ore: obsidian_ore,
-                    Resource.Clay: obsidian_clay,
-                },
-                Resource.Geode: {
-                    Resource.Ore: geode_ore,
-                    Resource.Obsidian: geode_obsidian,
-                },
-            },
+            robot_costs=robot_costs,
+            max_robot_count={
+                resource: max(
+                    robot_costs[robot].get(resource, 0)
+                    for robot in Resource
+                )
+                for resource in Resource
+                if resource != Resource.Geode
+            }
         )
 
     def build_robot(
