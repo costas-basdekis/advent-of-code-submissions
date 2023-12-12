@@ -318,7 +318,7 @@ class PoolSearch:
         ...     2546548887735
         ...     4322674655533
         ... ''')
-        >>> print(_pool.show_with_path(PoolSearch.from_pool(_pool).search().best_state.get_path()))
+        >>> print(_pool.show_with_path(PoolSearch.from_pool(_pool).search().best_state.get_point_path()))
         2>13432311323
         3v>>>53535623
         3255v>>654254

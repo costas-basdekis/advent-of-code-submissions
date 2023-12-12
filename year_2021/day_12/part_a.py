@@ -128,7 +128,7 @@ class CaveSystem(Generic[CaveFinderT]):
         ...     b-d
         ...     A-end
         ...     b-end
-        ... ''').get_paths())
+        ... ''').get_keypress_paths())
         [['start', 'A', 'b', 'A', 'c', 'A', 'end'],
             ['start', 'A', 'b', 'A', 'end'],
             ['start', 'A', 'b', 'end'],
