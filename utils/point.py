@@ -487,6 +487,21 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for value, min_value, max_value in zip(self, min_value, max_value)
         )
 
+    def replace_dimension(
+        self: SelfBP, dimension_index: int, value: int,
+    ) -> SelfBP:
+        """
+        >>> Point2D(0, 0).replace_dimension(0, 1)
+        Point2D(x=1, y=0)
+        >>> Point2D(0, 0).replace_dimension(1, 1)
+        Point2D(x=0, y=1)
+        """
+        coordinates = list(self.coordinates)
+        coordinates[dimension_index] = value
+        cls = type(self)
+        # noinspection PyArgumentList
+        return cls(*tuple(coordinates))
+
 
 class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
     coordinates_names = ("x", "y")

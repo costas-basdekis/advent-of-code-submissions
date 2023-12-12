@@ -9,6 +9,7 @@ from .helper import *
 from .math_utils import *
 from .point import *
 from .polymorphic import *
+from .string_utils import *
 from .typing_utils import *
 
 test_modules = sum((
@@ -23,6 +24,7 @@ test_modules = sum((
         importlib.import_module('utils.helper'),
         importlib.import_module('utils.point'),
         importlib.import_module('utils.polymorphic'),
+        importlib.import_module('utils.string_utils'),
         importlib.import_module('utils.typing_utils'),
     )
 ), [])
