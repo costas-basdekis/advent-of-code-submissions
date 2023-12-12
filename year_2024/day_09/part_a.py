@@ -136,18 +136,28 @@ class Disk(Generic[FileT]):
         return cls(files=files)
 
 
+DiskT = TypeVar("DiskT", bound=Disk)
+
+
 @dataclass
-class DiskCompacter:
+class DiskCompacter(Generic[DiskT]):
     ids_by_position: Dict[int, int]
     max_position: int
     min_empty_position: int
 
     @classmethod
-    def from_disk_text(cls, text: str) -> "DiskCompacter":
-        return cls.from_disk(Disk.from_text(text))
+    def get_disk_class(cls) -> Type[DiskT]:
+        # noinspection PyTypeChecker
+        return get_type_argument_class(cls, DiskT)
 
     @classmethod
-    def from_disk(cls, disk: Disk) -> "DiskCompacter":
+    def from_disk_text(cls, text: str) -> DiskT:
+        disk_class = cls.get_disk_class()
+        # noinspection PyTypeChecker
+        return cls.from_disk(disk_class.from_text(text))
+
+    @classmethod
+    def from_disk(cls, disk: DiskT) -> "DiskCompacter":
         ids_by_position = {
             position: file.file_id
             for file in disk.files
@@ -191,13 +201,14 @@ class DiskCompacter:
                 break
         return True
 
-    def to_disk(self) -> Disk:
+    def to_disk(self) -> DiskT:
         by_file_id = lambda position: self.ids_by_position[position]
         positions_by_id = {
             file_id: set(positions)
             for file_id, positions in groupby(sorted(self.ids_by_position, key=by_file_id), key=by_file_id)
         }
-        return Disk(files=[
+        disk_class = self.get_disk_class()
+        return disk_class(files=[
             File(file_id=file_id, positions=positions)
             for file_id, positions in positions_by_id.items()
         ])
