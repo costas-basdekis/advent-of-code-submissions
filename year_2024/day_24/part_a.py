@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 import re
+from functools import cached_property
 from typing import Callable, ClassVar, Dict, List, Optional, Union
 
 from aox.challenge import Debugger
@@ -51,6 +52,13 @@ class Device:
     def __contains__(self, item: str) -> bool:
         return self.values[item] is not None
 
+    @cached_property
+    def wires_by_result(self) -> Dict[str, "Wire"]:
+        return{
+            wire.result: wire
+            for wire in self.wires
+        }
+
     def get_output(self) -> int:
         """
         >>> Device.from_text(SMALL_EXAMPLE_TEXT).get_output()
@@ -58,30 +66,29 @@ class Device:
         >>> Device.from_text(LARGE_EXAMPLE_TEXT).get_output()
         2024
         """
+        return self.get_variable("z")
+
+    def get_variable(self, variable: str) -> int:
         return sum(
             1 << index
-            for index, value in enumerate(reversed(self.get_output_values()))
+            for index, value in enumerate(reversed(self.get_variable_values(variable)))
             if value
         )
 
-    def get_output_values(self) -> List[bool]:
+    def get_variable_values(self, variable: str) -> List[bool]:
         """
-        >>> Device.from_text(SMALL_EXAMPLE_TEXT).get_output_values()
+        >>> Device.from_text(SMALL_EXAMPLE_TEXT).get_variable_values("z")
         [True, False, False]
         """
-        gates = self.get_output_gates()
+        gates = self.get_variable_gates(variable)
         stack = list(gates)
-        wires_by_result = {
-            wire.result: wire
-            for wire in self.wires
-        }
         seen = set(stack)
         while stack:
             gate = stack[-1]
             if gate in self:
                 stack.pop()
                 continue
-            wire = wires_by_result[gate]
+            wire = self.wires_by_result[gate]
             dependencies = {wire.left, wire.right}
             if all(dependency in self for dependency in dependencies):
                 self[gate] = wire.calculate(self)
@@ -92,19 +99,19 @@ class Device:
             seen.update(next_items)
         return [self[gate] for gate in gates]
 
-    def get_output_gates(self) -> List[str]:
+    def get_variable_gates(self, variable: str) -> List[str]:
         """
-        >>> Device.from_text(SMALL_EXAMPLE_TEXT).get_output_gates()
+        >>> Device.from_text(SMALL_EXAMPLE_TEXT).get_variable_gates("z")
         ['z02', 'z01', 'z00']
         """
         return sorted((
             gate
             for gate in self.values
-            if gate.startswith("z")
+            if gate.startswith(variable)
         ), reverse=True)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Wire:
     left: str
     right: str

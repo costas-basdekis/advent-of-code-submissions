@@ -139,7 +139,7 @@ class InstructionSet(Generic[InstructionT, ScreenT]):
     @classmethod
     def result_from_instructions_text(cls, instructions_text: str) -> ScreenT:
         instruction_set = cls.from_instructions_text(instructions_text)
-        return instruction_set.get_result()
+        return instruction_set.get_variable()
 
     @classmethod
     def from_instructions_text(
