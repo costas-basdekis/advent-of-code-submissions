@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import cached_property
-from typing import Dict, List
+from typing import Dict, List, TypeVar
 
 from utils.method_utils import cached_classmethod
 from utils.point import Point2D
@@ -8,6 +8,9 @@ from utils.typing_utils import Cls, Self
 
 
 __all__ = ["DirectionBase", "Direction", "Direction8"]
+
+
+DirectionBaseT = TypeVar("DirectionBaseT", bound="Direction")
 
 
 class DirectionBase:
@@ -56,6 +59,9 @@ class DirectionBase:
 
     def __str__(self) -> str:
         return self.string_char
+
+    def __lt__(self: DirectionBaseT, other: DirectionBaseT) -> bool:
+        return self.name < other.name
 
     @cached_property
     def string_char(self) -> str:

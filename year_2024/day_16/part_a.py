@@ -85,7 +85,7 @@ class Maze:
     def __str__(self) -> str:
         return self.show()
 
-    def show(self, path: Optional[Path] = None) -> str:
+    def show(self, path: Optional[Path] = None, points: Optional[Set[Point2D]] = None) -> str:
         if path:
             arrows_map = {
                 position: str(direction)
@@ -98,6 +98,8 @@ class Maze:
             "".join(
                 "#"
                 if point in self.walls else
+                "O"
+                if points and point in points else
                 "S"
                 if point == self.start else
                 "E"
