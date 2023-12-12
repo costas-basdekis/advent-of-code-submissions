@@ -56,12 +56,7 @@ class Puzzle:
         return self.show()
 
     def show(self, only_points: Optional[Set[Point2D]] = None) -> str:
-        if only_points is not None:
-            if not only_points:
-                return ""
-            (min_x, min_y), (max_x, max_y) = min_and_max_tuples(only_points)
-        else:
-            (min_x, min_y), (max_x, max_y) = self.boundaries
+        (min_x, min_y), (max_x, max_y) = self.boundaries
         return "\n".join(
             "".join(
                 self.grid[point]
