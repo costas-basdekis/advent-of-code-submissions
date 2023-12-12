@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from typing import Set, Union
+from typing import Set, Union, Dict, Optional
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, Point2D
@@ -104,7 +104,7 @@ class Dish:
             for point in self.rounded_rocks
         )
 
-    def tilt_north(self) -> "Dish":
+    def tilt_north(self, cache: Optional[Dict[Point2D, Point2D]] = None) -> "Dish":
         """
         >>> print(Dish.from_map('''
         ...     O....#....
@@ -129,13 +129,15 @@ class Dish:
         #....###..
         #....#....
         """
-        rounded_count_per_square = {}
-        cache = {}
+        rounded_count_per_square: Dict[Point2D, int] = {}
+        if cache is None:
+            cache = {}
         for rounded in self.rounded_rocks:
             for y in range(rounded.y, -1, -1):
                 point = Point2D(rounded.x, y)
                 if point in cache:
                     target = cache[point]
+                    rounded_count_per_square.setdefault(target, 0)
                     rounded_count_per_square[target] += 1
                     for y2 in range(point.y + 1, rounded.y + 1):
                         cache[Point2D(point.x, y2)] = target
