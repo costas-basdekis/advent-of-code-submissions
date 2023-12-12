@@ -5,7 +5,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import utils
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D, Direction
+from utils import BaseChallenge, Point2D, Direction, Cls, Self
 
 
 class Challenge(BaseChallenge):
@@ -22,9 +22,10 @@ class Pool:
     heat_loss_map: Dict[Point2D, int]
     width: int
     height: int
+    valid_lengths: List[int]
 
     @classmethod
-    def from_map(cls, text: str) -> "Pool":
+    def from_map(cls: Cls["Pool"], text: str, valid_lengths: Optional[List[int]] = None) -> Self["Pool"]:
         """
         >>> print(Pool.from_map('''
         ...     2413432311323
@@ -55,12 +56,14 @@ class Pool:
         2546548887735
         4322674655533
         """
+        if valid_lengths is None:
+            valid_lengths = [1, 2, 3]
         lines = text.strip().splitlines()
         return cls(heat_loss_map={
             Point2D(x, y): int(char)
             for y, line in enumerate(lines)
             for x, char in enumerate(line.strip())
-        }, width=len(lines[0]) if lines else 0, height=len(lines))
+        }, width=len(lines[0]) if lines else 0, height=len(lines), valid_lengths=valid_lengths)
 
     def __str__(self, path: Optional[List["StateKey"]] = None, only_path_numbers: bool = False,) -> str:
         """
@@ -491,7 +494,7 @@ class SearchState:
         next_states = []
         next_states.extend([
             self._change(position=new_position, direction=new_direction)
-            for distance in [1, 2, 3]
+            for distance in self.pool.valid_lengths
             for new_position in [self.position.offset(self.direction.offset.resize(distance))]
             if self.pool.is_point_in_bounds(new_position)
             for new_direction in [self.direction.clockwise, self.direction.counter_clockwise]
