@@ -149,7 +149,7 @@ class Firewall:
         >>> Firewall().sort_ranges([range(5), range(3, 7), range(-4, 10)])
         [range(-4, 10), range(0, 5), range(3, 7)]
         """
-        return sorted(ranges, key=lambda _range: (_range.start, _range.stop))
+        return sorted(ranges, key=lambda _range: (_range.position, _range.stop))
 
     def do_ranges_overlap_or_touch(self, lhs: range, rhs: range):
         """
