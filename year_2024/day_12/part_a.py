@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import Dict, List, Optional, Tuple, Union
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D, min_and_max_tuples
+from utils import BaseChallenge, Point2D, min_and_max_tuples, Self
 
 
 class Challenge(BaseChallenge):
@@ -172,7 +172,7 @@ class Garden:
             for region in self.get_regions()
         )
 
-    def get_regions(self) -> List["Garden"]:
+    def get_regions(self: Self["Garden"]) -> List[Self["Garden"]]:
         """
         >>> _garden = Garden.from_text('''
         ...     AAAA
@@ -236,8 +236,9 @@ class Garden:
                 regions_by_position[next_position] = next_region
                 next_region.add(next_position)
                 queue.append(next_position)
+        cls = type(self)
         return [
-            Garden(plants={
+            cls(plants={
                 point: plant
                 for point in region
             })
