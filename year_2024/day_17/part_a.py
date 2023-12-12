@@ -3,12 +3,12 @@ from abc import ABC
 from dataclasses import dataclass, field
 import re
 from math import floor
-from typing import ClassVar, Dict, Generic, List, Optional, Type, Union, TypeVar
+from typing import ClassVar, Dict, Generic, List, Optional, Union, TypeVar
 
 import click
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, PolymorphicParser
+from utils import BaseChallenge, PolymorphicParser, Cls, Self
 from year_2017.day_06.part_a import Memory
 
 
@@ -32,8 +32,6 @@ class Challenge(BaseChallenge):
             machine.run_once()
 
 
-MachineTypeT = TypeVar('MachineTypeT', bound=Type['Machine'])
-MachineT = TypeVar('MachineT', bound='Machine')
 InstructionT = TypeVar('InstructionT', bound="InstructionBase")
 
 
@@ -43,7 +41,7 @@ class Machine(Generic[InstructionT]):
     instructions: List[InstructionT]
 
     @classmethod
-    def from_text(cls: MachineTypeT, text: str) -> MachineT:
+    def from_text(cls: Cls["Machine"], text: str) -> Self["Machine"]:
         """
         >>> print(Machine.from_text('''
         ...     Register A: 729
@@ -66,7 +64,7 @@ class Machine(Generic[InstructionT]):
         return cls.from_opcodes(opcodes, memory=memory)
 
     @classmethod
-    def from_opcodes(cls: MachineTypeT, opcodes: List[int], memory: Optional[Memory] = None) -> MachineT:
+    def from_opcodes(cls: Cls["Machine"], opcodes: List[int], memory: Optional[Memory] = None) -> Self["Machine"]:
         if memory is None:
             memory = Memory()
         instructions_by_opcode = InstructionBase.get_instructions_by_opcode()
@@ -86,7 +84,7 @@ class Machine(Generic[InstructionT]):
     def finished(self):
         return not (0 <= self.memory.pc < len(self.instructions))
 
-    def run(self: MachineT) -> MachineT:
+    def run(self: Self["Machine"]) -> Self["Machine"]:
         """
         >>> print(Machine.from_opcodes([2, 6], Memory(c=9)).run().memory)
         Register A: 0
@@ -127,7 +125,7 @@ class Machine(Generic[InstructionT]):
             self.run_once()
         return self
 
-    def run_once(self: MachineT) -> MachineT:
+    def run_once(self: Self["Machine"]) -> Self["Machine"]:
         instruction = self.next_instruction
         operand = self.next_operand
         if instruction is None or operand is None:
@@ -188,8 +186,25 @@ class Memory:
             return [self.a, self.b, self.c][operand - 4]
         raise Exception(f"Cannot parse combo operand {operand}")
 
+    @classmethod
+    def disassemble_combo(cls, operand: int) -> str:
+        if 0 <= operand <= 3:
+            return str(operand)
+        if 4 <= operand <= 6:
+            return ["a", "b", "c"][operand - 4]
+        raise Exception(f"Cannot parse combo operand {operand}")
+
     def write_out(self, value: int):
         self.out.append(value)
+
+    def copy(self) -> "Memory":
+        return Memory(
+            a=self.a,
+            b=self.b,
+            c=self.c,
+            pc=self.pc,
+            out=list(self.out),
+        )
 
 
 @dataclass
@@ -211,6 +226,9 @@ class InstructionBase(PolymorphicParser, ABC, root=True):
             for instruction_class in cls.sub_classes.values()
         }
 
+    def disassemble(self, operand: int) -> str:
+        raise NotImplementedError()
+
 
 @InstructionBase.register
 @dataclass
@@ -223,6 +241,9 @@ class AdvInstruction(InstructionBase):
         denominator = floor(2 ** memory.get_combo(operand))
         memory.a = numerator // denominator
 
+    def disassemble(self, operand: int) -> str:
+        return f"a = a // (2 ** {Memory.disassemble_combo(operand)})"
+
 
 @InstructionBase.register
 @dataclass
@@ -233,6 +254,9 @@ class BxlInstruction(InstructionBase):
     def operate(self, memory: Memory, operand: int):
         memory.b = memory.b ^ operand
 
+    def disassemble(self, operand: int) -> str:
+        return f"b = b ^ {operand}"
+
 
 @InstructionBase.register
 @dataclass
@@ -242,6 +266,9 @@ class BstInstruction(InstructionBase):
 
     def operate(self, memory: Memory, operand: int):
         memory.b = memory.get_combo(operand) % 8
+
+    def disassemble(self, operand: int) -> str:
+        return f"b = {Memory.disassemble_combo(operand)} % 8"
 
 
 @InstructionBase.register
@@ -255,6 +282,9 @@ class JnzInstruction(InstructionBase):
             return None
         return operand
 
+    def disassemble(self, operand: int) -> str:
+        return f"if a != 0: goto {operand}"
+
 
 @InstructionBase.register
 @dataclass
@@ -265,6 +295,9 @@ class BxcInstruction(InstructionBase):
     def operate(self, memory: Memory, operand: int):
         memory.b = memory.b ^ memory.c
 
+    def disassemble(self, operand: int) -> str:
+        return f"b = b ^ c"
+
 
 @InstructionBase.register
 @dataclass
@@ -274,6 +307,9 @@ class OutInstruction(InstructionBase):
 
     def operate(self, memory: Memory, operand: int):
         memory.write_out(memory.get_combo(operand) % 8)
+
+    def disassemble(self, operand: int) -> str:
+        return f"out({Memory.disassemble_combo(operand)} % 8)"
 
 
 @InstructionBase.register
@@ -287,6 +323,9 @@ class BdvInstruction(InstructionBase):
         denominator = floor(2 ** memory.get_combo(operand))
         memory.b = numerator // denominator
 
+    def disassemble(self, operand: int) -> str:
+        return f"b = a // (2 ** {Memory.disassemble_combo(operand)})"
+
 
 @InstructionBase.register
 @dataclass
@@ -298,6 +337,9 @@ class CdvInstruction(InstructionBase):
         numerator = memory.a
         denominator = floor(2 ** memory.get_combo(operand))
         memory.c = numerator // denominator
+
+    def disassemble(self, operand: int) -> str:
+        return f"c = a // (2 ** {Memory.disassemble_combo(operand)})"
 
 
 Challenge.main()
