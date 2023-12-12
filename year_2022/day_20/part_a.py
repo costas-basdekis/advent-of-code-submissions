@@ -9,8 +9,8 @@ from utils import BaseChallenge
 class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
-        >>> # < 13642
         >>> Challenge().default_solve()
+        1591
         """
         return Ciphertext\
             .from_values_text(_input)\
@@ -92,7 +92,7 @@ class Ciphertext:
         if original_items is None:
             original_items = list(self.items)
         for item in original_items:
-            self.mix_item_inline(self.find_first_item(item.value))
+            self.mix_item_inline(item)
         return self
 
     def mix_item_inline(self, item: "Item") -> "Ciphertext":
@@ -115,6 +115,15 @@ class Ciphertext:
         Ciphertext.from_values([1, 2, -3, 0, 3, 4, -2])
         >>> mix_value(4)
         Ciphertext.from_values([1, 2, -3, 4, 0, 3, -2])
+        >>> ciphertext = Ciphertext.from_values([1, 2, 3, 1, 4, 5])
+        >>> first_item = ciphertext.items[0]
+        >>> fourth_item = ciphertext.items[3]
+        >>> first_item == fourth_item
+        False
+        >>> ciphertext.mix_item_inline(first_item)
+        Ciphertext.from_values([2, 1, 3, 1, 4, 5])
+        >>> ciphertext.mix_item_inline(fourth_item)
+        Ciphertext.from_values([2, 1, 3, 4, 1, 5])
         """
         index = self.items.index(item)
         intermediate_length = len(self.items) - 1
@@ -132,7 +141,7 @@ class Ciphertext:
         return self
 
 
-@dataclass
+@dataclass(eq=False)
 class Item:
     value: int
 
