@@ -3,7 +3,7 @@ import string
 from dataclasses import dataclass
 import re
 from functools import cached_property
-from typing import ClassVar, Dict, List, Set, Tuple, Union
+from typing import ClassVar, Dict, List, Set, Tuple, Union, Optional
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, Point2D, Point3D, min_and_max_tuples
@@ -66,14 +66,16 @@ class BrickStack:
     brick_names = string.ascii_uppercase
     axis_names = "xyz"
 
-    def get_2d_representation(self, first_axis_index: int, second_axis_index: int) -> str:
+    def get_2d_representation(self, first_axis_index: int, second_axis_index: int, bricks: Optional[List["Brick"]] = None) -> str:
         min_values, max_values = self.boundaries
         min_x = min_values[first_axis_index]
         min_y = min_values[second_axis_index]
         max_x = max_values[first_axis_index]
         max_y = max_values[second_axis_index]
         bricks_by_point: Dict[Point2D, List[Brick]] = {}
-        for brick in self.bricks:
+        if bricks is None:
+            bricks = self.bricks
+        for brick in bricks:
             for x in range(brick.start[first_axis_index], brick.end[first_axis_index] + 1):
                 for y in range(brick.start[second_axis_index], brick.end[second_axis_index] + 1):
                     point = Point2D(x, y)
@@ -81,7 +83,7 @@ class BrickStack:
         if len(self.bricks) > len(self.brick_names):
             brick_names = {
                 brick: str(index)
-                for index, brick in enumerate(self.bricks, start=1)
+                for index, brick in enumerate(self.bricks)
             }
         else:
             brick_names = {
@@ -104,13 +106,14 @@ class BrickStack:
         max_len = max(max(map(len, text_values.values())), max(map(len, map(str, [min_x, max_x]))))
         max_y_axis_len = max(map(len, map(str, [min_y, max_y])))
         x_separator = " " if max_len > 1 else ""
+        content_width = ((max_x - min_x + 1) * (max_len + len(x_separator)) - len(x_separator))
         return "{}\n{}\n{}\n{}".format(
-            self.axis_names[first_axis_index].center(max_x - min_x + 1),
+            self.axis_names[first_axis_index].center(content_width),
             x_separator.join(str(x).center(max_len) for x in range(min_x, max_x + 1)),
             "\n".join(
                 "{} {} {}".format(
                     x_separator.join(
-                        text_values[point]
+                        text_values[point].rjust(max_len)
                         for x in range(min_x, max_x + 1)
                         for point in [Point2D(x, y)]
                     ),
@@ -122,7 +125,7 @@ class BrickStack:
                 for y in range(max_y, 1 - 1, -1)
             ),
             "{} {}".format(
-                "-" * (max_x - min_x + 1),
+                "-" * content_width,
                 "0".rjust(max_y_axis_len)
             ),
         )
@@ -195,7 +198,8 @@ class BrickStack:
                 for y in range(output_brick.start.y, output_brick.end.y + 1)
             })
             output_bricks.append(output_brick)
-        return BrickStack(bricks=output_bricks)
+        cls = type(self)
+        return cls(bricks=output_bricks)
 
     def get_disintegration_count(self) -> int:
         """
@@ -213,14 +217,15 @@ class BrickStack:
         """
         return sum(
             1
-            for dependencies in self.get_brick_disintegration_dependencies().values()
+            for dependencies in self.brick_disintegration_dependencies.values()
             if not dependencies
         )
 
-    def get_brick_disintegration_dependencies(self) -> Dict["Brick", Set["Brick"]]:
+    @cached_property
+    def brick_disintegration_dependencies(self) -> Dict["Brick", Set["Brick"]]:
         """
         >>> def _check(s: BrickStack):
-        ...     ds = s.get_brick_disintegration_dependencies()
+        ...     ds = s.brick_disintegration_dependencies
         ...     print("\\n".join(
         ...         f"{s.brick_names[s.bricks.index(_brick)]}: {', '.join(sorted(s.brick_names[s.bricks.index(d)] for d in ds[_brick]))}"
         ...         for _brick in s.bricks
@@ -243,14 +248,8 @@ class BrickStack:
         F: G
         G:
         """
-        dependencies = self.get_brick_dependencies()
-        reverse_dependencies: Dict[Brick, Set[Brick]] = {
-            brick: set()
-            for brick in self.bricks
-        }
-        for brick, brick_dependencies in dependencies.items():
-            for dependency in brick_dependencies:
-                reverse_dependencies[dependency].add(brick)
+        dependencies = self.brick_dependencies
+        reverse_dependencies = self.brick_reverse_dependencies
         disintegration_dependencies: Dict[Brick, Set[Brick]] = {
             brick: set()
             for brick in self.bricks
@@ -262,10 +261,48 @@ class BrickStack:
                     disintegration_dependencies[brick].add(dependency)
         return disintegration_dependencies
 
-    def get_brick_dependencies(self) -> Dict["Brick", Set["Brick"]]:
+    @cached_property
+    def brick_reverse_dependencies(self) -> Dict["Brick", Set["Brick"]]:
         """
         >>> def _check(s: BrickStack):
-        ...     ds = s.get_brick_dependencies()
+        ...     ds = s.brick_reverse_dependencies
+        ...     print("\\n".join(
+        ...         f"{s.brick_names[s.bricks.index(_brick)]}: {', '.join(sorted(s.brick_names[s.bricks.index(d)] for d in ds[_brick]))}"
+        ...         for _brick in s.bricks
+        ...     ))
+        >>> _stack = BrickStack.from_text('''
+        ...     1,0,1~1,2,1
+        ...     0,0,2~2,0,2
+        ...     0,2,3~2,2,3
+        ...     0,0,4~0,2,4
+        ...     2,0,5~2,2,5
+        ...     0,1,6~2,1,6
+        ...     1,1,8~1,1,9
+        ... ''').drop_bricks()
+        >>> _check(_stack)
+        A: B, C
+        B: D, E
+        C: D, E
+        D: F
+        E: F
+        F: G
+        G:
+        """
+        dependencies = self.brick_dependencies
+        reverse_dependencies: Dict[Brick, Set[Brick]] = {
+            brick: set()
+            for brick in self.bricks
+        }
+        for brick, brick_dependencies in dependencies.items():
+            for dependency in brick_dependencies:
+                reverse_dependencies[dependency].add(brick)
+        return reverse_dependencies
+
+    @cached_property
+    def brick_dependencies(self) -> Dict["Brick", Set["Brick"]]:
+        """
+        >>> def _check(s: BrickStack):
+        ...     ds = s.brick_dependencies
         ...     print("\\n".join(
         ...         f"{s.brick_names[s.bricks.index(_brick)]}: {', '.join(sorted(s.brick_names[s.bricks.index(d)] for d in ds.get(_brick, set())))}"
         ...         for _brick in s.bricks

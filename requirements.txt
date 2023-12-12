@@ -4,3 +4,4 @@ requests==2.22.0
 beautifulsoup4==4.9.3
 aox==1.1.1
 numpy~=1.21.4
+pyperclip~=1.10.0
