@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import re
-from enum import Enum
-from typing import (
-    Any, cast, Callable, ClassVar, Dict, Generic, Iterable, List, Optional, Set,
-    Tuple, Type, Union, TypeVar,
-)
+from typing import List, Tuple, Union
 
 from aox.challenge import Debugger
-from utils import (
-    BaseChallenge, Point2D, get_type_argument_class, helper, Cls, Self,
-)
+from utils import BaseChallenge
 
 
 class Challenge(BaseChallenge):
@@ -212,6 +206,26 @@ class Almanac:
             journey.append(result)
         return journey
 
+    def translate_range(self, _range: range) -> List[range]:
+        return self.get_range_journey(_range)[-1]
+
+    def get_range_journey(self, _range: range) -> List[List[range]]:
+        maps = [
+            self.seed_to_soil_map,
+            self.soil_to_fertilizer_map,
+            self.fertilizer_to_water_map,
+            self.water_to_light_map,
+            self.light_to_temperature_map,
+            self.temperature_to_humidity_map,
+            self.humidity_to_location_map,
+        ]
+        journey = [[_range]]
+        result = [_range]
+        for _map in maps:
+            result = _map.translate_ranges(result)
+            journey.append(result)
+        return journey
+
 
 @dataclass
 class AlmanacMap:
@@ -259,6 +273,17 @@ class AlmanacMap:
 
         return item
 
+    def translate_ranges(self, input_ranges: List[range]) -> List[range]:
+        translated_ranges = []
+        remaining_ranges = input_ranges
+        for map_item in self.map_items:
+            item_translated_ranges, item_remaining_ranges = \
+                map_item.translate_ranges(remaining_ranges)
+            translated_ranges.extend(item_translated_ranges)
+            remaining_ranges = item_remaining_ranges
+
+        return translated_ranges + remaining_ranges
+
 
 @dataclass
 class AlmanacMapItem:
@@ -294,6 +319,67 @@ class AlmanacMapItem:
         if item not in self:
             return item
         return item - self.source_range.start + self.target_start
+
+    def translate_ranges(
+        self, input_ranges: List[range],
+    ) -> Tuple[List[range], List[range]]:
+        translated_ranges, remaining_ranges = [], []
+        for _range in input_ranges:
+            item_translated_ranges, item_remaining_ranges = \
+                self.translate_range(_range)
+            translated_ranges.extend(item_translated_ranges)
+            remaining_ranges.extend(item_remaining_ranges)
+        return translated_ranges, remaining_ranges
+
+    def translate_range(
+        self, input_range: range,
+    ) -> Tuple[List[range], List[range]]:
+        """
+        >>> AlmanacMapItem(range(98, 100), 50).translate_range(range(98, 100))
+        ([range(50, 52)], [])
+        >>> AlmanacMapItem(range(98, 100), 50).translate_range(range(0, 5))
+        ([], [range(0, 5)])
+        >>> AlmanacMapItem(range(98, 100), 50).translate_range(range(200, 5))
+        ([], [range(200, 5)])
+        >>> AlmanacMapItem(range(98, 100), 50).translate_range(range(90, 110))
+        ([range(50, 52)], [range(90, 98), range(100, 110)])
+        >>> AlmanacMapItem(range(98, 100), 50).translate_range(range(90, 99))
+        ([range(50, 51)], [range(90, 98)])
+        >>> AlmanacMapItem(range(98, 100), 50).translate_range(range(99, 110))
+        ([range(51, 52)], [range(100, 110)])
+        """
+        input_start = input_range.start
+        input_end = input_range.stop - 1
+        source_start = self.source_range.start
+        source_end = self.source_range.stop - 1
+
+        if input_end < source_start or input_start > source_end:
+            return [], [input_range]
+
+        if input_start >= source_start and input_end <= source_end:
+            return [
+                range(self[input_range.start], self[input_range.stop - 1] + 1),
+            ], []
+
+        if input_start < source_start and input_end > source_end:
+            return [
+                range(self[source_start], self[source_end] + 1),
+            ], [
+                range(input_start, source_start),
+                range(source_end + 1, input_end + 1),
+            ]
+        elif input_start < source_start:
+            return [
+                range(self[source_start], self[input_end] + 1),
+            ], [
+                range(input_start, source_start),
+            ]
+        else:
+            return [
+                range(self[input_start], self[source_end] + 1),
+            ], [
+                range(source_end + 1, input_end + 1),
+            ]
 
 
 Challenge.main()
