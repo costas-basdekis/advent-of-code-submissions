@@ -78,15 +78,25 @@ class HandSet(Generic[HandT]):
         return sorted(self.hands)
 
 
+HandTypeT = TV["HandType"]
+
+
 @dataclass
 @total_ordering
-class Hand:
+class Hand(Generic[HandTypeT]):
     cards: str
     bid: int
-    type: "HandType"
+    type: HandTypeT
 
     re_hand = re.compile(r"([AKQJT2-9]+)\s+(\d+)")
     rank_order = '23456789TJQKA'
+
+    @classmethod
+    def get_type_class(cls) -> Type[HandTypeT]:
+        return cast(
+            Type[HandTypeT],
+            get_type_argument_class(cls, HandTypeT),
+        )
 
     @classmethod
     def from_hand_text(cls, hand_text: str) -> "Hand":
@@ -95,7 +105,8 @@ class Hand:
         Hand(cards='32T3K', bid=765, type=HandType.OnePair)
         """
         cards_str, bid_str = cls.re_hand.match(hand_text.strip()).groups()
-        return cls(cards_str, int(bid_str), HandType.from_cards(cards_str))
+        type_class = cls.get_type_class()
+        return cls(cards_str, int(bid_str), type_class.from_cards(cards_str))
 
     def __eq__(self, other) -> bool:
         """
@@ -115,9 +126,7 @@ class Hand:
                 f"and {type(other).__name__}")
         return self.get_order_key() < other.get_order_key()
 
-    def get_order_key(
-        self,
-    ) -> Tuple["HandType", Tuple[int, ...]]:
+    def get_order_key(self) -> Tuple[HandTypeT, Tuple[int, ...]]:
         return self.type, tuple(map(self.rank_order.index, self.cards))
 
 
@@ -152,21 +161,21 @@ class HandType(Enum):
         cards_set = set(cards)
         first_rank_count = max(map(cards.count, cards_set))
         if len(cards_set) == 1:
-            return HandType.FiveOfAKind
+            return cls.FiveOfAKind
         elif len(cards_set) == 2:
             if first_rank_count == 4:
-                return HandType.FourOfAKind
+                return cls.FourOfAKind
             elif first_rank_count == 3:
-                return HandType.FullHouse
+                return cls.FullHouse
         elif len(cards_set) == 3:
             if first_rank_count == 3:
-                return HandType.ThreeOfAKind
+                return cls.ThreeOfAKind
             elif first_rank_count == 2:
-                return HandType.TwoPair
+                return cls.TwoPair
         elif len(cards_set) == 4:
-            return HandType.OnePair
+            return cls.OnePair
         else:
-            return HandType.HighCard
+            return cls.HighCard
         raise Exception(
             f"Cannot interpret cards '{cards}' "
             f"(set: {cards_set}, first rank count: {first_rank_count})"
