@@ -531,6 +531,16 @@ class Point2D(namedtuple("Point2D", ("x", "y")), BasePoint):
     def __new__(cls, *args, **kwargs):
         return cls.for_new(super().__new__, args, kwargs)
 
+    def flip(self) -> "Point2D":
+        """
+        >>> Point2D(0, 0).flip()
+        Point2D(x=0, y=0)
+        >>> Point2D(2, 3).flip()
+        Point2D(x=3, y=2)
+        """
+        cls = type(self)
+        return cls(self.y, self.x)
+
 
 class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
     coordinates_names = ("x", "y", "z")

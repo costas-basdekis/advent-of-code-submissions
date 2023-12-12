@@ -1,393 +1,302 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass, field
-import re
-from enum import Enum
-from typing import (
-    Any, cast, Callable, ClassVar, Dict, Generic, Iterable, List, Optional, Set,
-    Tuple, Type, Union, TypeVar,
-)
+from typing import ClassVar, Dict, List, Set, Tuple, Union
 
-import utils
 from aox.challenge import Debugger
-from utils import (
-    BaseChallenge, Point2D, get_type_argument_class, helper, Cls, Self,
-    min_and_max_tuples, Point3D, join_multiline,
-)
+from utils import BaseChallenge, Point2D, min_and_max_tuples
 from year_2022.day_22 import part_a
+from year_2022.day_22.part_a import Direction
 
 
 class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
-        >>> Challenge().default_solve()
+        >>> solution = Challenge().default_solve()
+        >>> 130280 < solution
+        True
+        >>> solution
         42
         """
+        return PathFinderExtended\
+            .from_map_text(_input)\
+            .get_password()
+
+    def play(self):
+        path_finder = PathFinderExtended\
+            .from_map_text(self.input)\
+            .trace_traverse()
+        path_finder.play()
 
 
-FaceVertices = Tuple[Point3D, Point3D, Point3D, Point3D]
-Vertices = Dict[Point2D, FaceVertices]
-FaceEdge = Tuple[Point3D, Point3D]
-Edges = Dict[Point2D, Tuple[FaceEdge, FaceEdge, FaceEdge, FaceEdge]]
+class PathFinderExtended(part_a.PathFinder["BoardExtended"]):
+    """
+    >>> path_finder = PathFinderExtended.from_map_text(Challenge().input).trace_traverse()
+    >>> path_finder.board.calculate_next_point(Point2D(0, 159), Direction.Right)
+    (Point2D(x=1, y=159), Direction.Right)
+    >>> list(path_finder.instructions[2].iterate_advance(path_finder.board, Point2D(59, 0), Direction.Up))
+    [(Point2D(x=0, y=159), Direction.Right),
+        (Point2D(x=1, y=159), Direction.Right),
+        (Point2D(x=2, y=159), Direction.Right)]
+    >>> path_finder.path[10:14]
+    [(Point2D(x=59, y=0), Direction.Up, 'L'),
+        (Point2D(x=0, y=159), Direction.Right, '3'),
+        (Point2D(x=1, y=159), Direction.Right, '3'),
+        (Point2D(x=2, y=159), Direction.Right, '3')]
+    """
 
 
 @dataclass
-class CubeSolver:
-    board: part_a.Board
-    size: int = 50
+class BoardExtended(part_a.Board):
+    continuation_map: "ContinuationMap" = field(default_factory=lambda: ContinuationMap.from_preset())
 
-    edges_indexes: Tuple[
-        Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int],
-    ] = ((0, 1), (1, 3), (3, 2), (2, 0))
+    def get_next_point_wrapped(self, point: Point2D, direction: Direction) -> Tuple[Point2D, Direction]:
+        """
+        >>> board = BoardExtended.from_board_text(Challenge().input.strip("\\n").split("\\n\\n")[0])
+        >>> board.calculate_next_point(Point2D(0, 159), Direction.Right)
+        (Point2D(x=1, y=159), Direction.Right)
+        """
+        new_pair =  self.continuation_map[(point, direction)]
+        return new_pair
 
-    def visualise_edges(self, vertices: Vertices, edges: Edges) -> str:
-        """
-        >>> solver = CubeSolver(
-        ...     part_a.Board.from_board_text(part_a.BOARD_INPUT), 4,
-        ...     )
-        >>> _vertices = solver.find_vertices(Point2D(0, 1))
-        >>> _edges = solver.assign_edges(_vertices)
-        >>> print(solver.visualise_edges(_vertices, _edges))
-               D
-              RBL
-               U
-         B  B  B
-        LDRDRURUL
-         F  F  F
-               U  U
-              RFLFLB
-               D  D
-        """
-        edges_by_face: Dict[Point2D, List[FaceEdge]] = {
-            face: [
-                tuple(sorted(
-                    face_vertices[edge_index]
-                    for edge_index in edge_indexes
-                ))
-                for edge_indexes in self.edges_indexes
-            ]
-            for face, face_vertices in vertices.items()
-        }
-        faces_by_edge = helper.group_by((
-            (edge, face)
-            for face, edges in edges_by_face.items()
-            for edge in edges
-        ), key=lambda pair: pair[0], value="auto", values_container=set)
-        face_counts_by_edge = set(map(len, faces_by_edge.values()))
-        if face_counts_by_edge != {2}:
-            raise Exception(
-                f"Some edges didn't have exactly 2 faces, "
-                f"but had: {face_counts_by_edge - {2}}"
-            )
-        other_face_by_face_and_edge = {
-            (face, edge): other_face
-            for edge, faces in faces_by_edge.items()
-            for first_face, second_face in [faces]
-            for face, other_face
-            in [(first_face, second_face), (second_face, first_face)]
-        }
-        other_face_name_by_face_and_edge = {
-            key: self.face_name_by_vertices[
-                cast(FaceVertices, tuple(sorted(vertices[other_face])))
-            ]
-            for key, other_face in other_face_by_face_and_edge.items()
-        }
-        (min_x, min_y), (max_x, max_y) = min_and_max_tuples(vertices)
-        return "\n".join(
-            join_multiline("", (
-                " {up} \n{left}{name}{right}\n {down} ".format(
-                    name=self.face_name_by_vertices[
-                        cast(FaceVertices, tuple(sorted(face_vertices)))
-                    ],
-                    up=other_face_name_by_face_and_edge[(
-                        face_point, tuple(sorted(up_edge))
-                    )],
-                    right=other_face_name_by_face_and_edge[(
-                        face_point, tuple(sorted(right_edge)),
-                    )],
-                    down=other_face_name_by_face_and_edge[(
-                        face_point, tuple(sorted(down_edge)),
-                    )],
-                    left=other_face_name_by_face_and_edge[(
-                        face_point, tuple(sorted(left_edge)),
-                    )],
-                )
-                if face_point in vertices else
-                "   \n   \n   "
-                for x in range(min_x, max_x + 1)
-                for face_point in [Point2D(x, y)]
-                for face_vertices
-                in [
-                    vertices[face_point]
-                    if face_point in vertices else
-                    None
-                ]
-                for up_edge, right_edge, down_edge, left_edge
-                in [
-                    edges[face_point]
-                    if face_point in vertices else
-                    (None, None, None, None)
-                ]
-            ))
-            for y in range(min_y, max_y + 1)
-        )
 
-    def assign_opposite_edges(
-        self, vertices: Vertices, edges: Edges,
-    ):
+Region = str
+Position = Point2D
+Range = Tuple[Position, Position]
+
+
+@dataclass
+class ContinuationMap:
+    continuations: Dict[Tuple[Position, Direction], Tuple[Position, Direction]]
+    regions_positions: Dict[Region, Position] = field(repr=False)
+    directions_boundaries: Dict[Direction, Range] = field(repr=False)
+    regions_boundaries: Dict[Region, Dict[Direction, Range]] = field(repr=False)
+    continuations_mappings: List[Tuple[Range, Direction, Range, Direction]] = field(repr=False)
+
+    @classmethod
+    def from_preset(cls, size: int = 50) -> "ContinuationMap":
         """
-        >>> solver = CubeSolver(
-        ...     part_a.Board.from_board_text(part_a.BOARD_INPUT), 4,
-        ...     )
-        >>> _vertices = solver.find_vertices(Point2D(0, 1))
-        >>> _edges = solver.assign_edges(_vertices)
-        >>> solver.assign_opposite_edges(_vertices, _edges)
+        >>> cmap = ContinuationMap.from_preset(3)
+        >>> print(cmap)
+           +^^^^+
+           <    >
+           <  vv+
+           < >
+           < >
+           < >
+        +^^  >
+        <    >
+        <  vv+
+        < >
+        < >
+        +v+
+        >>> cmap.regions_boundaries["D"][Direction.Up]
+        (Point2D(x=0, y=6), Point2D(x=2, y=6))
+        >>> cmap.regions_boundaries["C"][Direction.Left]
+        (Point2D(x=3, y=3), Point2D(x=3, y=5))
+        >>> ((Point2D(x=0, y=6), Point2D(x=2, y=6)), Direction.Up,
+        ...     (Point2D(x=3, y=3), Point2D(x=3, y=5)), Direction.Right) in cmap.continuations_mappings
+        True
+        >>> cmap[(Point2D(0, 6), Direction.Up)]
+        (Point2D(x=3, y=3), Direction.Right)
+        >>> cmap = ContinuationMap.from_preset()
+        >>> cmap[(Point2D(0, 100), Direction.Up)]
+        (Point2D(x=50, y=50), Direction.Right)
         """
-        edge_inwards_directions = [
-            part_a.Direction.Down, part_a.Direction.Left,
-            part_a.Direction.Up, part_a.Direction.Right,
+        regions_map = " AB\n C \nDE \nF  "
+        """
+         AB
+         C
+        DE
+        F
+        """
+
+        continuations_shorthands: List[Tuple[Region, Direction, bool, Region, Direction]] = [
+            ("A", Direction.Left , True , "D", Direction.Right),
+            ("A", Direction.Up   , False, "F", Direction.Right),
+            ("B", Direction.Up   , False, "F", Direction.Up   ),
+            ("B", Direction.Right, True , "E", Direction.Left ),
+            ("B", Direction.Down , False, "C", Direction.Left ),
+            ("C", Direction.Left , False, "D", Direction.Down ),
+            ("C", Direction.Right, False, "B", Direction.Up   ),
+            ("D", Direction.Left , True , "A", Direction.Right),
+            ("D", Direction.Up   , False, "C", Direction.Right),
+            ("E", Direction.Right, True , "B", Direction.Left ),
+            ("E", Direction.Down , False, "F", Direction.Left ),
+            ("F", Direction.Left , False, "A", Direction.Down ),
+            ("F", Direction.Right, False, "E", Direction.Up   ),
+            ("F", Direction.Down , False, "B", Direction.Down ),
         ]
-        edge_offsets: Tuple[
-            Tuple[Point2D, Point2D], Tuple[Point2D, Point2D],
-            Tuple[Point2D, Point2D], Tuple[Point2D, Point2D],
-        ] = (
-            (Point2D(0, 0), Point2D(1, 0)),
-            (Point2D(1, 0), Point2D(1, 1)),
-            (Point2D(1, 1), Point2D(0, 1)),
-            (Point2D(0, 1), Point2D(0, 0)),
-        )
-        size_minus_1 = self.size - 1
-        per_point_edge_offsets: Dict[Point2D, Tuple[
-            Tuple[Point2D, Point2D, part_a.Direction],
-            Tuple[Point2D, Point2D, part_a.Direction],
-            Tuple[Point2D, Point2D, part_a.Direction],
-            Tuple[Point2D, Point2D, part_a.Direction],
-        ]] = {
-            point: tuple(
-                (
-                    first.resize(size_minus_1).offset(offset),
-                    second.resize(size_minus_1).offset(offset),
-                    edge_inwards_direction
+        """
+         AB
+         C
+        DE
+        F
+        
+        A,L: - D,R
+        A,U:  !F,R
+        B,U:   F,U
+        B,R: - E,L
+        B,D:  !C,L
+        C,L:  !D,D
+        C,R:  !B,U
+        D,L: - A,R
+        D,U:  !C,R
+        E,R: - B,L
+        E,D:  !F,L
+        F,L:  !A,D
+        F,R:  !E,U
+        F,D:   B,D
+        
+        """
+
+        return cls.from_regions_map(regions_map, continuations_shorthands, size)
+
+    @classmethod
+    def from_regions_map(cls, regions_map: str, continuations_shorthands: List[Tuple[Region, Direction, bool, Region, Direction]], size: int) -> "ContinuationMap":
+        """
+        >>> cmap = ContinuationMap.from_regions_map("A", [("A", Direction.Up, False, "A", Direction.Up)], 3)
+        >>> cmap
+        ContinuationMap(continuations={(Point2D(x=0, y=0), Direction.Up): (Point2D(x=0, y=2), Direction.Up),
+            (Point2D(x=1, y=0), Direction.Up): (Point2D(x=1, y=2), Direction.Up),
+            (Point2D(x=2, y=0), Direction.Up): (Point2D(x=2, y=2), Direction.Up)})
+        >>> print(cmap)
+        ^^^
+        >>> cmap = ContinuationMap.from_regions_map(" A", [("A", Direction.Up, False, "A", Direction.Up)], 3)
+        >>> cmap
+        ContinuationMap(continuations={(Point2D(x=3, y=0), Direction.Up): (Point2D(x=3, y=2), Direction.Up),
+            (Point2D(x=4, y=0), Direction.Up): (Point2D(x=4, y=2), Direction.Up),
+            (Point2D(x=5, y=0), Direction.Up): (Point2D(x=5, y=2), Direction.Up)})
+        >>> print(cmap)
+           ^^^
+        """
+        regions_positions: Dict[Region, Position] = {
+            region: Point2D(x, y)
+            for y, line in enumerate(filter(None, map(str.rstrip, regions_map.splitlines())))
+            for x, region in enumerate(line)
+            if region != " "
+        }
+
+        size_minus_1 = size - 1
+        directions_boundaries: Dict[Direction, Range] = {
+            Direction.Up: (Point2D(0, 0), Point2D(size_minus_1, 0)),
+            Direction.Down: (Point2D(0, size_minus_1), Point2D(size_minus_1, size_minus_1)),
+            Direction.Left: (Point2D(0, 0), Point2D(0, size_minus_1)),
+            Direction.Right: (Point2D(size_minus_1, 0), Point2D(size_minus_1, size_minus_1)),
+        }
+
+        regions_boundaries: Dict[Region, Dict[Direction, Range]] = {
+            region: {
+                direction: (
+                    Point2D(position.x * size + direction_start_x, position.y * size + direction_start_y),
+                    Point2D(position.x * size + direction_end_x, position.y * size + direction_end_y),
                 )
-                for (first, second), edge_inwards_direction
-                in zip(edge_offsets, edge_inwards_directions)
-            )
-            for point in edges
-            for offset in [point.resize(self.size)]
-        }
-        return per_point_edge_offsets
-
-    def assign_edges(self, vertices: Vertices) -> Edges:
-        return {
-            face_point: (
-                [face_vertices[0], face_vertices[1]],
-                [face_vertices[1], face_vertices[3]],
-                [face_vertices[3], face_vertices[2]],
-                [face_vertices[2], face_vertices[0]],
-            )
-            for face_point in vertices
-            for face_vertices in [vertices[face_point]]
+                for direction, ((direction_start_x, direction_start_y), (direction_end_x, direction_end_y))
+                in directions_boundaries.items()
+            }
+            for region, position in regions_positions.items()
         }
 
-    vertices_by_face_name: ClassVar[Dict[str, FaceVertices]] = {
-        "D": (
-            Point3D(x, y, z)
-            for x in [0, 1]
-            for y in [0, 1]
-            for z in [0]
-        ),
-        "U": (
-            Point3D(x, y, z)
-            for x in [0, 1]
-            for y in [0, 1]
-            for z in [1]
-        ),
-        "L": (
-            Point3D(x, y, z)
-            for x in [0]
-            for y in [0, 1]
-            for z in [0, 1]
-        ),
-        "R": (
-            Point3D(x, y, z)
-            for x in [1]
-            for y in [0, 1]
-            for z in [0, 1]
-        ),
-        "B": (
-            Point3D(x, y, z)
-            for x in [0, 1]
-            for y in [0]
-            for z in [0, 1]
-        ),
-        "F": (
-            Point3D(x, y, z)
-            for x in [0, 1]
-            for y in [1]
-            for z in [0, 1]
-        ),
-    }
-    face_name_by_vertices: ClassVar[Dict[FaceVertices, str]] = {
-        tuple(sorted(face_vertices)): face_name
-        for face_name, face_vertices in vertices_by_face_name.items()
+        continuations_mappings: List[Tuple[Range, Direction, Range, Direction]] = [
+            (
+                regions_boundaries[area_from][direction_from], direction_from,
+                cls.invert_range_if(invert, regions_boundaries[area_to][direction_to.opposite]), direction_to,
+            )
+            for area_from, direction_from, invert, area_to, direction_to
+            in continuations_shorthands
+        ]
+
+        continuations: Dict[Tuple[Position, Direction], Tuple[Position, Direction]] = {
+            (position_from, direction_from): (cls.interpolate_to_range(position_from, range_from, range_to), direction_to)
+            for range_from, direction_from, range_to, direction_to
+            in continuations_mappings
+            for ((start_x_from, start_y_from), (end_x_from, end_y_from)) in [range_from]
+            for x in (range(start_x_from, end_x_from + 1) if start_x_from < end_x_from else range(end_x_from, start_x_from + 1))
+            for y in (range(start_y_from, end_y_from + 1) if start_y_from < end_y_from else range(end_y_from, start_y_from + 1))
+            for position_from in [Point2D(x, y)]
+        }
+
+        return cls(
+            continuations,
+            regions_positions,
+            directions_boundaries,
+            regions_boundaries,
+            continuations_mappings,
+        )
+
+    @classmethod
+    def invert_range(cls, _range: Range) -> Range:
+        start, end = _range
+        return end, start
+
+    @classmethod
+    def invert_range_if(cls, invert: bool, _range: Range) -> Range:
+        if invert:
+            return cls.invert_range(_range)
+        return _range
+
+    @classmethod
+    def interpolate_to_range(cls, position: Position, range_from: Range, range_to: Range) -> Position:
+        """
+        >>> ContinuationMap.interpolate_to_range(Point2D(0, 6),
+        ...     (Point2D(x=0, y=6), Point2D(x=2, y=6)), (Point2D(x=3, y=3), Point2D(x=5, y=3)))
+        Point2D(x=3, y=3)
+        >>> ContinuationMap.interpolate_to_range(Point2D(0, 6),
+        ...     (Point2D(x=0, y=6), Point2D(x=2, y=6)), (Point2D(x=3, y=3), Point2D(x=3, y=5)))
+        Point2D(x=3, y=3)
+        >>> ContinuationMap.interpolate_to_range(Point2D(0, 100),
+        ...     (Point2D(x=0, y=100), Point2D(x=49, y=100)), (Point2D(x=50, y=50), Point2D(x=50, y=99)))
+        Point2D(x=50, y=50)
+        >>> cmap = ContinuationMap.from_preset()
+        >>> ContinuationMap.interpolate_to_range(Point2D(0, 100),
+        ...     cmap.regions_boundaries["D"][Direction.Up], cmap.regions_boundaries["C"][Direction.Left])
+        Point2D(x=50, y=50)
+        """
+        start_from, end_from = range_from
+        distance_from = end_from.difference(start_from)
+        start_to, end_to = range_to
+        distance_to = end_to.difference(start_to)
+        if (distance_from.x == 0) != (distance_to.x == 0):
+            position = position.flip()
+            start_from = start_from.flip()
+            end_from = end_from.flip()
+            distance_from = end_from.difference(start_from)
+        assert abs(distance_from.x) == abs(distance_to.x), f"{distance_from} != {distance_to} for from={range_from} to={range_to}"
+        assert abs(distance_from.y) == abs(distance_to.y)
+        ratio = Point2D(
+            distance_to.x // distance_from.x if distance_from.x != 0 else 0,
+            distance_to.y // distance_from.y if distance_from.y != 0 else 0,
+        )
+        return Point2D(
+            (position.x - start_from.x) * ratio.x + start_to.x,
+            (position.y - start_from.y) * ratio.y + start_to.y,
+        )
+
+    def __getitem__(self, item: Tuple[Position, Direction]) -> Tuple[Position, Direction]:
+        return self.continuations[item]
+
+    DIRECTIONS_STR_MAP: ClassVar[Dict[Direction, str]] = {
+        Direction.Left: "<",
+        Direction.Right: ">",
+        Direction.Up: "^",
+        Direction.Down: "v",
     }
 
-    def visualise_faces(self, vertices: Vertices) -> str:
-        """
-        >>> solver = CubeSolver(
-        ...     part_a.Board.from_board_text(part_a.BOARD_INPUT), 4,
-        ...     )
-        >>> print(solver.visualise_faces(solver.find_vertices(Point2D(0, 1))))
-          B
-        DRU
-          FL
-        """
-        (min_x, min_y), (max_x, max_y) = min_and_max_tuples(vertices)
+    def __str__(self) -> str:
+        directions_by_point: Dict[Point2D, Set[Direction]] = {}
+        for point, direction in self.continuations:
+            directions_by_point.setdefault(point, set()).add(direction)
+        _, (max_x, max_y) = min_and_max_tuples(directions_by_point)
         return "\n".join(
             "".join(
-                self.face_name_by_vertices.get(face_vertices, "?")
-                if face_point in vertices else
                 " "
-                for x in range(min_x, max_x + 1)
-                for face_point in [Point2D(x, y)]
-                for face_vertices
-                in [cast(FaceVertices, tuple(sorted(
-                    vertices.get(face_point, ()),
-                )))]
+                if not directions else
+                "+"
+                if len(directions) > 1 else
+                self.DIRECTIONS_STR_MAP[first_direction]
+                for x in range(0, max_x + 1)
+                for point in [Point2D(x, y)]
+                for directions in [directions_by_point.get(point)]
+                for first_direction in [list(directions or {None})[0]]
             )
-            for y in range(min_y, max_y + 1)
+            for y in range(0, max_y + 1)
         )
-
-    def find_vertices(
-        self, first_face: Optional[Point2D] = None,
-    ) -> Vertices:
-        return self.assign_vertices(self.find_faces(), first_face=first_face)
-
-    def assign_vertices(
-        self, faces: Set[Point2D], first_face: Optional[Point2D] = None,
-    ) -> Vertices:
-        """
-        >>> solver = CubeSolver(
-        ...     part_a.Board.from_board_text(part_a.BOARD_INPUT), 4,
-        ...     )
-        >>> _vertices = solver.find_vertices(Point2D(0, 1))
-        >>> _vertices[Point2D(0, 1)]  # D
-        (Point3D(x=0, y=0, z=0), Point3D(x=1, y=0, z=0),
-            Point3D(x=0, y=1, z=0), Point3D(x=1, y=1, z=0))
-        >>> _vertices[Point2D(1, 1)]  # R
-        (Point3D(x=1, y=0, z=0), Point3D(x=1, y=0, z=1),
-            Point3D(x=1, y=1, z=0), Point3D(x=1, y=1, z=1))
-        >>> _vertices[Point2D(2, 1)]  # U
-        (Point3D(x=1, y=0, z=1), Point3D(x=0, y=0, z=1),
-            Point3D(x=1, y=1, z=1), Point3D(x=0, y=1, z=1))
-        >>> _vertices[Point2D(2, 0)]  # B
-        (Point3D(x=1, y=0, z=0), Point3D(x=0, y=0, z=0),
-            Point3D(x=1, y=0, z=1), Point3D(x=0, y=0, z=1))
-        >>> _vertices[Point2D(2, 2)]  # F
-        (Point3D(x=1, y=1, z=1), Point3D(x=0, y=1, z=1),
-            Point3D(x=1, y=1, z=0), Point3D(x=0, y=1, z=0))
-        >>> _vertices[Point2D(3, 2)]  # L
-        (Point3D(x=0, y=1, z=1), Point3D(x=0, y=0, z=1),
-            Point3D(x=0, y=1, z=0), Point3D(x=0, y=0, z=0))
-        """
-        vertices = {}
-        remaining_faces = set(faces)
-        if first_face is None:
-            first_face = remaining_faces.pop()
-        else:
-            remaining_faces.remove(first_face)
-        vertices[first_face] = (
-            Point3D(0, 0, 0), Point3D(1, 0, 0),
-            Point3D(0, 1, 0), Point3D(1, 1, 0),
-        )
-        queue = [first_face]
-
-        while queue and remaining_faces:
-            face = queue.pop()
-            face_vertices = vertices[face]
-            plane_index = next(
-                index
-                for index in range(3)
-                if len({vertex[index] for vertex in face_vertices}) == 1
-            )
-            plane_value = face_vertices[0][plane_index]
-            opposite_plane_value = 1 - plane_value
-            opposite_face_vertices = tuple(
-                face_vertex.replace_dimension(
-                    plane_index, opposite_plane_value,
-                )
-                for face_vertex in face_vertices
-            )
-            face_up = face.offset(Point2D(0, -1))
-            if face_up in remaining_faces:
-                remaining_faces.remove(face_up)
-                queue.append(face_up)
-                vertices[face_up] = (
-                    opposite_face_vertices[0], opposite_face_vertices[1],
-                    face_vertices[0], face_vertices[1],
-                )
-            face_down = face.offset(Point2D(0, 1))
-            if face_down in remaining_faces:
-                remaining_faces.remove(face_down)
-                queue.append(face_down)
-                vertices[face_down] = (
-                    face_vertices[2], face_vertices[3],
-                    opposite_face_vertices[2], opposite_face_vertices[3],
-                )
-            face_left = face.offset(Point2D(-1, 0))
-            if face_left in remaining_faces:
-                remaining_faces.remove(face_left)
-                queue.append(face_left)
-                vertices[face_left] = (
-                    opposite_face_vertices[0], face_vertices[0],
-                    opposite_face_vertices[1], face_vertices[2],
-                )
-            face_right = face.offset(Point2D(1, 0))
-            if face_right in remaining_faces:
-                remaining_faces.remove(face_right)
-                queue.append(face_right)
-                vertices[face_right] = (
-                    face_vertices[1], opposite_face_vertices[1],
-                    face_vertices[3], opposite_face_vertices[3],
-                )
-
-        return vertices
-
-    def find_faces(self) -> Set[Point2D]:
-        """
-        >>> sorted(CubeSolver(
-        ...     part_a.Board.from_board_text(part_a.BOARD_INPUT), 4,
-        ...     ).find_faces())
-        [Point2D(x=0, y=1), Point2D(x=1, y=1), Point2D(x=2, y=0),
-            Point2D(x=2, y=1), Point2D(x=2, y=2), Point2D(x=3, y=2)]
-        """
-        (min_x, min_y), (max_x, max_y) = min_and_max_tuples(self.board.points)
-        board_width = max_x - min_x + 1
-        board_height = max_y - min_y + 1
-        if board_width % self.size != 0 or board_height % self.size != 0:
-            raise Exception(
-                f"Board size ({board_width}x{board_height}) "
-                f"is not congruent to cube size {self.size}"
-            )
-        face_count_x = board_width // self.size
-        face_count_y = board_height // self.size
-        faces = set()
-        for y in range(face_count_y):
-            ys = range(y * self.size, (y + 1) * self.size)
-            for x in range(face_count_x):
-                xs = range(x * self.size, (x + 1) * self.size)
-                exist_values = {
-                    Point2D(x, y) in self.board.points
-                    for x in xs
-                    for y in ys
-                }
-                if len(exist_values) == 2:
-                    raise Exception(f"Board face at {x}x{y} was not consistent")
-                face_exists, = exist_values
-                if face_exists:
-                    faces.add(Point2D(x, y))
-
-        return faces
-
-
-Challenge.main()
-challenge = Challenge()

@@ -3,10 +3,12 @@ from abc import ABC
 from dataclasses import dataclass
 import re
 from enum import Enum
-from typing import ClassVar, Dict, Iterable, List, Optional, Tuple, Union
+from typing import ClassVar, Dict, Iterable, List, Optional, Tuple, Union, Generic, Type
+
+import click
 
 from aox.challenge import Debugger
-from utils import BaseChallenge, Point2D, Cls, min_and_max_tuples
+from utils import BaseChallenge, Point2D, Cls, min_and_max_tuples, TV, get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -20,17 +22,25 @@ class Challenge(BaseChallenge):
             .get_password()
 
 
+BoardT = TV["Board"]
+
+
 @dataclass
-class PathFinder:
-    board: "Board"
+class PathFinder(Generic[BoardT]):
+    board: BoardT
     instructions: List["Instruction"]
-    path: List[Tuple[Point2D, "Direction"]]
+    path: List[Tuple[Point2D, "Direction", str]]
+
+    @classmethod
+    def get_board_class(cls) -> Type[BoardT]:
+        return get_type_argument_class(cls, BoardT)
 
     @classmethod
     def from_map_text(cls, map_text: str) -> "PathFinder":
         board_text, instructions_text = map_text.strip("\n").split("\n\n")
+        board_class = cls.get_board_class()
         return cls(
-            board=Board.from_board_text(board_text),
+            board=board_class.from_board_text(board_text),
             instructions=Instruction.parse_all(instructions_text),
             path=[],
         )
@@ -73,27 +83,30 @@ class PathFinder:
         """
         point = self.board.get_top_left_point()
         direction = Direction.Right
-        self.path = [(point, direction)]
+        self.path = [(point, direction, "S")]
         for instruction in self.instructions:
             traversal = instruction.iterate_advance(
                 self.board, point, direction,
             )
             for point, direction in traversal:
-                self.path.append((point, direction))
+                self.path.append((point, direction, str(instruction)))
         return self
 
-    def __str__(self) -> str:
+    def __str__(self, limit: Optional[int] = None) -> str:
         (min_x, min_y), (max_x, max_y) = min_and_max_tuples(self.board.points)
+        path = self.path
+        if limit is not None:
+            path = path[:limit]
         direction_by_point = {
             point: direction
-            for point, direction in self.path
+            for point, direction, _ in path
         }
         return "\n".join(
             ":{}".format(
                 "".join(
                     str(direction)
                     if direction else
-                    Board.print_map[content]
+                    self.board.print_map[content]
                     for x in range(min_x, max_x + 1)
                     for point in [Point2D(x, y)]
                     for content in [self.board.points.get(point)]
@@ -102,6 +115,72 @@ class PathFinder:
             )
             for y in range(min_y, max_y + 1)
         )
+
+    def play(self):
+        limit = 0
+        while True:
+            click.echo(click.style(f"Path: {limit}/{len(self.path)}", fg="green"))
+            text = self.__str__(limit)
+            if limit > 0:
+                position, direction, instruction = self.path[limit - 1]
+                if limit > 1:
+                    previous_position, previous_direction, _ = self.path[limit - 2]
+                    click.echo(click.style(
+                        f"From {previous_position.x},{previous_position.y}/{previous_direction.name}, "
+                        f"with Instruction: {instruction}, "
+                        f"to {position.x},{position.y}/{direction.name}",
+                        fg="green",
+                    ))
+                else:
+                    click.echo(click.style(
+                        f"With Instruction: {instruction}, "
+                        f"at {position.x},{position.y}/{direction.name}",
+                        fg="green",
+                    ))
+                lines = text.splitlines()
+                lines[position.y] = "".join([
+                    lines[position.y][:position.x + 1],
+                    click.style(lines[position.y][position.x + 1], fg="green"),
+                    lines[position.y][position.x + 2:],
+                ])
+                text = "\n".join(lines)
+            click.echo(text)
+            while True:
+                click.echo(click.style(f"Path: {limit}/{len(self.path)}", fg="green"))
+                if limit > 0:
+                    position, direction, instruction = self.path[limit - 1]
+                    if limit > 1:
+                        previous_position, previous_direction, _ = self.path[limit - 2]
+                        click.echo(click.style(
+                            f"From {previous_position.x},{previous_position.y}/{previous_direction.name}, "
+                            f"with Instruction: {instruction}, "
+                            f"to {position.x},{position.y}/{direction.name}",
+                            fg="green",
+                        ))
+                    else:
+                        click.echo(click.style(
+                            f"With Instruction: {instruction}, "
+                            f"at {position.x},{position.y}/{direction.name}",
+                            fg="green",
+                        ))
+                click.echo("Move forward (right), backwards (left), offset (O), position (P), exit (e)")
+                char = click.getchar()
+                if char == "\x1b[D":
+                    limit -= 1
+                    break
+                elif char == "\x1b[C":
+                    limit += 1
+                    break
+                elif char.lower() == "o":
+                    offset = int(click.prompt(f"Input offset ({-limit} to {len(self.path) - limit})", type=int))
+                    limit += offset
+                    break
+                elif char.lower() == "p":
+                    limit = int(click.prompt(f"Input position (0 to {len(self.path)})", type=int))
+                    break
+                elif char.lower() == "e":
+                    return
+            limit = min(len(self.path), max(0, limit))
 
 
 class Instruction(ABC):
@@ -145,15 +224,18 @@ class Instruction(ABC):
         cls.instruction_classes.append(instruction_cls)
         return instruction_cls
 
+    def __str__(self) -> str:
+        raise NotImplementedError()
+
     def advance(
-        self, board: "Board", point: Point2D, direction: "Direction",
+        self, board: BoardT, point: Point2D, direction: "Direction",
     ) -> Tuple[Point2D, "Direction"]:
         for point, direction in self.iterate_advance(board, point, direction):
             pass
         return point, direction
 
     def iterate_advance(
-        self, board: "Board", point: Point2D, direction: "Direction",
+        self, board: BoardT, point: Point2D, direction: "Direction",
     ) -> Iterable[Tuple[Point2D, "Direction"]]:
         raise NotImplementedError()
 
@@ -179,8 +261,11 @@ class MoveInstruction(Instruction):
         amount_str, = match.groups()
         return cls(amount=int(amount_str)), text[len(amount_str):]
 
+    def __str__(self) -> str:
+        return f"{self.amount}"
+
     def iterate_advance(
-        self, board: "Board", point: Point2D, direction: "Direction",
+        self, board: BoardT, point: Point2D, direction: "Direction",
     ) -> Iterable[Tuple[Point2D, "Direction"]]:
         """
         >>> instruction, _ = MoveInstruction.try_parse_portion("10")
@@ -191,11 +276,11 @@ class MoveInstruction(Instruction):
             (Point2D(x=10, y=0), Direction.Right)]
         """
         for _ in range(self.amount):
-            next_point = board.get_next_point(point, direction)
+            next_point, next_direction = board.get_next_point(point, direction)
             if board[next_point] == Content.Wall:
                 break
-            point = next_point
-            yield point, direction
+            point, direction = next_point, next_direction
+            yield point, next_direction
 
 
 @Instruction.register
@@ -213,13 +298,16 @@ class RotateLeftInstruction(Instruction):
         instruction_str, = match.group()
         return cls(), text[len(instruction_str):]
 
+    def __str__(self) -> str:
+        return "L"
+
     def advance(
-        self, board: "Board", point: Point2D, direction: "Direction",
+        self, board: BoardT, point: Point2D, direction: "Direction",
     ) -> Tuple[Point2D, "Direction"]:
         return point, direction.left
 
     def iterate_advance(
-        self, board: "Board", point: Point2D, direction: "Direction",
+        self, board: BoardT, point: Point2D, direction: "Direction",
     ) -> Iterable[Tuple[Point2D, "Direction"]]:
         yield self.advance(board, point, direction)
 
@@ -239,8 +327,11 @@ class RotateRightInstruction(Instruction):
         instruction_str, = match.group()
         return cls(), text[len(instruction_str):]
 
+    def __str__(self) -> str:
+        return "R"
+
     def iterate_advance(
-        self, board: "Board", point: Point2D, direction: "Direction",
+        self, board: BoardT, point: Point2D, direction: "Direction",
     ) -> Iterable[Tuple[Point2D, "Direction"]]:
         yield point, direction.right
 
@@ -333,7 +424,7 @@ class Content(Enum):
 @dataclass
 class Board:
     points: Dict[Point2D, Content]
-    next_point_cache: Dict[Tuple[Point2D, Direction], Point2D]
+    next_point_cache: Dict[Tuple[Point2D, Direction], Tuple[Point2D, Direction]]
 
     print_map: ClassVar[Dict[Optional[Content], str]] = {
         Content.Wall: "#",
@@ -398,41 +489,52 @@ class Board:
             key=lambda point: (point.y, point.x),
         )
 
-    def get_next_point(self, point: Point2D, direction: Direction) -> Point2D:
-        """
-        >>> board = Board.from_board_text(BOARD_INPUT)
-        >>> board.get_next_point(Point2D(8, 0), Direction.Right)
-        Point2D(x=9, y=0)
-        >>> board.get_next_point(Point2D(9, 0), Direction.Left)
-        Point2D(x=8, y=0)
-        >>> board.get_next_point(Point2D(8, 0), Direction.Down)
-        Point2D(x=8, y=1)
-        >>> board.get_next_point(Point2D(8, 1), Direction.Up)
-        Point2D(x=8, y=0)
-        >>> board.get_next_point(Point2D(8, 0), Direction.Left)
-        Point2D(x=11, y=0)
-        >>> board.get_next_point(Point2D(11, 0), Direction.Right)
-        Point2D(x=8, y=0)
-        >>> board.get_next_point(Point2D(8, 0), Direction.Up)
-        Point2D(x=8, y=11)
-        >>> board.get_next_point(Point2D(8, 11), Direction.Down)
-        Point2D(x=8, y=0)
-        """
+    def get_next_point(self, point: Point2D, direction: Direction) -> Tuple[Point2D, Direction]:
         if point not in self.points:
             raise Exception(f"Point is not on board")
         if (point, direction) not in self.next_point_cache:
-            next_point = point.offset(direction.offset)
+            next_point, next_direction = self.calculate_next_point(point, direction)
             if next_point not in self.points:
-                opposite_offset = direction.opposite_offset
-                next_point = point
-                while True:
-                    next_next_point = next_point.offset(opposite_offset)
-                    if next_next_point not in self.points:
-                        break
-                    next_point = next_next_point
-            self.next_point_cache[(point, direction)] = next_point
-            self.next_point_cache[(next_point, direction.opposite)] = point
+                raise Exception(f"Going from {(point, direction)} to {(next_point, next_direction)}: next point doesn't exist")
+            self.next_point_cache[(point, direction)] = (next_point, next_direction)
+            self.next_point_cache[(next_point, next_direction.opposite)] = (point, direction.opposite)
         return self.next_point_cache[(point, direction)]
+
+    def calculate_next_point(self, point: Point2D, direction: Direction) -> Tuple[Point2D, Direction]:
+        """
+        >>> board = Board.from_board_text(BOARD_INPUT)
+        >>> board.calculate_next_point(Point2D(8, 0), Direction.Right)
+        (Point2D(x=9, y=0), Direction.Right)
+        >>> board.calculate_next_point(Point2D(9, 0), Direction.Left)
+        (Point2D(x=8, y=0), Direction.Left)
+        >>> board.calculate_next_point(Point2D(8, 0), Direction.Down)
+        (Point2D(x=8, y=1), Direction.Down)
+        >>> board.calculate_next_point(Point2D(8, 1), Direction.Up)
+        (Point2D(x=8, y=0), Direction.Up)
+        >>> board.calculate_next_point(Point2D(8, 0), Direction.Left)
+        (Point2D(x=11, y=0), Direction.Left)
+        >>> board.calculate_next_point(Point2D(11, 0), Direction.Right)
+        (Point2D(x=8, y=0), Direction.Right)
+        >>> board.calculate_next_point(Point2D(8, 0), Direction.Up)
+        (Point2D(x=8, y=11), Direction.Up)
+        >>> board.calculate_next_point(Point2D(8, 11), Direction.Down)
+        (Point2D(x=8, y=0), Direction.Down)
+        """
+        next_point = point.offset(direction.offset)
+        if next_point in self.points:
+            return next_point, direction
+
+        return self.get_next_point_wrapped(point, direction)
+
+    def get_next_point_wrapped(self, point: Point2D, direction: Direction) -> Tuple[Point2D, Direction]:
+        opposite_offset = direction.opposite_offset
+        next_point = point
+        while True:
+            next_next_point = next_point.offset(opposite_offset)
+            if next_next_point not in self.points:
+                break
+            next_point = next_next_point
+        return next_point, direction
 
 
 Challenge.main()
