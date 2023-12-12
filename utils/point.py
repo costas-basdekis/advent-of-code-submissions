@@ -4,9 +4,9 @@ import itertools
 import math
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import Tuple, List, Union, Iterable, Dict, ClassVar
+from typing import Tuple, List, Union, Iterable, Dict, ClassVar, Optional
 
-from .math_utils import sign
+from .math_utils import sign, reframe
 from .typing_utils import Self, Cls
 
 __all__ = ['BasePoint', 'Point2D', 'Point3D', 'Point4D', 'PointHex']
@@ -215,6 +215,66 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             for name, coordinate, offset
             in zip(self.coordinates_names, self.coordinates, offsets)
         })
+
+    def round(self: SelfBP, ndigits: Optional[int] = None) -> SelfBP:
+        """
+        >>> Point3D(3, -2, 4).round()
+        Point3D(x=3, y=-2, z=4)
+        """
+        cls = type(self)
+        # noinspection PyArgumentList
+        return cls(**{
+            name: round(coordinate, ndigits)
+            for name, coordinate
+            in zip(self.coordinates_names, self.coordinates)
+        })
+
+    def reframe(self: SelfBP, source_min: SelfBP, source_max: SelfBP, target_min: SelfBP, target_max: SelfBP) -> SelfBP:
+        """
+        >>> [
+        ...     Point3D(x, 2 * x, x + 10).reframe(Point3D(0, 0, 0), Point3D(10, 10, 10), Point3D(0, 0, 0), Point3D(100, 100, 100))
+        ...     for x in [-25, -10, -5, 0, 1, 5, 6, 10, 15, 20, 35]
+        ... ]
+        [Point3D(x=-250.0, y=-500.0, z=-150.0),
+            Point3D(x=-100.0, y=-200.0, z=0.0),
+            Point3D(x=-50.0, y=-100.0, z=50.0),
+            Point3D(x=0.0, y=0.0, z=100.0),
+            Point3D(x=10.0, y=20.0, z=110.0),
+            Point3D(x=50.0, y=100.0, z=150.0),
+            Point3D(x=60.0, y=120.0, z=160.0),
+            Point3D(x=100.0, y=200.0, z=200.0),
+            Point3D(x=150.0, y=300.0, z=250.0),
+            Point3D(x=200.0, y=400.0, z=300.0),
+            Point3D(x=350.0, y=700.0, z=450.0)]
+        """
+        cls = type(self)
+        # noinspection PyArgumentList
+        return cls(*(
+            reframe(coordinate, source_min[index], source_max[index], target_min[index], target_max[index])
+            for index, coordinate
+            in enumerate(self.coordinates)
+        ))
+
+    def interpolate(self: SelfBP, other: SelfBP, ratio: int) -> SelfBP:
+        """
+        >>> [Point3D(10, 20, 30).interpolate(Point3D(20, 40, 60), x) for x in [-1, -0.5, 0, 0.25, 0.5, 0.75, 1.0, 1.5, 2]]
+        [Point3D(x=0, y=0, z=0),
+            Point3D(x=5.0, y=10.0, z=15.0),
+            Point3D(x=10, y=20, z=30),
+            Point3D(x=12.5, y=25.0, z=37.5),
+            Point3D(x=15.0, y=30.0, z=45.0),
+            Point3D(x=17.5, y=35.0, z=52.5),
+            Point3D(x=20.0, y=40.0, z=60.0),
+            Point3D(x=25.0, y=50.0, z=75.0),
+            Point3D(x=30, y=60, z=90)]
+        """
+        cls = type(self)
+        # noinspection PyArgumentList
+        return cls(*(
+            self[index] + ratio * (other[index] - self[index])
+            for index, coordinate
+            in enumerate(self.coordinates)
+        ))
 
     def resize(self: SelfBP, factor: float) -> SelfBP:
         return self.ZERO_POINT.offset(self, factor)
@@ -567,6 +627,19 @@ class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
 
     def __new__(cls, *args, **kwargs):
         return cls.for_new(super().__new__, args, kwargs)
+
+    def to_2d(self, first_index: int = 0, second_index: int = 1) -> Point2D:
+        """
+        >>> Point3D(1, 2, 3).to_2d()
+        Point2D(x=1, y=2)
+        >>> Point3D(1, 2, 3).to_2d(0, 2)
+        Point2D(x=1, y=3)
+        >>> Point3D(1, 2, 3).to_2d(1, 2)
+        Point2D(x=2, y=3)
+        >>> Point3D(1, 2, 3).to_2d(2, 0)
+        Point2D(x=3, y=1)
+        """
+        return Point2D(self[first_index], self[second_index])
 
 
 class Point4D(namedtuple("Point4D", ("x", "y", "z", "t")), BasePoint):

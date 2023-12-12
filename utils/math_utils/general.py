@@ -9,6 +9,7 @@ __all__ = [
     'product',
     'lcm',
     'sign',
+    'reframe',
 ]
 
 T = TypeVar('T', bound=Any)
@@ -204,3 +205,16 @@ def sign(value):
         return 0
     else:
         return 1
+
+
+def reframe(source_value: float, source_min: float, source_max: float, target_min: float, target_max: float) -> float:
+    """
+    >>> [reframe(x, 0, 10, 0, 100) for x in [-25, -10, -5, 0, 1, 5, 6, 10, 15, 20, 35]]
+    [-250.0, -100.0, -50.0, 0.0, 10.0, 50.0, 60.0, 100.0, 150.0, 200.0, 350.0]
+    >>> [reframe(x, 0, 10, 100, 200) for x in [-25, -10, -5, 0, 1, 5, 6, 10, 15, 20, 35]]
+    [-150.0, 0.0, 50.0, 100.0, 110.0, 150.0, 160.0, 200.0, 250.0, 300.0, 450.0]
+    """
+    target_length = target_max - target_min
+    source_length = source_max - source_min
+    return (source_value - source_min) * target_length / source_length + target_min
+
