@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 import itertools
+import math
 from dataclasses import dataclass
-from typing import Iterable, List, Union
+from typing import Iterable, List, Union, Generic, Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge
+from utils import BaseChallenge, TV, get_type_argument_class
 
 
 class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        7017
         """
-        return RecordSet.from_text(_input).get_arrangement_total(debugger=debugger)
+        return RecordSet.from_text("\n".join(_input.splitlines())).get_arrangement_total(debugger=debugger)
+
+
+RecordT = TV["Record"]
 
 
 @dataclass
-class RecordSet:
+class RecordSet(Generic[RecordT]):
     records: List["Record"]
+
+    @classmethod
+    def get_record_class(cls) -> Type[RecordT]:
+        return get_type_argument_class(cls, RecordT)
 
     @classmethod
     def from_text(cls, text: str) -> "RecordSet":
@@ -38,7 +46,8 @@ class RecordSet:
         ????.######..#####. 1,6,5
         ?###???????? 3,2,1
         """
-        return cls(records=list(map(Record.from_text, text.strip().splitlines())))
+        record_class = cls.get_record_class()
+        return cls(records=list(map(record_class.from_text, text.strip().splitlines())))
 
     def __str__(self) -> str:
         return "\n".join(map(str, self.records))
@@ -106,16 +115,34 @@ class Record:
         .###....##.# 3,2,1
         """
         unknown_indexes = self.get_unknown_indexes()
-        values_list = itertools.product([True, False], repeat=len(unknown_indexes))
+        known_broken_count = self.get_known_broken_count()
+        unknown_broken_count = sum(self.group_sizes) - known_broken_count
+        unknown_broken_indexes_list = itertools.combinations(unknown_indexes, unknown_broken_count)
+        values_list = (
+            tuple(
+                index in unknown_broken_indexes
+                for index in unknown_indexes
+            )
+            for unknown_broken_indexes in unknown_broken_indexes_list
+        )
+        total_count = (
+            math.factorial(len(unknown_indexes))
+            // math.factorial(len(unknown_indexes) - unknown_broken_count)
+            // math.factorial(unknown_broken_count)
+        )
         for index, values in debugger.stepping(enumerate(values_list)):
-            record = self.apply_indexes(unknown_indexes, values)
+            record = self.apply_indexes(values)
             if record.are_group_sizes_valid():
                 yield record
             if debugger:
-                debugger.default_report_if(f"Candidate {index + 1}/{2 ** len(unknown_indexes)}")
+                debugger.default_report_if(
+                    f"Candidate {index + 1}/{total_count} "
+                    f"({len(unknown_indexes)} choose {unknown_broken_count}) "
+                    f"for {self}"
+                )
 
-    def apply_indexes(self, unknown_indexes: Iterable[int], values: Iterable[bool]) -> "Record":
-        sequence = self.sequence.replace("?", "{}").format(*("#" if value else "." for value in values))
+    def apply_indexes(self, values: List[bool]) -> "Record":
+        sequence = self.sequence.replace("?", "{}", len(values)).format(*("#" if value else "." for value in values))
         cls = type(self)
         return cls(sequence=sequence, group_sizes=self.group_sizes)
 
@@ -129,6 +156,13 @@ class Record:
             for index, char in enumerate(self.sequence)
             if char == "?"
         ]
+
+    def get_known_broken_count(self) -> int:
+        """
+        >>> Record.from_text("????.######..#####. 1,6,5").get_known_broken_count()
+        11
+        """
+        return self.sequence.count("#")
 
     def are_group_sizes_valid(self) -> bool:
         """
