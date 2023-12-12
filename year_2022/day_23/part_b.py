@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass, field
-import re
-from enum import Enum
-from typing import (
-    Any, cast, Callable, ClassVar, Dict, Generic, Iterable, List, Optional, Set,
-    Tuple, Type, Union, TypeVar,
-)
+from typing import Union
 
 from aox.challenge import Debugger
-from utils import (
-    BaseChallenge, Point2D, get_type_argument_class, helper, Cls, Self,
-)
+from utils import BaseChallenge
 from year_2022.day_23 import part_a
 
 
