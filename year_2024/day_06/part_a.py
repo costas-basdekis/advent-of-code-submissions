@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from functools import cached_property
-from typing import List, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union, Iterable, Callable
 
 from aox.challenge import Debugger
 from utils import BaseChallenge, Point2D, Direction, min_and_max_tuples
@@ -68,17 +68,24 @@ class Lab:
     def __str__(self) -> str:
         return self.show()
 
-    def show(self, path_points: Optional[Set[Point2D]] = None) -> str:
+    def show(self, path_points: Optional[Set[Point2D]] = None, extra_obstacles: Optional[List[Point2D]] = None, style_func: Optional[Callable[[Point2D, str], str]] = None) -> str:
         (min_x, min_y), (max_x, max_y) = self.boundaries
+        if style_func is None:
+            def style_func(point: Point2D, text: str) -> str:
+                return text
         return "\n".join(
             "".join(
-                "#"
-                if point in self.obstacles else
-                "X"
-                if path_points is not None and point in path_points else
-                str(self.guard_direction)
-                if point == self.guard_position else
-                "."
+                style_func(point, (
+                    "#"
+                    if point in self.obstacles else
+                    "O"
+                    if extra_obstacles and point in extra_obstacles else
+                    "X"
+                    if path_points is not None and point in path_points else
+                    str(self.guard_direction)
+                    if point == self.guard_position else
+                    "."
+                ))
                 for x in range(min_x, max_x + 1)
                 for point in [Point2D(x, y)]
             )
@@ -114,7 +121,7 @@ class Lab:
         """
         return len(self.get_path_points())
 
-    def get_path_points(self) -> Set[Point2D]:
+    def get_path_points(self, path_summary: Optional[List[Point2D]] = None) -> Set[Point2D]:
         """
         >>> _lab = Lab.from_text('''
         ...     ....#.....
@@ -141,7 +148,8 @@ class Lab:
         ......#X..
         """
         points = set()
-        path_summary = self.get_path_summary()
+        if path_summary is None:
+            path_summary = self.get_path_summary()
         for start, end in zip(path_summary, path_summary[1:]):
             offset = end.difference(start).to_unit()
             points.add(start)
