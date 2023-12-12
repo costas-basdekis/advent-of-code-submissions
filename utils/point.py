@@ -327,6 +327,18 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
         # noinspection PyArgumentList
         return cls(coordinates)
 
+    def inner(self: SelfBP, other: SelfBP) -> float:
+        """
+        >>> Point3D(1, 3, -5).inner(Point3D(4, -2, -1))
+        3
+        >>> Point2D(1, 3).inner(Point2D(4, -2))
+        -2
+        """
+        return sum(
+            left * right
+            for left, right in zip(self, other)
+        )
+
     def get_manhattan_neighbours(self: SelfBP) -> Iterable[SelfBP]:
         """
         >>> sorted(Point2D(0, 0).get_manhattan_neighbours())
@@ -640,6 +652,17 @@ class Point3D(namedtuple("Point3D", ("x", "y", "z")), BasePoint):
         Point2D(x=3, y=1)
         """
         return Point2D(self[first_index], self[second_index])
+
+    def cross(self, other: "Point3D") -> "Point3D":
+        """
+        >>> Point3D(3, -3, 1).cross(Point3D(4, 9, 2))
+        Point3D(x=-15, y=-2, z=39)
+        """
+        return Point3D(
+            self.y * other.z - self.z  * other.y,
+            self.z * other.x - self.x * other.z,
+            self.x * other.y - self.y * other.x,
+        )
 
 
 class Point4D(namedtuple("Point4D", ("x", "y", "z", "t")), BasePoint):
