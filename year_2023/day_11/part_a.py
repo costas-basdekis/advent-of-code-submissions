@@ -91,7 +91,7 @@ class Universe:
             for right_index in range(left_index + 1, len(self.galaxies))
         )
 
-    def expand_empty_rows_and_columns(self) -> "Universe":
+    def expand_empty_rows_and_columns(self, expansion_count: int = 1) -> "Universe":
         """
         >>> _universe = Universe.from_universe_map('''
         ...     ...#......
@@ -133,12 +133,12 @@ class Universe:
         for x in range(min_x, max_x + 1):
             columns_added_before[x] = columns_added_before_count
             if x in empty_columns_indexes:
-                columns_added_before_count += 1
+                columns_added_before_count += expansion_count
         rows_added_before_count = 0
         for x in range(min_x, max_x + 1):
             rows_added_before[x] = rows_added_before_count
             if x in empty_rows_indexes:
-                rows_added_before_count += 1
+                rows_added_before_count += expansion_count
         galaxies = [
             Point2D(
                 galaxy.x + columns_added_before[galaxy.x],
