@@ -162,10 +162,12 @@ def lcm(*items: int) -> int:
     30
     >>> lcm(6, 15)
     30
+    >>> lcm(100, 150, 200)
+    600
     """
     if hasattr(math, "lcm"):
         return math.lcm(*items)
-    return (
-        functools.reduce(lambda a, b: a * b, items)
-        // functools.reduce(lambda a, b: math.gcd(a, b), items)
-    )
+    result = 1
+    for item in items:
+        result = result * item // math.gcd(result, item)
+    return result

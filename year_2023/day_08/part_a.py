@@ -92,7 +92,7 @@ class Node:
     right: str
     network: Network
 
-    re_node = re.compile(r"([A-Z]+) = \(([A-Z]+), ([A-Z]+)\)")
+    re_node = re.compile(r"([A-Z0-9]+) = \(([A-Z0-9]+), ([A-Z0-9]+)\)")
 
     @classmethod
     def from_node_text(cls, node_text: str, network: Network) -> "Node":
