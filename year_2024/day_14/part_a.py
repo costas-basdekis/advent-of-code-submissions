@@ -81,7 +81,7 @@ class Space(Generic[RobotT]):
             for y in range(min_y, max_y+1)
         )
 
-    def move(self, count: int) -> "Space":
+    def move(self: Self["Space"], count: int) -> Self["Space"]:
         """
         >>> print("!" + str(Space.from_text('''
         ...     p=0,4 v=3,-3
