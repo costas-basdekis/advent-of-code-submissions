@@ -172,6 +172,28 @@ class BasePoint(metaclass=BasePointMeta, abstract=True):
             in zip(self.coordinates, other.coordinates)
         )
 
+    def chebyshev_length(self) -> float:
+        """
+        >>> Point3D(0, 0, 0).chebyshev_length()
+        0
+        >>> Point3D(10, -3, -50).chebyshev_length()
+        50
+        """
+        return self.chebyshev_distance(self.ZERO_POINT)
+
+    def chebyshev_distance(self: SelfBP, other: SelfBP) -> float:
+        """
+        >>> Point3D(0, 0, 0).chebyshev_distance(Point3D(0, 0, 0))
+        0
+        >>> Point3D(0, 0, 0).chebyshev_distance(Point3D(2, 3, -4))
+        4
+        """
+        return max(
+            abs(my_coordinate - other_coordinate)
+            for my_coordinate, other_coordinate
+            in zip(self.coordinates, other.coordinates)
+        )
+
     def offset(
         self: SelfBP, offsets: Union[SelfBP, Tuple[float, ...]],
         factor: float = 1,
