@@ -231,6 +231,8 @@ class Rule(PolymorphicParser, ABC, root=True):
     DefaultRule(target_name='rfg')
     """
 
+    target_name: str
+
     def evaluate(self, part: "Part") -> Optional[str]:
         raise NotImplementedError()
 
@@ -317,6 +319,9 @@ class CompareRule(Rule):
             target_name=target_name,
         )
 
+    def __str__(self) -> str:
+        return f"{self.attribute.value}{self.operation.value}{self.value}:{self.target_name}"
+
     operator_map: ClassVar[Dict[CompareRuleOperation, Callable[[int, int], bool]]] = {
         CompareRuleOperation.LessThan: operator.lt,
         CompareRuleOperation.GreaterThan: operator.gt,
@@ -350,6 +355,9 @@ class DefaultRule(Rule):
             return None
         target_name, = match.groups()
         return cls(target_name=target_name)
+
+    def __str__(self) -> str:
+        return f"{self.target_name}"
 
     def evaluate(self, part: "Part") -> Optional[str]:
         return self.target_name
