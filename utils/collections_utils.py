@@ -11,6 +11,7 @@ __all__ = [
     'get_windows',
     'iterable_length',
     'count_by',
+    'unique_without_hash',
 ]
 
 
@@ -216,3 +217,19 @@ def count_by(
         for _key, items
         in itertools.groupby(sorted(iterable, key=key), key=key)
     }
+
+
+def unique_without_hash(items: Iterable[T]) -> Iterable[T]:
+    """
+    >>> a, b, c = [], [], []
+    >>> ids = list(map(id, [a, b, c]))
+    >>> list(map(ids.index, map(id, unique_without_hash([a, b, a, a, c, b, c, a, b]))))
+    [0, 1, 2]
+    """
+    seen = set()
+    for item in items:
+        item_id = id(item)
+        if item_id in seen:
+            continue
+        seen.add(item_id)
+        yield item

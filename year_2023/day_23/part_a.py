@@ -14,7 +14,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        2130
         """
         return len(Island.from_text(_input).get_longest_path(debugger=debugger)) - 1
 
@@ -136,7 +136,7 @@ class Island:
             raise Exception(f"Expected 1 point on bottom row ({self.boundaries}) but got {len(bottom_row_points)} ({bottom_row_points})")
         return bottom_row_points[0]
 
-    def get_longest_path(self, paths: Optional[List[List[Point2D]]] = None, debugger: Debugger = Debugger(enabled=False)) -> List[Point2D]:
+    def get_longest_path(self, start: Optional[Point2D] = None, end: Optional[Point2D] = None, path_graph: Optional[Dict[Point2D, List[List[Point2D]]]] = None, paths: Optional[List[List[Point2D]]] = None, debugger: Debugger = Debugger(enabled=False)) -> List[Point2D]:
         """
         >>> _island = Island.from_text(EXAMPLE_INPUT)
         >>> _longest_path = _island.get_longest_path()
@@ -167,31 +167,77 @@ class Island:
         >>> len(_longest_path) - 1
         94
         """
-        if paths is None:
-            paths = self.get_all_single_choice_paths()
-        path_graph = self.get_path_graph(paths)
+        if path_graph is None:
+            if paths is None:
+                paths = self.get_all_single_choice_paths()
+            path_graph = self.get_path_graph(paths)
         unique_starts = set(path_graph) - {path[-1] for paths in path_graph.values() for path in paths}
         if not unique_starts:
             raise Exception(f"There are no starts")
-        queue: List[List[Point2D]] = [
-            [start]
+        if start is not None:
+            if start not in unique_starts:
+                raise Exception(f"Start {start} is not in unique starts {unique_starts}")
+            unique_starts = {start}
+        queue: List[Tuple[List[Point2D], List[Point2D]]] = [
+            ([start], [start])
             for start in unique_starts
         ]
-        longest_path: List[Point2D] = queue[0]
+        longest_path: Optional[List[Point2D]] = None
+        path_length_by_hops_and_end: Dict[Tuple[Tuple[Point2D], Point2D], int] = {}
+        unreachable_clipped_count = 0
+        too_short_clipped_count = 0
         while debugger.step_if(queue):
-            path = queue.pop(0)
+            path, ends_path = queue.pop(0)
             next_paths = path_graph.get(path[-1], [])
             for next_path in next_paths:
                 if next_path[-1] in path:
                     continue
+                next_ends_path = ends_path + [next_path[-1]]
+                if end is not None:
+                    if not self.can_ends_path_reach_point(path_graph, next_ends_path, end):
+                        unreachable_clipped_count += 1
+                        continue
                 next_total_path = path + next_path[1:]
                 next_total_length = len(next_total_path)
-                if next_total_length > len(longest_path):
-                    longest_path = next_total_path
-                queue.append(next_total_path)
-            if debugger.should_report():
-                debugger.default_report_if(f"Queue: {len(queue)}, longest path: {len(longest_path)}")
+                hops_and_end_key = tuple(sorted(next_ends_path)), next_ends_path[-1]
+                if path_length_by_hops_and_end.get(hops_and_end_key, 0) > next_total_length:
+                    too_short_clipped_count += 1
+                    continue
+                path_length_by_hops_and_end[hops_and_end_key] = next_total_length
+                if end is None or next_total_path[-1] == end:
+                    if not longest_path or next_total_length > len(longest_path):
+                        longest_path = next_total_path
+                queue.append((next_total_path, next_ends_path))
+            if debugger.should_report() or not queue:
+                debugger.default_report(
+                    f"Queue: {len(queue)}, "
+                    f"longest path: {len(longest_path) if longest_path else 'N/A'}, "
+                    f"hop count: {len(ends_path) - 1}, "
+                    f"clipped due to unreachable: {unreachable_clipped_count}, "
+                    f"clipped due to too short: {too_short_clipped_count}"
+                )
+        if not longest_path:
+            raise Exception(f"Could not find a path between {start} and {end}")
         return longest_path
+
+    def can_ends_path_reach_point(self, path_graph: Dict[Point2D, List[List[Point2D]]], ends_path: List[Point2D], target: Point2D) -> bool:
+        if ends_path[-1] == target:
+            return True
+        seen = set(ends_path)
+        if target in seen:
+            return False
+        queue = [ends_path[-1]]
+        while queue:
+            position = queue.pop(0)
+            next_points = {
+                path[-1]
+                for path in path_graph[position]
+            } - seen
+            if target in next_points:
+                return True
+            seen |= next_points
+            queue.extend(next_points)
+        return False
 
     def get_path_graph(self, paths: Optional[List[List[Point2D]]] = None) -> Dict[Point2D, List[List[Point2D]]]:
         if paths is None:
