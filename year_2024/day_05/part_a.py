@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Dict, Iterable, List, Set, Union
+from typing import Dict, Iterable, List, Set, Union, Generic, TypeVar, Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge
+from utils import BaseChallenge, get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -16,10 +16,24 @@ class Challenge(BaseChallenge):
         return PrinterProtocol.from_text(_input).get_sum_of_middle_pages_of_valid_updates()
 
 
+RulesetT = TypeVar('RulesetT', bound='Ruleset')
+UpdateT = TypeVar('UpdateT', bound='Update')
+
+
 @dataclass
-class PrinterProtocol:
-    ruleset: "Ruleset"
-    updates: List["Update"]
+class PrinterProtocol(Generic[RulesetT, UpdateT]):
+    ruleset: RulesetT
+    updates: List[UpdateT]
+
+    @classmethod
+    def get_ruleset_class(cls) -> Type[RulesetT]:
+        # noinspection PyTypeChecker
+        return get_type_argument_class(cls, RulesetT)
+
+    @classmethod
+    def get_update_class(cls) -> Type[UpdateT]:
+        # noinspection PyTypeChecker
+        return get_type_argument_class(cls, UpdateT)
 
     @classmethod
     def from_text(cls, text: str) -> "PrinterProtocol":
@@ -58,9 +72,11 @@ class PrinterProtocol:
         (6, 6)
         """
         precedence_str, updates_str = text.strip().split("\n\n")
+        ruleset_class = cls.get_ruleset_class()
+        update_class = cls.get_update_class()
         return cls(
-            ruleset=Ruleset.from_text(precedence_str),
-            updates=list(map(Update.from_text, updates_str.strip().splitlines())),
+            ruleset=ruleset_class.from_text(precedence_str),
+            updates=list(map(update_class.from_text, updates_str.strip().splitlines())),
         )
 
     def get_sum_of_middle_pages_of_valid_updates(self) -> int:
@@ -138,7 +154,7 @@ class PrinterProtocol:
             for update in self.get_valid_updates()
         )
 
-    def get_valid_updates(self) -> Iterable["Update"]:
+    def get_valid_updates(self) -> Iterable[UpdateT]:
         """
         >>> _protocol = PrinterProtocol.from_text('''
         ...     47|53
