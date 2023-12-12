@@ -150,13 +150,13 @@ class City:
             for _type, items in groupby(sorted(self.antennas, key=by_type), key=by_type)
         }
 
-    def get_antennas_antinodes(self, first: Point2D, second: Point2D) -> Tuple[Point2D, Point2D]:
+    def get_antennas_antinodes(self, first: Point2D, second: Point2D) -> List[Point2D]:
         """
         >>> City.from_text("").get_antennas_antinodes(Point2D(4, 3), Point2D(5, 5))
-        (Point2D(x=3, y=1), Point2D(x=6, y=7))
+        [Point2D(x=3, y=1), Point2D(x=6, y=7)]
         """
         difference = second.difference(first)
-        return first.offset(difference, factor=-1), second.offset(difference)
+        return [first.offset(difference, factor=-1), second.offset(difference)]
 
     def is_within_bounds(self, point: Point2D) -> bool:
         (min_x, min_y), (max_x, max_y) = self.boundaries
