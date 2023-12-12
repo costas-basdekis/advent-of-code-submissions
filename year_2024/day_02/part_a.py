@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Union, Generic, TypeVar, Type
 
 from aox.challenge import Debugger
-from utils import BaseChallenge
+from utils import BaseChallenge, get_type_argument_class
 
 
 class Challenge(BaseChallenge):
@@ -15,9 +15,16 @@ class Challenge(BaseChallenge):
         return ReportSet.from_text(_input).get_safe_count()
 
 
+ReportT = TypeVar("ReportT", bound="Report")
+
+
 @dataclass
-class ReportSet:
-    reports: List["Report"]
+class ReportSet(Generic[ReportT]):
+    reports: List[ReportT]
+
+    @classmethod
+    def get_report_class(cls) -> Type[ReportT]:
+        return get_type_argument_class(cls, ReportT)
 
     @classmethod
     def from_text(cls, text: str) -> "ReportSet":
@@ -33,7 +40,8 @@ class ReportSet:
         >>> len(_report_set.reports)
         6
         """
-        return cls(reports=list(map(Report.from_text, text.strip().splitlines())))
+        report_class = cls.get_report_class()
+        return cls(reports=list(map(report_class.from_text, text.strip().splitlines())))
 
     def get_safe_count(self) -> int:
         """
