@@ -13,15 +13,21 @@ class Challenge(BaseChallenge):
 
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
-        >>> Challenge().default_solve() > 2350
+        >>> solution = Challenge().default_solve()
+        >>> 1651 > solution > 2350
         True
-        >>> Challenge().default_solve()
+        >>> solution
         42
         """
         return DoublePathFinder\
             .find_most_release_possible_from_valves_text(
-                _input, minimum_release=1871 * 0 + 2350, debugger=debugger
+                _input, minimum_release=1651,
+                debugger=debugger,
             )
+        # return DoublePathFinder\
+        #     .find_most_release_possible_from_valves_text(
+        #         _input, minimum_release=1871 * 0 + 2350, debugger=debugger
+        #     )
 
     def play(self):
         # E: DD
@@ -184,7 +190,7 @@ class DoubleSearchState(part_a.SearchState):
             for valve_name in self.openable_valve_names
         }
         return (
-            f"Valve(position='{self.position}', "
+            f"DoubleSearchState(position='{self.position}', "
             f"can_open={self.is_current_valve_openable}, "
             f"elephant_position='{self.elephant_position}', "
             f"can_elephant_open={self.is_current_elephant_valve_openable}, "
