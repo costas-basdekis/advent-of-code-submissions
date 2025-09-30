@@ -12,7 +12,7 @@ class Challenge(BaseChallenge):
         pass
         """
         >>> Challenge().default_solve()
-        42
+        558415252330828
         """
         hailstone = CloudExtended\
             .from_text(_input)\

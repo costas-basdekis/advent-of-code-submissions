@@ -11,7 +11,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        4776
         """
         return Lab.from_text(_input).get_path_point_count()
 

@@ -10,7 +10,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        1873
         """
         return PuzzleExtended.from_text(_input).get_all_double_mas_position_count()
 

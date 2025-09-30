@@ -11,7 +11,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        62098619
         """
         return ProgramExtended.from_text(_input)\
             .get_mul_sum_with_dos()

@@ -11,7 +11,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        2524
         """
         return Puzzle.from_text(_input).get_all_xmas_direction_count()
 

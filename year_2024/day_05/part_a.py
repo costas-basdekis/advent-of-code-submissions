@@ -11,7 +11,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        4905
         """
         return PrinterProtocol.from_text(_input).get_sum_of_middle_pages_of_valid_updates()
 

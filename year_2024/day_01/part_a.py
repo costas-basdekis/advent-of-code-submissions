@@ -10,7 +10,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        2375403
         """
         return LocationRegister.from_text(_input)\
             .get_sorted_distances_sum()

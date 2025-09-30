@@ -12,7 +12,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        544523
         """
         return Apparatus.from_text(_input)\
             .get_size_product_of_3_connection_components()

@@ -10,7 +10,7 @@ class Challenge(BaseChallenge):
     def solve(self, _input: str, debugger: Debugger) -> Union[str, int]:
         """
         >>> Challenge().default_solve()
-        42
+        634
         """
         return ReportSetExtended.from_text(_input)\
             .get_safe_with_1_removal_count()
