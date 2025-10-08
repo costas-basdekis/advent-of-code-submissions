@@ -7,6 +7,7 @@ from .collections_utils import *
 from .crypto import *
 from .direction import *
 from .helper import *
+from .icpc_utils import *
 from .math_utils import *
 from .method_utils import *
 from .parse_map_utils import *
@@ -28,6 +29,7 @@ test_modules = sum((
         importlib.import_module('utils.math_utils'),
         importlib.import_module('utils.method_utils'),
         importlib.import_module('utils.helper'),
+        importlib.import_module('utils.icpc_utils'),
         importlib.import_module('utils.parse_map_utils'),
         importlib.import_module('utils.point'),
         importlib.import_module('utils.polymorphic'),

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import aox.utils
 if TYPE_CHECKING:
     from aox.challenge import Debugger
-from aox.boilerplate import DefaultBoilerplate
+from utils import DefaultBoilerplateWithIcpc
 
 dot_aox = Path(os.path.dirname(os.path.realpath(__file__)))
 repo_root = dot_aox.parent
@@ -33,7 +33,7 @@ The name of the module under which the challenges leave. If there is no parent
 module (or it is the root one) you can leave it as `None`.
 """
 
-CHALLENGES_BOILERPLATE = DefaultBoilerplate(
+CHALLENGES_BOILERPLATE = DefaultBoilerplateWithIcpc(
     example_part_path=repo_root.joinpath('custom', 'custom_example_part.py'),
 )
 """

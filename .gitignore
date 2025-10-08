@@ -132,3 +132,5 @@ dmypy.json
 .idea
 
 cached_pages
+icpc/*/data.zip
+icpc/*/data/*
