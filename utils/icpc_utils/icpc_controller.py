@@ -1,4 +1,6 @@
+import string
 import traceback
+from pathlib import Path
 from typing import Tuple, Union
 
 import click
@@ -12,8 +14,43 @@ from aox.utils import try_import_module, has_method_arguments, pretty_duration
 __all__ = ['IcpcController']
 
 
-class IcpcController(Controller):
-    def get_or_create_challenge(self, year, day, part, force):
+class IcpcController:
+    controller: Controller
+
+    def __init__(self):
+        self.controller = Controller()
+        self.controller.get_or_create_challenge = lambda year, day, part, force: self.get_or_create_challenge(year, part, force)
+
+    def list_years(self):
+        icpc_root: Path = settings_proxy().path.absolute().parent.parent / "icpc"
+        years = [
+            int(directory.name.split("_")[1])
+            for directory in icpc_root.glob("year_*")
+            if directory.is_dir()
+            and not (set(directory.name.split("_")[1]) - set(string.digits))
+        ]
+        click.echo(f"Found {e_success(str(len(years)))} years with code:")
+        for year in sorted(years, reverse=True):
+            year_directory = icpc_root / f"year_{year}"
+            problem_file_count = sum(1 for _ in year_directory.glob("problem_*.py"))
+            click.echo(
+                f"  * {e_success(str(year))}: "
+                f"{e_success(str(problem_file_count))} problems with code")
+
+    def test_and_run_challenge(self, year, part, force, filters_texts,
+                               debug, debug_interval):
+        return self.controller.test_and_run_challenge(year, 1, part, force, filters_texts, debug, debug_interval)
+
+    def test_challenge(self, year, part, force, filters_texts):
+        return self.controller.test_challenge(year, 1, part, force, filters_texts)
+
+    def run_challenge(self, year, part, force, debug, debug_interval):
+        return self.controller.run_challenge(year, 1, part, force, debug, debug_interval)
+
+    def play_challenge(self, year, part, force):
+        return self.controller.play_challenge(year, 1, part, force)
+
+    def get_or_create_challenge(self, year, part, force):
         module_name = f"icpc.year_{year}.problem_{part}"
         module = try_import_module(module_name)
         if not module:
@@ -48,7 +85,7 @@ class IcpcController(Controller):
         #         .get_challenge_instance(year, day, part)
         # return challenge_instance
 
-    def check_challenge_many(self, year, day, part, force, input_names, all_inputs, verbose, very_verbose, debug, debug_interval):
+    def check_challenge_many(self, year, part, force, input_names, all_inputs, verbose, very_verbose, debug, debug_interval):
         verbose = verbose or very_verbose
         if all_inputs:
             input_names = settings_proxy().challenges_boilerplate\
@@ -69,7 +106,7 @@ class IcpcController(Controller):
             try:
                 if verbose:
                     print(f" * Checking {e_value(input_name)}...", end="\n" if very_verbose else "")
-                _, success, _, duration = self.check_challenge(year, day, part, force, input_name, very_verbose, debug, debug_interval)
+                _, success, _, duration = self.check_challenge(year, part, force, input_name, very_verbose, debug, debug_interval)
                 total_challenge_time += duration
                 max_challenge_time = max(max_challenge_time, duration)
                 if verbose and not very_verbose:
@@ -99,13 +136,12 @@ class IcpcController(Controller):
             if error_names:
                 print(f"First few errors: {e_error(' '.join(error_names[:5]))}")
 
-    def check_challenge(self, year, day, part, force, input_name, verbose, debug, debug_interval) -> Tuple[bool, bool, Union[None, str, int], float]:
+    def check_challenge(self, year, part, force, input_name, verbose, debug, debug_interval) -> Tuple[bool, bool, Union[None, str, int], float]:
         input_file, output_file = settings_proxy().challenges_boilerplate\
             .get_icpc_problem_file_pair(year, part, input_name)
         _input = input_file.read_text().strip()
         output = output_file.read_text().strip()
-        challenge_instance = self.get_or_create_challenge(
-            year, day, part, force)
+        challenge_instance = self.get_or_create_challenge(year, part, force)
         if not challenge_instance:
             return False, False, None, 0
         debugger = Debugger(

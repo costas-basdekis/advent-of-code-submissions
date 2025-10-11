@@ -21,19 +21,23 @@ class DefaultBoilerplateWithIcpc(DefaultBoilerplate):
     example_icpc_part_path: Path = current_directory / ''
 
     def extract_from_filename(self, filename: str) -> Tuple[int, int, str]:
+        parts = self.extract_icpc_from_filename(filename)
+        if parts is None:
+            return super().extract_from_filename(filename)
+        year, part = parts
+        return year, 1, part
+
+    def extract_icpc_from_filename(self, filename: str) -> Optional[Tuple[int, str]]:
         """
-        >>> DefaultBoilerplateWithIcpc().extract_from_filename(
-        ...     '/home/user/git/my-aoc/year_2020/day_05/part_a.py')
-        (2020, 5, 'a')
-        >>> DefaultBoilerplateWithIcpc().extract_from_filename(
+        >>> DefaultBoilerplateWithIcpc().extract_icpc_from_filename(
         ...     '/home/user/git/my-aoc/icpc/year_2020/problem_d.py')
-        (2020, 1, 'd')
+        (2020, 'd')
         """
         match = self.re_icpc_filename.match(filename)
         if not match:
-            return super().extract_from_filename(filename)
+            return None
         year_str, part_str = match.groups()
-        return int(year_str), 1, part_str
+        return int(year_str), part_str
 
     def get_icpc_sample_problem_file(self, year: int, problem: str, relative: bool = False) -> Optional[Path]:
         data_directory = self.get_icpc_problem_data_directory(year, problem, relative=relative)

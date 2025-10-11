@@ -46,16 +46,13 @@ def create_icpc_cli():
     def challenge(ctx, year, part, path, force, filters_texts, debug,
                   debug_interval):
         if path is not None:
-            year, day, part = settings_proxy().challenges_boilerplate\
-                .extract_from_filename(path)
-            ctx.params['year'], ctx.params['day'], ctx.params['part'] = \
-                year, day, part
-        else:
-            ctx.params['day'] = day = 1
+            year, part = settings_proxy().challenges_boilerplate\
+                .extract_icpc_from_filename(path)
+            ctx.params['year'], ctx.params['part'] = year, part
         if ctx.invoked_subcommand:
             return
         controller.test_and_run_challenge(
-            year, day, part, force, filters_texts, debug, debug_interval)
+            year, part, force, filters_texts, debug, debug_interval)
 
     @challenge.command(
         name="all",
@@ -75,7 +72,7 @@ def create_icpc_cli():
             **params,
         }
         controller.test_and_run_challenge(
-            params['year'], params['day'], params['part'], params['force'],
+            params['year'], params['part'], params['force'],
             params['filters_texts'], params['debug'], params['debug_interval'])
 
     @challenge.command(
@@ -92,7 +89,7 @@ def create_icpc_cli():
             **params,
         }
         controller.test_challenge(
-            params['year'], params['day'], params['part'], params['force'],
+            params['year'], params['part'], params['force'],
             params['filters_texts'])
 
     @challenge.command(
@@ -111,7 +108,7 @@ def create_icpc_cli():
             **params,
         }
         controller.run_challenge(
-            params['year'], params['day'], params['part'], params['force'],
+            params['year'], params['part'], params['force'],
             params['debug'], params['debug_interval'])
 
     @challenge.command(
@@ -134,7 +131,7 @@ def create_icpc_cli():
             **params,
         }
         controller.check_challenge_many(
-            params['year'], params['day'], params['part'], params['force'],
+            params['year'], params['part'], params['force'],
             params['input_names'], params['all_inputs'], params['verbose'], params['very_verbose'],
             params['debug'], params['debug_interval'])
 
@@ -148,8 +145,7 @@ def create_icpc_cli():
     @click.pass_context
     def play(ctx):
         params = ctx.parent.params
-        controller.play_challenge(
-            params['year'], params['day'], params['part'], params['force'])
+        controller.play_challenge(params['year'], params['part'], params['force'])
 
     return icpc
 
