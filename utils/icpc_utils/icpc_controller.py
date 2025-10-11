@@ -78,6 +78,8 @@ class IcpcController(Controller):
                     success_count += 1
                 else:
                     error_names.append(input_name)
+                if len(input_names) == 1:
+                    print()
             except KeyboardInterrupt:
                 break
         if verbose or all_inputs or len(input_names) > 1:
