@@ -53,6 +53,12 @@ class IcpcController(Controller):
         if all_inputs:
             input_names = settings_proxy().challenges_boilerplate\
                 .get_icpc_problem_file_names(year, part)
+            if not input_names:
+                print(e_error("No inputs found"))
+                return
+        if not input_names:
+            print(e_error("No input names provided"))
+            return
         if verbose or all_inputs or len(input_names) > 1:
             print(f"Checking {len(input_names)} inputs...")
         success_count = 0
