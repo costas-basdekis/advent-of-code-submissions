@@ -57,15 +57,25 @@ class DefaultBoilerplateWithIcpc(DefaultBoilerplate):
             for input_file in input_files
         ]
 
-    def get_icpc_problem_file_pair(self, year: int, problem: str, input_name: str, relative: bool = False) -> Optional[Tuple[Path, Path]]:
+    def get_icpc_problem_file_pair(self, year: int, problem: str, input_name: str, relative: bool = False) -> Tuple[Path, Path]:
+        return (
+            self.get_icpc_problem_file(year, problem, input_name, relative=relative),
+            self.get_icpc_output_file(year, problem, input_name, relative=relative),
+        )
+
+    def get_icpc_problem_file(self, year: int, problem: str, input_name: str, relative: bool = False) -> Path:
         data_directory = self.get_icpc_problem_data_directory(year, problem, relative=relative)
         input_file = data_directory / f"{input_name}.in"
         if not input_file.exists():
-            raise FileNotFoundError(f"Could not find an input file {input_file}")
-        output_file = data_directory / f"{input_name}.ans"
-        if not output_file.exists():
-            raise FileNotFoundError(f"Could not find an output file {output_file}")
-        return input_file, output_file
+            raise FileNotFoundError(f"Could not find input file {input_file}")
+        return input_file
+
+    def get_icpc_output_file(self, year: int, problem: str, input_name: str, relative: bool = False) -> Path:
+        data_directory = self.get_icpc_problem_data_directory(year, problem, relative=relative)
+        input_file = data_directory / f"{input_name}.ans"
+        if not input_file.exists():
+            raise FileNotFoundError(f"Could not find output file {input_file}")
+        return input_file
 
     def get_icpc_problem_data_directory(self, year: int, problem: str, relative: bool = False) -> Path:
         """

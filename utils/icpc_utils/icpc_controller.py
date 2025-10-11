@@ -9,7 +9,7 @@ from aox.challenge import Debugger
 from aox.controller.controller import Controller
 from aox.settings import settings_proxy
 from aox.styling.shortcuts import e_error, e_value, e_success, e_warn
-from aox.utils import try_import_module, has_method_arguments, pretty_duration
+from aox.utils import try_import_module, has_method_arguments, pretty_duration, Timer
 
 __all__ = ['IcpcController']
 
@@ -44,8 +44,39 @@ class IcpcController:
     def test_challenge(self, year, part, force, filters_texts):
         return self.controller.test_challenge(year, 1, part, force, filters_texts)
 
-    def run_challenge(self, year, part, force, debug, debug_interval):
-        return self.controller.run_challenge(year, 1, part, force, debug, debug_interval)
+    def run_challenge_many(self, year, part, input_names, all_inputs, force, debug, debug_interval):
+        if all_inputs:
+            input_names = settings_proxy().challenges_boilerplate\
+                .get_icpc_problem_file_names(year, part)
+            if not input_names:
+                print(e_error("No inputs found"))
+                return
+        if not input_names:
+            self.controller.run_challenge(year, 1, part, force, debug, debug_interval)
+            return
+        for input_name in input_names:
+            print(f"Running with {input_name}:")
+            self.run_challenge(year, part, input_name, force, debug, debug_interval)
+
+    def run_challenge(self, year, part, input_name, force, debug, debug_interval):
+        challenge_instance = self.get_or_create_challenge(year, part, force)
+        if not challenge_instance:
+            return False, None
+        input_file = settings_proxy().challenges_boilerplate\
+            .get_icpc_problem_file(year, part, input_name)
+        with Timer() as timer:
+            debugger = Debugger(enabled=debug, min_report_interval_seconds=debug_interval)
+            solution = challenge_instance.solve(_input=input_file.read_text(), debugger=debugger)
+        if solution is None:
+            styled_solution = e_error(str(solution))
+        else:
+            styled_solution = e_value(str(solution))
+        click.echo(
+            f"Solution: {styled_solution}"
+            f" (in {timer.get_pretty_duration(2)})")
+
+        return True, solution
+
 
     def play_challenge(self, year, part, force):
         return self.controller.play_challenge(year, 1, part, force)

@@ -98,6 +98,8 @@ def create_icpc_cli():
         ),
         short_help="Run the challenge",
     )
+    @click.argument('input_names', type=str, nargs=-1)
+    @click.option('--all', '-a', 'all_inputs', is_flag=True)
     @click.option('--debug', '-d', 'debug', is_flag=True)
     @click.option('--debug-interval', '-i', 'debug_interval', type=float,
                   default=5)
@@ -107,9 +109,10 @@ def create_icpc_cli():
             **ctx.parent.params,
             **params,
         }
-        controller.run_challenge(
-            params['year'], params['part'], params['force'],
-            params['debug'], params['debug_interval'])
+        controller.run_challenge_many(
+            params['year'], params['part'],
+            params['input_names'], params['all_inputs'],
+            params['force'], params['debug'], params['debug_interval'])
 
     @challenge.command(
         help=(
