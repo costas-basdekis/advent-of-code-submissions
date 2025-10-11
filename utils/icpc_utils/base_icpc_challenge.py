@@ -40,4 +40,7 @@ class BaseIcpcChallenge(BaseChallenge, ABC):
             else:
                 # noinspection PyArgumentList
                 result = self.solve(_input, debug=debugger)
-        return result == output, result, timer.duration
+        return self.does_solution_match_output(result, output), result, timer.duration
+
+    def does_solution_match_output(self, result: str, output: str) -> bool:
+        return str(result) == output
