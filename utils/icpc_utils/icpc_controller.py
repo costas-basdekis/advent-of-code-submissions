@@ -149,12 +149,7 @@ class IcpcController:
         duration = 0
         # noinspection PyBroadException
         try:
-            if has_method_arguments(
-                    challenge_instance.default_solve, "debugger"):
-                matches, solution, duration = challenge_instance.check_solve(_input, output, debugger=debugger)
-            else:
-                # noinspection PyArgumentList
-                matches, solution, duration = challenge_instance.check_solve(_input, output, debug=debugger)
+            matches, solution, duration = challenge_instance.check_solve(_input, output, debugger=debugger)
             failed = False
         except Exception:
             if verbose:
