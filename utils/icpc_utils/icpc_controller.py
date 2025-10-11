@@ -107,14 +107,17 @@ class IcpcController(Controller):
         challenge_instance = self.get_or_create_challenge(
             year, day, part, force)
         if not challenge_instance:
-            return False, False, None
+            return False, False, None, 0
         debugger = Debugger(
             enabled=debug, min_report_interval_seconds=debug_interval)
+        duration = 0
+        # noinspection PyBroadException
         try:
             if has_method_arguments(
                     challenge_instance.default_solve, "debugger"):
                 matches, solution, duration = challenge_instance.check_solve(_input, output, debugger=debugger)
             else:
+                # noinspection PyArgumentList
                 matches, solution, duration = challenge_instance.check_solve(_input, output, debug=debugger)
             failed = False
         except Exception:
