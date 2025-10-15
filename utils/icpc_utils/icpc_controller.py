@@ -1,7 +1,7 @@
 import string
 import traceback
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 import click
 
@@ -55,15 +55,25 @@ class IcpcController:
             self.controller.run_challenge(year, 1, part, force, debug, debug_interval)
             return
         for input_name in input_names:
-            print(f"Running with {input_name}:")
-            self.run_challenge(year, part, input_name, force, debug, debug_interval)
+            input_file = None
+            actual_input_name = input_name
+            try:
+                input_file = settings_proxy().challenges_boilerplate\
+                    .get_icpc_problem_file(year, part, input_name, partial_match=True)
+            except FileNotFoundError:
+                pass
+            else:
+                actual_input_name = input_file.name[:-len(".in")]
+            print(f"Running with {actual_input_name}:")
+            self.run_challenge(year, part, input_name, force, debug, debug_interval, input_file=input_file)
 
-    def run_challenge(self, year, part, input_name, force, debug, debug_interval):
+    def run_challenge(self, year: int, part: str, input_name: str, force: bool, debug: bool, debug_interval: int, input_file: Optional[Path] = None) -> Tuple[bool, Optional[Union[int, str]]]:
         challenge_instance = self.get_or_create_challenge(year, part, force)
         if not challenge_instance:
             return False, None
-        input_file = settings_proxy().challenges_boilerplate\
-            .get_icpc_problem_file(year, part, input_name)
+        if input_file is None:
+            input_file = settings_proxy().challenges_boilerplate\
+                .get_icpc_problem_file(year, part, input_name, partial_match=True)
         with Timer() as timer:
             debugger = Debugger(enabled=debug, min_report_interval_seconds=debug_interval)
             solution = challenge_instance.solve(_input=input_file.read_text(), debugger=debugger)
@@ -135,9 +145,18 @@ class IcpcController:
         max_challenge_time = 0
         for input_name in input_names:
             try:
+                file_pair = None
                 if verbose:
-                    print(f" * Checking {e_value(input_name)}...", end="\n" if very_verbose else "")
-                _, success, _, duration = self.check_challenge(year, part, force, input_name, very_verbose, debug, debug_interval)
+                    actual_input_name = input_name
+                    try:
+                        file_pair = settings_proxy().challenges_boilerplate\
+                            .get_icpc_problem_file_pair(year, part, input_name, partial_match=True)
+                    except FileNotFoundError:
+                        pass
+                    else:
+                        actual_input_name = file_pair[0].name[:-len(".in")]
+                    print(f" * Checking {e_value(actual_input_name)}...", end="\n" if very_verbose else "")
+                _, success, _, duration = self.check_challenge(year, part, force, input_name, very_verbose, debug, debug_interval, file_pair=file_pair)
                 total_challenge_time += duration
                 max_challenge_time = max(max_challenge_time, duration)
                 if verbose and not very_verbose:
@@ -167,9 +186,11 @@ class IcpcController:
             if error_names:
                 print(f"First few errors: {e_error(' '.join(error_names[:5]))}")
 
-    def check_challenge(self, year, part, force, input_name, verbose, debug, debug_interval) -> Tuple[bool, bool, Union[None, str, int], float]:
-        input_file, output_file = settings_proxy().challenges_boilerplate\
-            .get_icpc_problem_file_pair(year, part, input_name)
+    def check_challenge(self, year: int, part: str, force: bool, input_name: str, verbose: bool, debug: bool, debug_interval: int, file_pair: Optional[Tuple[Path, Path]] = None) -> Tuple[bool, bool, Union[None, str, int], float]:
+        if file_pair is None:
+            file_pair = settings_proxy().challenges_boilerplate\
+            .get_icpc_problem_file_pair(year, part, input_name, partial_match=True)
+        input_file, output_file = file_pair
         _input = input_file.read_text().strip()
         output = output_file.read_text().strip()
         challenge_instance = self.get_or_create_challenge(year, part, force)

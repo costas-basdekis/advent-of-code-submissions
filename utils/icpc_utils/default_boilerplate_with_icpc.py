@@ -57,17 +57,37 @@ class DefaultBoilerplateWithIcpc(DefaultBoilerplate):
             for input_file in input_files
         ]
 
-    def get_icpc_problem_file_pair(self, year: int, problem: str, input_name: str, relative: bool = False) -> Tuple[Path, Path]:
+    def get_icpc_problem_file_pair(self, year: int, problem: str, input_name: str, relative: bool = False, partial_match: bool = False) -> Tuple[Path, Path]:
+        input_file = self.get_icpc_problem_file(year, problem, input_name, relative=relative, partial_match=partial_match)
+        actual_input_name = input_file.name[:-len(".in")]
         return (
-            self.get_icpc_problem_file(year, problem, input_name, relative=relative),
-            self.get_icpc_output_file(year, problem, input_name, relative=relative),
+            input_file,
+            self.get_icpc_output_file(year, problem, actual_input_name, relative=relative),
         )
 
-    def get_icpc_problem_file(self, year: int, problem: str, input_name: str, relative: bool = False) -> Path:
+    def get_icpc_problem_files(self, year: int, problem: str, input_name: str, relative: bool = False, partial_match: bool = False) -> List[Path]:
         data_directory = self.get_icpc_problem_data_directory(year, problem, relative=relative)
         input_file = data_directory / f"{input_name}.in"
         if not input_file.exists():
+            if partial_match:
+                return list(data_directory.glob(f"*{input_name}*.in"))
+            return []
+        return [input_file]
+
+    def get_icpc_problem_file(self, year: int, problem: str, input_name: str, relative: bool = False, partial_match: bool = False) -> Path:
+        input_files = self.get_icpc_problem_files(year, problem, input_name, relative=relative, partial_match=partial_match)
+        if not input_files:
+            data_directory = self.get_icpc_problem_data_directory(year, problem, relative=relative)
+            input_file = data_directory / f"{input_name}.in"
             raise FileNotFoundError(f"Could not find input file {input_file}")
+        if len(input_files) > 1:
+            data_directory = self.get_icpc_problem_data_directory(year, problem, relative=relative)
+            input_file = data_directory / f"{input_name}.in"
+            raise FileNotFoundError(
+                f"Could not find input file {input_file}, "
+                f"and there are {len(input_files)} files with that prefix: "
+                f"{', '.join(possible_file.name for possible_file in input_files)}")
+        input_file, = input_files
         return input_file
 
     def get_icpc_output_file(self, year: int, problem: str, input_name: str, relative: bool = False) -> Path:
