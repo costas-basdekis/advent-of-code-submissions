@@ -163,6 +163,7 @@ class IcpcController:
             if not input_names:
                 print(e_error("No inputs found"))
                 return
+            input_names = sorted(input_names)
         if not input_names:
             print(e_error("No input names provided"))
             return
