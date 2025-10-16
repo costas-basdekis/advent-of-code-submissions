@@ -1,3 +1,4 @@
+from itertools import zip_longest
 import string
 import traceback
 from pathlib import Path
@@ -249,14 +250,29 @@ class IcpcController:
             else:
                 print(e_error("×"), end="", flush=True)
         else:
-            click.echo(
-                f"Solution: {styled_solution}"
-                f" (in {pretty_duration(duration, 2)})")
-            if matches:
-                print(e_success(f"Matches!"))
-            elif failed:
-                print(e_warn("Failed!"))
+            if not matches and not failed and "\n" in output:
+                solution_lines = solution.splitlines()
+                output_lines = output.splitlines()
+                click.echo("Mismatch: \n{}\n (in {})".format(
+                    "\n".join(
+                        (
+                            e_success(solution_line)
+                            if solution_line == output_line else 
+                            f"{e_error(solution_line)}{e_value(output_line)}"
+                        )
+                        for solution_line, output_line in zip_longest(solution_lines, output_lines, fillvalue="")
+                    ),
+                    pretty_duration(duration, 2),
+                ))
             else:
-                print(f"{e_error('Does not match')} {e_value(output)}")
+                click.echo(
+                    f"Solution: {styled_solution}"
+                    f" (in {pretty_duration(duration, 2)})")
+                if matches:
+                    print(e_success(f"Matches!"))
+                elif failed:
+                    print(e_warn("Failed!"))
+                else:
+                    print(f"{e_error('Does not match')} {e_value(output)}")
 
         return True, matches, solution, duration
