@@ -4,21 +4,16 @@ from typing import Tuple, Optional, List
 
 from aox.boilerplate import DefaultBoilerplate
 from aox.settings import settings_proxy
-from aox.utils import get_current_directory
+from aox.styling.shortcuts import e_value, e_warn
+import click
+import shutil
 
 
 __all__ = ['DefaultBoilerplateWithIcpc']
 
-current_directory = get_current_directory()
-
 
 class DefaultBoilerplateWithIcpc(DefaultBoilerplate):
     re_icpc_filename = re.compile(r"^(?:.*/)?icpc/year_(\d+)/problem_(\w).py$")
-
-    example_icpc_year_path: Path = current_directory\
-        .joinpath('default_boilerplate_example_year')
-    example_icpc_day_path: Path = example_icpc_year_path.joinpath('example_day')
-    example_icpc_part_path: Path = current_directory / ''
 
     def extract_from_filename(self, filename: str) -> Tuple[int, int, str]:
         parts = self.extract_icpc_from_filename(filename)
@@ -96,22 +91,43 @@ class DefaultBoilerplateWithIcpc(DefaultBoilerplate):
         if not input_file.exists():
             raise FileNotFoundError(f"Could not find output file {input_file}")
         return input_file
-
-    def get_icpc_problem_data_directory(self, year: int, problem: str, relative: bool = False) -> Path:
-        """
-        >>> str(DefaultBoilerplateWithIcpc().get_icpc_problem_data_directory(2025, "a", True))
-        'icpc/year_2025/data/A-askewedreasoning'
-        """
+    
+    def get_icpc_year_directory(self, year: int, relative: bool = False) -> Path:
         if relative:
             base = Path()
         else:
             base = settings_proxy().challenges_root
         if base is None:
             raise FileNotFoundError(f"No base given")
-        data_dir = base / "icpc" / f"year_{year}" / "data"
+        return base / "icpc" / f"year_{year}"
+
+    def get_icpc_problem_data_directory(self, year: int, problem: str, relative: bool = False) -> Path:
+        """
+        >>> str(DefaultBoilerplateWithIcpc().get_icpc_problem_data_directory(2025, "a", True))
+        'icpc/year_2025/data/A-askewedreasoning'
+        """
+        data_dir = self.get_icpc_year_directory(year, relative=relative) / "data"
         if not data_dir.exists():
             raise FileNotFoundError(f"Year data directory {data_dir} does not exist")
         paths = list(data_dir.glob(f"{problem.upper()}-*"))
         if not paths:
             raise FileNotFoundError(f"Problem data directory {data_dir}/A-* does not exist")
         return paths[0]
+
+    def create_icpc_part(self, year: int, part: str) -> Optional[Path]:
+        year_path = self.get_icpc_year_directory(year)
+        problem_path = year_path / f"problem_{part}.py"
+
+        if problem_path.exists():
+            click.echo(
+                f"Challenge {e_warn(f'{year} {part.upper()}')} already "
+                f"exists at {e_value(str(problem_path))}")
+            return None
+
+        year_init_path = year_path / "__init__.py"
+        if not year_init_path.exists():
+            year_init_path.parent.mkdir(exist_ok=True)
+            year_init_path.touch()
+        example_problem_path = settings_proxy().challenges_root / "custom" / "custom_icpc_example_problem.py"
+        shutil.copy(example_problem_path, problem_path)
+        return problem_path

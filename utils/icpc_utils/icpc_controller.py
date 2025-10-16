@@ -95,7 +95,15 @@ class IcpcController:
         module_name = f"icpc.year_{year}.problem_{part}"
         module = try_import_module(module_name)
         if not module:
-            click.echo(f"Could not find {e_error(module_name)}!")
+            if not self.add_challenge_if_agreed(year, part, force):
+                click.echo(f"Could not find {e_error(module_name)}!")
+                return None
+            module = try_import_module(module_name)
+            if not module:
+                click.echo(
+                    f"Could not import challenge module {e_error(module_name)} "
+                    f"even after creating it")
+                return None
 
         from .base_icpc_challenge import BaseIcpcChallenge
         if not hasattr(module, 'challenge'):
@@ -125,6 +133,27 @@ class IcpcController:
         #     challenge_instance = self.combined_info \
         #         .get_challenge_instance(year, day, part)
         # return challenge_instance
+
+    def add_challenge_if_agreed(self, year: int, part: str, force: bool) -> bool:
+        if not force:
+            should_create_challenge = click.prompt(
+                f"Do you want to create challenge "
+                f"{e_value(f'{year} {part.upper()}')}?",
+                type=bool, default=True)
+        else:
+            should_create_challenge = True
+        if not should_create_challenge:
+            return False
+        return bool(self.add_challenge(year, part))
+
+    def add_challenge(self, year: int, part: str) -> bool:
+        problem_path = settings_proxy().challenges_boilerplate.create_icpc_part(year, part)
+        if not problem_path:
+            return False
+        click.echo(
+            f"Added challenge {e_success(f'{year} {part.upper()}')} at "
+            f"{e_value(str(problem_path))}")
+        return True
 
     def check_challenge_many(self, year, part, force, input_names, all_inputs, verbose, very_verbose, debug, debug_interval):
         verbose = verbose or very_verbose
