@@ -2,7 +2,7 @@ from itertools import zip_longest
 import string
 import traceback
 from pathlib import Path
-from typing import Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional
 
 import click
 
@@ -45,7 +45,7 @@ class IcpcController:
     def test_challenge(self, year, part, force, filters_texts):
         return self.controller.test_challenge(year, 1, part, force, filters_texts)
 
-    def run_challenge_many(self, year, part, input_names, all_inputs, force, debug, debug_interval):
+    def run_challenge_many(self, year: int, part: str, input_names: List[str], all_inputs: bool, case_indexes: List[int], force: bool, debug: bool, debug_interval: int):
         if all_inputs:
             input_names = settings_proxy().challenges_boilerplate\
                 .get_icpc_problem_file_names(year, part)
@@ -66,18 +66,26 @@ class IcpcController:
             else:
                 actual_input_name = input_file.name[:-len(".in")]
             print(f"Running with {actual_input_name}:")
-            self.run_challenge(year, part, input_name, force, debug, debug_interval, input_file=input_file)
+            self.run_challenge(year, part, input_name, case_indexes, force, debug, debug_interval, input_file=input_file)
 
-    def run_challenge(self, year: int, part: str, input_name: str, force: bool, debug: bool, debug_interval: int, input_file: Optional[Path] = None) -> Tuple[bool, Optional[Union[int, str]]]:
+    def run_challenge(self, year: int, part: str, input_name: str, case_indexes: List[int], force: bool, debug: bool, debug_interval: int, input_file: Optional[Path] = None) -> Tuple[bool, Optional[Union[int, str]]]:
         challenge_instance = self.get_or_create_challenge(year, part, force)
         if not challenge_instance:
             return False, None
         if input_file is None:
             input_file = settings_proxy().challenges_boilerplate\
                 .get_icpc_problem_file(year, part, input_name, partial_match=True)
+        input_text = input_file.read_text()
+        if case_indexes:
+            try:
+                input_text = challenge_instance.filter_cases(input_text, case_indexes)
+            except NotImplementedError:
+                click.echo(
+                    f"Challenge {e_error(f'{year} {part.upper()}')} does not "
+                    f"support filtering cases")
         with Timer() as timer:
             debugger = Debugger(enabled=debug, min_report_interval_seconds=debug_interval)
-            solution = challenge_instance.solve(_input=input_file.read_text(), debugger=debugger)
+            solution = challenge_instance.solve(_input=input_text, debugger=debugger)
         if solution is None:
             styled_solution = e_error(str(solution))
         else:
@@ -263,6 +271,13 @@ class IcpcController:
                         for solution_line, output_line in zip_longest(solution_lines, output_lines, fillvalue="")
                     ),
                     pretty_duration(duration, 2),
+                ))
+                click.echo("Failed cases: {}".format(
+                    ", ".join(
+                        e_error(str(index))
+                        for index, (solution_line, output_line) in enumerate(zip_longest(solution_lines, output_lines, fillvalue=""), start=1)
+                        if solution_line != output_line
+                    )
                 ))
             else:
                 click.echo(
