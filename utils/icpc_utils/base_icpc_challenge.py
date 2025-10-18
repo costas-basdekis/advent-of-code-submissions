@@ -58,3 +58,8 @@ class BaseIcpcChallenge(BaseChallenge, ABC):
     def join_cases(self, cases: List[str]) -> str:
         """Joins separate cases into a single input"""
         raise NotImplementedError()
+
+    def filter_outputs(self, output: str, case_indexes: List[int]) -> str:
+        cases = output.strip().splitlines()
+        selected_cases = [cases[i - 1] for i in case_indexes]
+        return "\n".join(selected_cases)

@@ -123,6 +123,7 @@ def create_icpc_cli():
     )
     @click.argument('input_names', type=str, nargs=-1)
     @click.option('--all', '-a', 'all_inputs', is_flag=True)
+    @click.option('--cases', '-c', 'case_indexes', type=int, multiple=True)
     @click.option('--verbose', '-v', 'verbose', is_flag=True)
     @click.option('--very-verbose', '-vv', 'very_verbose', is_flag=True)
     @click.option('--debug', '-d', 'debug', is_flag=True)
@@ -136,7 +137,7 @@ def create_icpc_cli():
         }
         controller.check_challenge_many(
             params['year'], params['part'], params['force'],
-            params['input_names'], params['all_inputs'], params['verbose'], params['very_verbose'],
+            params['input_names'], params['all_inputs'], params['case_indexes'], params['verbose'], params['very_verbose'],
             params['debug'], params['debug_interval'])
 
     @challenge.command(

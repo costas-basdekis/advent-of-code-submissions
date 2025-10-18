@@ -164,7 +164,10 @@ class IcpcController:
             f"{e_value(str(problem_path))}")
         return True
 
-    def check_challenge_many(self, year, part, force, input_names, all_inputs, verbose, very_verbose, debug, debug_interval):
+    def check_challenge_many(
+        self, year: int, part: str, force: bool, input_names: List[str], all_inputs: bool, case_indexes: List[int],
+        verbose: bool, very_verbose: bool, debug: bool, debug_interval: int,
+    ) -> None:
         verbose = verbose or very_verbose
         if all_inputs:
             input_names = settings_proxy().challenges_boilerplate\
@@ -195,7 +198,7 @@ class IcpcController:
                     else:
                         actual_input_name = file_pair[0].name[:-len(".in")]
                     print(f" * Checking {e_value(actual_input_name)}...", end="\n" if very_verbose else "")
-                _, success, _, duration = self.check_challenge(year, part, force, input_name, very_verbose, debug, debug_interval, file_pair=file_pair)
+                _, success, _, duration = self.check_challenge(year, part, force, input_name, case_indexes, very_verbose, debug, debug_interval, file_pair=file_pair)
                 total_challenge_time += duration
                 max_challenge_time = max(max_challenge_time, duration)
                 if verbose and not very_verbose:
@@ -226,7 +229,10 @@ class IcpcController:
             if error_names:
                 print(f"First few errors: {e_error(' '.join(error_names[:5]))}")
 
-    def check_challenge(self, year: int, part: str, force: bool, input_name: str, verbose: bool, debug: bool, debug_interval: int, file_pair: Optional[Tuple[Path, Path]] = None) -> Tuple[bool, bool, Union[None, str, int], float]:
+    def check_challenge(
+        self, year: int, part: str, force: bool, input_name: str, case_indexes: List[int], verbose: bool, debug: bool,
+            debug_interval: int, file_pair: Optional[Tuple[Path, Path]] = None,
+    ) -> Tuple[bool, bool, Union[None, str, int], float]:
         if file_pair is None:
             file_pair = settings_proxy().challenges_boilerplate\
             .get_icpc_problem_file_pair(year, part, input_name, partial_match=True)
@@ -239,6 +245,14 @@ class IcpcController:
         debugger = Debugger(
             enabled=debug, min_report_interval_seconds=debug_interval)
         duration = 0
+        if case_indexes:
+            try:
+                _input = challenge_instance.filter_cases(_input, case_indexes)
+                output = challenge_instance.filter_outputs(output, case_indexes)
+            except NotImplementedError:
+                click.echo(
+                    f"Challenge {e_error(f'{year} {part.upper()}')} does not "
+                    f"support filtering cases")
         # noinspection PyBroadException
         try:
             matches, solution, duration = challenge_instance.check_solve(_input, output, debugger=debugger)
