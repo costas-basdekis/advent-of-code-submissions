@@ -207,6 +207,7 @@ class IcpcController:
                 if len(input_names) == 1:
                     print()
             except KeyboardInterrupt:
+                print(f"\nAborted when running input_name {e_value(input_name)}", end="")
                 break
         if verbose or all_inputs or len(input_names) > 1:
             if not verbose:
