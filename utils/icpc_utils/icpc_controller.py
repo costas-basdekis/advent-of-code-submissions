@@ -250,6 +250,8 @@ class IcpcController:
                 print()
             if error_names:
                 print(f"First few errors: {e_error(' '.join(error_names[:5]))}")
+        else:
+            print(f"In {e_value(pretty_duration(total_challenge_time, 2))}")
 
         profiler.present_results()
 
