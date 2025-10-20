@@ -1,3 +1,6 @@
+import cProfile
+import tempfile
+from dataclasses import dataclass
 from itertools import zip_longest
 import string
 import traceback
@@ -10,7 +13,7 @@ from aox.challenge import Debugger
 from aox.controller.controller import Controller
 from aox.settings import settings_proxy
 from aox.styling.shortcuts import e_error, e_value, e_success, e_warn
-from aox.utils import try_import_module, has_method_arguments, pretty_duration, Timer
+from aox.utils import try_import_module, pretty_duration, Timer
 
 __all__ = ['IcpcController']
 
@@ -45,7 +48,10 @@ class IcpcController:
     def test_challenge(self, year, part, force, filters_texts):
         return self.controller.test_challenge(year, 1, part, force, filters_texts)
 
-    def run_challenge_many(self, year: int, part: str, input_names: List[str], all_inputs: bool, case_indexes: List[int], force: bool, debug: bool, debug_interval: int):
+    def run_challenge_many(
+        self, year: int, part: str, input_names: List[str], all_inputs: bool, case_indexes: List[int], force: bool,
+        debug: bool, debug_interval: int, profile_filename: Optional[str],
+    ):
         if all_inputs:
             input_names = settings_proxy().challenges_boilerplate\
                 .get_icpc_problem_file_names(year, part)
@@ -55,6 +61,7 @@ class IcpcController:
         if not input_names:
             self.controller.run_challenge(year, 1, part, force, debug, debug_interval)
             return
+        profiler = ChallengeProfiler.from_profile_filename(profile_filename)
         for input_name in input_names:
             input_file = None
             actual_input_name = input_name
@@ -66,9 +73,16 @@ class IcpcController:
             else:
                 actual_input_name = input_file.name[:-len(".in")]
             print(f"Running with {actual_input_name}:")
-            self.run_challenge(year, part, input_name, case_indexes, force, debug, debug_interval, input_file=input_file)
+            with profiler:
+                self.run_challenge(
+                    year, part, input_name, case_indexes, force, debug, debug_interval, None, input_file=input_file)
 
-    def run_challenge(self, year: int, part: str, input_name: str, case_indexes: List[int], force: bool, debug: bool, debug_interval: int, input_file: Optional[Path] = None) -> Tuple[bool, Optional[Union[int, str]]]:
+        profiler.present_results()
+
+    def run_challenge(
+        self, year: int, part: str, input_name: str, case_indexes: List[int], force: bool, debug: bool,
+        debug_interval: int, profile_filename: Optional[str], input_file: Optional[Path] = None,
+    ) -> Tuple[bool, Optional[Union[int, str]]]:
         challenge_instance = self.get_or_create_challenge(year, part, force)
         if not challenge_instance:
             return False, None
@@ -83,8 +97,9 @@ class IcpcController:
                 click.echo(
                     f"Challenge {e_error(f'{year} {part.upper()}')} does not "
                     f"support filtering cases")
-        with Timer() as timer:
-            debugger = Debugger(enabled=debug, min_report_interval_seconds=debug_interval)
+        debugger = Debugger(enabled=debug, min_report_interval_seconds=debug_interval)
+        profiler = ChallengeProfiler.from_profile_filename(profile_filename)
+        with Timer() as timer, profiler:
             solution = challenge_instance.solve(_input=input_text, debugger=debugger)
         if solution is None:
             styled_solution = e_error(str(solution))
@@ -93,6 +108,8 @@ class IcpcController:
         click.echo(
             f"Solution: {styled_solution}"
             f" (in {timer.get_pretty_duration(2)})")
+
+        profiler.present_results()
 
         return True, solution
 
@@ -166,7 +183,7 @@ class IcpcController:
 
     def check_challenge_many(
         self, year: int, part: str, force: bool, input_names: List[str], all_inputs: bool, case_indexes: List[int],
-        verbose: bool, very_verbose: bool, debug: bool, debug_interval: int,
+        verbose: bool, very_verbose: bool, debug: bool, debug_interval: int, profile_filename: Optional[str],
     ) -> None:
         verbose = verbose or very_verbose
         if all_inputs:
@@ -185,6 +202,7 @@ class IcpcController:
         error_names = []
         total_challenge_time = 0
         max_challenge_time = 0
+        profiler = ChallengeProfiler.from_profile_filename(profile_filename)
         for input_name in input_names:
             try:
                 file_pair = None
@@ -198,7 +216,11 @@ class IcpcController:
                     else:
                         actual_input_name = file_pair[0].name[:-len(".in")]
                     print(f" * Checking {e_value(actual_input_name)}...", end="\n" if very_verbose else "")
-                _, success, _, duration = self.check_challenge(year, part, force, input_name, case_indexes, very_verbose, debug, debug_interval, file_pair=file_pair)
+                with profiler:
+                    _, success, _, duration = self.check_challenge(
+                        year, part, force, input_name, case_indexes, very_verbose, debug, debug_interval, None,
+                        file_pair=file_pair,
+                    )
                 total_challenge_time += duration
                 max_challenge_time = max(max_challenge_time, duration)
                 if verbose and not very_verbose:
@@ -229,9 +251,11 @@ class IcpcController:
             if error_names:
                 print(f"First few errors: {e_error(' '.join(error_names[:5]))}")
 
+        profiler.present_results()
+
     def check_challenge(
         self, year: int, part: str, force: bool, input_name: str, case_indexes: List[int], verbose: bool, debug: bool,
-            debug_interval: int, file_pair: Optional[Tuple[Path, Path]] = None,
+            debug_interval: int, profile_filename: Optional[str], file_pair: Optional[Tuple[Path, Path]] = None,
     ) -> Tuple[bool, bool, Union[None, str, int], float]:
         if file_pair is None:
             file_pair = settings_proxy().challenges_boilerplate\
@@ -253,9 +277,11 @@ class IcpcController:
                 click.echo(
                     f"Challenge {e_error(f'{year} {part.upper()}')} does not "
                     f"support filtering cases")
+        profiler = ChallengeProfiler.from_profile_filename(profile_filename)
         # noinspection PyBroadException
         try:
-            matches, solution, duration = challenge_instance.check_solve(_input, output, debugger=debugger)
+            with profiler:
+                matches, solution, duration = challenge_instance.check_solve(_input, output, debugger=debugger)
             failed = False
         except Exception:
             if verbose:
@@ -305,4 +331,39 @@ class IcpcController:
                 else:
                     print(f"{e_error('Does not match')} {e_value(output)}")
 
+        profiler.present_results()
+
         return True, matches, solution, duration
+
+
+@dataclass
+class ChallengeProfiler:
+    filename: Optional[str]
+    profiler: Optional[cProfile.Profile]
+
+    @classmethod
+    def from_profile_filename(cls, profile_filename: Optional[str]) -> "ChallengeProfiler":
+        return cls(filename=profile_filename, profiler=cProfile.Profile() if profile_filename else None)
+
+    def __enter__(self) -> Optional[cProfile.Profile]:
+        if not self.profiler:
+            return None
+        return self.profiler.__enter__()
+
+    def __exit__(self, *exc_info) -> None:
+        if not self.profiler:
+            return
+        self.profiler.__exit__(*exc_info)
+
+    def present_results(self) -> None:
+        if not self.filename:
+            return
+        if self.filename == "-":
+            self.profiler.print_stats()
+        elif self.filename == "visualise":
+            from snakeviz.cli import main
+            with tempfile.NamedTemporaryFile(suffix=".prof") as profile_file:
+                self.profiler.dump_stats(profile_file.name)
+                main([profile_file.name])
+        else:
+            self.profiler.dump_stats(self.filename)

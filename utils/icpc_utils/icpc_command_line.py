@@ -104,6 +104,14 @@ def create_icpc_cli():
     @click.option('--debug', '-d', 'debug', is_flag=True)
     @click.option('--debug-interval', '-i', 'debug_interval', type=float,
                   default=5)
+    @click.option(
+        '--profile', '-p', 'profile_filename', type=str,
+        help=(
+            "Profile the execution. Use '-' to print to console, "
+            "'visualise' to run the 'snakeviz' visualisation in the browser, "
+            "or a filename"
+        ),
+    )
     @click.pass_context
     def run(ctx, **params):
         params = {
@@ -113,7 +121,7 @@ def create_icpc_cli():
         controller.run_challenge_many(
             params['year'], params['part'],
             params['input_names'], params['all_inputs'], params['case_indexes'],
-            params['force'], params['debug'], params['debug_interval'])
+            params['force'], params['debug'], params['debug_interval'], params['profile_filename'])
 
     @challenge.command(
         help=(
@@ -129,6 +137,14 @@ def create_icpc_cli():
     @click.option('--debug', '-d', 'debug', is_flag=True)
     @click.option('--debug-interval', '-i', 'debug_interval', type=float,
                   default=5)
+    @click.option(
+        '--profile', '-p', 'profile_filename', type=str,
+        help=(
+            "Profile the execution. Use '-' to print to console, "
+            "'visualise' to run the 'snakeviz' visualisation in the browser, "
+            "or a filename"
+        ),
+    )
     @click.pass_context
     def check(ctx, **params):
         params = {
@@ -138,7 +154,7 @@ def create_icpc_cli():
         controller.check_challenge_many(
             params['year'], params['part'], params['force'],
             params['input_names'], params['all_inputs'], params['case_indexes'], params['verbose'], params['very_verbose'],
-            params['debug'], params['debug_interval'])
+            params['debug'], params['debug_interval'], params['profile_filename'])
 
     @challenge.command(
         help=(
