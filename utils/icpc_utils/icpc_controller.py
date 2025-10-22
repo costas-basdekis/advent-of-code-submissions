@@ -14,6 +14,7 @@ from aox.controller.controller import Controller
 from aox.settings import settings_proxy
 from aox.styling.shortcuts import e_error, e_value, e_success, e_warn
 from aox.utils import try_import_module, pretty_duration, Timer
+from utils.method_utils import has_method_var_args
 
 __all__ = ['IcpcController']
 
@@ -113,9 +114,14 @@ class IcpcController:
 
         return True, solution
 
-
-    def play_challenge(self, year, part, force):
-        return self.controller.play_challenge(year, 1, part, force)
+    def play_challenge(self, year: int, part: str, extra: List[str], force: bool) -> Tuple[bool, Union[None, str, int]]:
+        challenge_instance = self.get_or_create_challenge(year, part, force)
+        if not challenge_instance:
+            return False, None
+        if extra and not has_method_var_args(challenge_instance.play):
+            print(f"Challenge play method doesn't accept extra arguments")
+        result = challenge_instance.play(*extra)
+        return True, result
 
     def get_or_create_challenge(self, year, part, force):
         module_name = f"icpc.year_{year}.problem_{part}"

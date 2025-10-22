@@ -2,6 +2,7 @@ import sys
 from abc import ABC
 from typing import List, Tuple, Union
 
+from aox.challenge import PlayNotImplementedError
 from aox.settings import settings_proxy
 from aox.utils import has_method_arguments, Timer
 from utils.base_challenge import BaseChallenge
@@ -23,6 +24,13 @@ class BaseIcpcChallenge(BaseChallenge, ABC):
             '0',
             'a',
         ] + extra_args
+
+    def play(self, *extra):
+        """
+        Some challenges can benefit from providing an interactive or visual
+        mode.
+        """
+        raise PlayNotImplementedError(f"Challenge has not implemented play")
 
     def get_input(self):
         return settings_proxy().challenges_boilerplate\

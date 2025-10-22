@@ -163,10 +163,14 @@ def create_icpc_cli():
         ),
         short_help="Run interactive mode (if defined)",
     )
+    @click.argument('extra', type=str, nargs=-1)
     @click.pass_context
-    def play(ctx):
-        params = ctx.parent.params
-        controller.play_challenge(params['year'], params['part'], params['force'])
+    def play(ctx, **params):
+        params = {
+            **ctx.parent.params,
+            **params,
+        }
+        controller.play_challenge(params['year'], params['part'], params['extra'], params['force'])
 
     return icpc
 

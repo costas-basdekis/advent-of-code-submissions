@@ -1,7 +1,8 @@
+import inspect
 from functools import wraps
 from typing import TypeVar, Callable
 
-__all__ = ["CallableT", "cached_classmethod"]
+__all__ = ["CallableT", "cached_classmethod", "has_method_var_args"]
 
 
 CallableT = TypeVar("CallableT", bound=Callable)
@@ -24,3 +25,21 @@ def cached_classmethod(func: CallableT) -> CallableT:
         return context["value"]
 
     return decorated
+
+
+def has_method_var_args(method: Callable) -> bool:
+    """
+    >>> has_method_var_args(lambda: None)
+    False
+    >>> has_method_var_args(lambda a, b: None)
+    False
+    >>> has_method_var_args(lambda a, b, *, c: None)
+    False
+    >>> has_method_var_args(lambda a, b, **c: None)
+    False
+    >>> has_method_var_args(lambda a, b, *c: None)
+    True
+    >>> has_method_var_args(lambda a, b, *c, **d: None)
+    True
+    """
+    return inspect.getfullargspec(method).varargs is not None
