@@ -15,6 +15,7 @@ from .point import *
 from .polymorphic import *
 from .show_utils import *
 from .string_utils import *
+from .system_utils import *
 from .typing_utils import *
 
 test_modules = sum((
@@ -35,6 +36,7 @@ test_modules = sum((
         importlib.import_module('utils.polymorphic'),
         importlib.import_module('utils.show_utils'),
         importlib.import_module('utils.string_utils'),
+        importlib.import_module('utils.system_utils'),
         importlib.import_module('utils.typing_utils'),
     )
 ), [])
