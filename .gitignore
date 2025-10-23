@@ -134,3 +134,4 @@ dmypy.json
 cached_pages
 icpc/*/data.zip
 icpc/*/data/*
+icpc/*/problemset.pdf
