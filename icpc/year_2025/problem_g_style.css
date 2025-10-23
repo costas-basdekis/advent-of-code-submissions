@@ -1,0 +1,40 @@
+.triangle {
+    stroke: black;
+    fill: white;
+}
+.triangle.min {
+    fill: cyan;
+}
+.triangle.max {
+    fill: pink;
+}
+.mouse-polyline {
+    stroke-width: 5px;
+    stroke: blue;
+    fill: none;
+}
+.mouse-polyline.invalid {
+    stroke: red;
+}
+.path-length {
+    fill: black;
+    font: 25px sans-serif;
+    filter: url(#solid);
+}
+.ribbon {
+    stroke: green;
+    fill: green;
+    mask: url(#mask-stripe);
+}
+.ribbon.invalid {
+    stroke: red;
+    fill: red;
+}
+.ribbon.final {
+    stroke: blue;
+    fill: blue;
+}
+.ribbon.final.invalid {
+    stroke: purple;
+    fill: purple;
+}
