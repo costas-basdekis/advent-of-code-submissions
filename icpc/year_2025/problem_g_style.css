@@ -16,7 +16,7 @@
 .mouse-polyline.invalid {
     stroke: red;
 }
-.path-length {
+text {
     fill: black;
     font: 25px sans-serif;
     filter: url(#solid);

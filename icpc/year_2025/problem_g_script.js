@@ -2,6 +2,7 @@ const DefaultDelta = 0.00001;
 
 function main() {
     const [$svg] = document.getElementsByTagName("svg");
+    const [$yValues] = document.getElementsByClassName("y-values");
     window.svgWidth = parseInt($svg.attributes.width.value, 10);
     window.svgHeight = parseInt($svg.attributes.height.value, 10);
     normalisePoints();
@@ -16,8 +17,10 @@ function main() {
         allReverseRibbons.splice(0, allReverseRibbons.length - 50);
     }
     showRibbons(allReverseRibbons, true);
+    console.log("Ribbons", allReverseRibbons);
     const allReverseEndSideRanges = getEndSideRanges(allReverseSideRanges, 0);
     const allStartSideRanges = mergeSideRanges(allReverseEndSideRanges);
+    const yRanges = getViableYs(allStartSideRanges);
     console.log(`${firstSideRanges.length} start side ranges`);
     console.log(`${allSideRanges.length} side ranges`);
     console.log(` * ${allSideRanges.map(sideRange => data.indexOf(sideRange.triangle)).join(', ')}`);
@@ -26,10 +29,13 @@ function main() {
     console.log(`${allReverseEndSideRanges.length} reverse end side ranges`);
     console.log(`${allStartSideRanges.length} merged side ranges`);
     console.log(allStartSideRanges);
+    console.log(yRanges);
     if (!allStartSideRanges.length) {
         console.log("No valid Ys");
+        $yValues.textContent = "N/A";
     } else {
         console.log(`Valid Y values are ${allStartSideRanges.map(({side: [{y: first}, {y: second}], start, end}) => almostEqual(start, end) ? `${first + (second - first) * start}` : `${first + (second - first) * start}-${first + (second - first) * end}`).join(", ")}`);
+        $yValues.textContent = yRanges.map(([yStart, yEnd]) => almostEqual(yStart, yEnd) ? `${yStart}` : `${yStart}-${yEnd}`).join(", ");
     }
     $svg.addEventListener("mousemove", e => {
         if (e.x >= 0 && e.x <= svgWidth && e.y >= 0 && e.y <= svgHeight) {
@@ -528,12 +534,13 @@ function showRibbons(ribbons, final = false) {
 }
 
 function getEndSideRanges(allSideRanges, matchX = svgWidth) {
-    return allSideRanges.filter(sideRange => (
-        (almostEqual(sideRange.start, 0) && almostEqual(sideRange.side[0].x, matchX))
-        || (almostEqual(sideRange.end, 1) && almostEqual(sideRange.side[1].x, matchX))
-        || (sideRange.side.every(({x}) => almostEqual(x, matchX)))
-    )).map(sideRange => {
-        if (almostEqual(sideRange.start, 0) && almostEqual(sideRange.side[0].x, matchX)) {
+    return allSideRanges.map(sideRange => {
+        const startEquals = almostEqual(sideRange.side[0].x, matchX);
+        const endEquals = almostEqual(sideRange.side[1].x, matchX);
+        if (startEquals && endEquals) {
+            return sideRange;
+        }
+        if (almostEqual(sideRange.start, 0) && startEquals) {
             return {
                 triangle: sideRange.triangle,
                 side: sideRange.side,
@@ -541,7 +548,7 @@ function getEndSideRanges(allSideRanges, matchX = svgWidth) {
                 end: 0,
             };
         }
-        if (almostEqual(sideRange.end, 1) && almostEqual(sideRange.side[1].x, matchX)) {
+        if (almostEqual(sideRange.end, 1) && endEquals) {
             return {
                 triangle: sideRange.triangle,
                 side: sideRange.side,
@@ -549,8 +556,8 @@ function getEndSideRanges(allSideRanges, matchX = svgWidth) {
                 end: 1,
             };
         }
-        return sideRange;
-    });
+        return null;
+    }).filter(sideRange => sideRange);
 }
 
 function mergeSideRanges(sideRanges) {
@@ -594,6 +601,36 @@ function mergeSideRanges(sideRanges) {
     }
     mergedSideRanges.sort((left, right) => Math.min(...left.side.map(({x}) => x)) - Math.min(...right.side.map(({x}) => x)));
     return mergedSideRanges;
+}
+
+function getViableYs(sideRanges) {
+    const yRanges = sideRanges.map(sideRange => {
+        const {side, start, end} = sideRange;
+        const [first, second] = [side[0].y, side[1].y];
+        let yRange = [first + (second - first) * start, first + (second - first) * end];
+        if (first > second) {
+            yRange = [yRange[1], yRange[0]];
+        }
+        return yRange;
+    }).sort((left, right) => almostEqual(left[0], right[0]) ? (almostEqual(left[1], right[1]) ? 0 : (left[1] - right[1])) : (left[0] - right[0]));
+    const mergedYRanges = []
+    let previousYRange = null;
+    for (const yRange of yRanges) {
+        if (!previousYRange) {
+            previousYRange = yRange;
+            continue;
+        }
+        if (yRange[0] > previousYRange[1] && !almostEqual(yRange[0], previousYRange[1])) {
+            mergedYRanges.push(previousYRange);
+            previousYRange = yRange;
+            continue;
+        }
+        previousYRange = [previousYRange[0], yRange[1]];
+    }
+    if (previousYRange) {
+        mergedYRanges.push(previousYRange);
+    }
+    return mergedYRanges;
 }
 
 main();
