@@ -43,7 +43,7 @@ class Challenge(BaseIcpcChallenge):
             user_input = click.prompt("Enter an input number and a case index")
             if user_input.lower() == "r":
                 print(f"Restarting...")
-                return restart_process()
+                return restart_process(edit_args=lambda args: args[:args.index("play") + 1] + ["--", str(input_number), str(case_index)])
             input_number, case_index = [int(part.strip()) for part in user_input.strip().split(",")]
 
     def output_mountain_from_file(self, input_number: int, case_index: int) -> None:
@@ -58,15 +58,14 @@ class Challenge(BaseIcpcChallenge):
             print(f"Choose a case index between 0 and {len(cases) - 1}")
             return
         mountain = Mountain.from_text(cases[case_index])
-        viable_side_ranges = MountainSolver.from_mountain(mountain)\
-            .get_all_viable_side_ranges()
-        if viable_side_ranges:
+        y_ranges = MountainSolver.from_mountain(mountain)\
+            .get_viable_ys()
+        if y_ranges:
             ranges_str = "\n".join(
                 f' * {y_start}-{y_end}'
-                if not almost_equals(y_start, y_end) else
+                if not almost_equal(y_start, y_end) else
                 f' * {y_start}'
-                for side_range in viable_side_ranges
-                for y_start, y_end in [side_range.get_y_range()]
+                for y_start, y_end in y_ranges
             )
             print(f"Got {e_success('viable Ys')}:\n{ranges_str}")
         else:
@@ -119,6 +118,7 @@ class Challenge(BaseIcpcChallenge):
                 <g class='ribbons' />
                 <polyline class='mouse-polyline' />
                 <text class='path-length' x='10' y='25' />
+                <text class='y-values' x='10' y='50' />
                 <script type='text/javascript'><![CDATA[
                     {data}
                     {script}
@@ -220,6 +220,189 @@ class Challenge(BaseIcpcChallenge):
 
 
 @dataclass
+class MountainSolver2:
+    mountain: "Mountain"
+    hill_side_map: "HillSideMap"
+
+    @classmethod
+    def from_mountain(cls, mountain: "Mountain") -> "MountainSolver":
+        return cls(mountain=mountain, hill_side_map=HillSideMap.from_mountain(mountain))
+    
+    def get_end_ribbons(self) -> List["Ribbon"]:
+        end_ribbons = []
+        ribbons = self.get_start_ribbons()
+        while ribbons:
+            pass
+
+    def filter_end_ribbons(self, ribbons: List["Ribbon"]) -> List["Ribbon"]:
+        return [
+            ribbon
+            for ribbon in ribbons
+            if ribbon.end.has_x(self.mountain.width)
+        ]
+    
+    def get_next_ribbons(self, ribbon: "Ribbon") -> List["Ribbon"]:
+        next_side_range = self.get_next_side_range_from_ribbon(ribbon)
+        if not next_side_range:
+            return []
+        return [
+            next_ribbon
+            for next_ribbons in [self.make_ribbons_from_side_range(next_side_range, previous=ribbon)]
+            for next_ribbon in next_ribbons
+        ]
+    
+    def get_next_side_range_from_ribbon(self, ribbon: "Ribbon") -> Optional["SideRange"]:
+        next_hill_and_side = self.hill_side_map.get_from_side_range(ribbon.end)
+        if not next_hill_and_side:
+            return None
+        next_hill, next_side = next_hill_and_side
+        return SideRange.from_hill_and_side(next_hill, next_side)
+    
+    def get_start_ribbons(self, match_x: float = 0) -> List["Ribbon"]:
+        """
+        >>> hill = Hill(points=(Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)))
+        >>> solver = MountainSolver2.from_mountain( Mountain(hills=[hill], width=5, height=10))
+        >>> show_ribbons(solver.get_start_ribbons())
+        [(((0, 0), (0, 10), 0, 0.5), ((0, 0), (5, 5), 0.0, 1), 1), (((0, 0), (0, 10), 0.5, 1), ((0, 10), (5, 5), 0, 1.0), 1)]
+        
+        >>> solver = MountainSolver2.from_mountain(Mountain.from_text(VIABLE_EXAMPLE_INPUT_3))
+        >>> show_ribbons(solver.get_start_ribbons())
+        [(((0, 0), (0, 10), 0, 0.7), ((0, 0), (1, 5), 0.0, 1), 1),
+            (((0, 0), (0, 10), 0.7, 1), ((0, 10), (1, 5), 0, 1.0), 1)]
+        """
+        starting_side_ranges = self.get_start_side_ranges(match_x=match_x)
+        return [
+            ribbon
+            for side_range in starting_side_ranges
+            for ribbon in self.make_ribbons_from_side_range(side_range)
+        ]
+    
+    def make_ribbons_from_side_range(self, side_range: "SideRange", previous: Optional["Ribbon"] = None) -> List["Ribbon"]:
+        """
+        >>> hill = Hill(points=(Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)))
+        >>> solver = MountainSolver2.from_mountain( Mountain(hills=[hill], width=5, height=10))
+        >>> show_ribbons(solver.make_ribbons_from_side_range(SideRange(hill=hill, side=hill.min_mid_side, start=0, end=1)))
+        [(((0, 0), (5, 5), 0, 1), ((0, 0), (0, 10), 0.0, 0.5), 1)]
+        >>> show_ribbons(solver.make_ribbons_from_side_range(SideRange(hill=hill, side=hill.mid_max_side, start=0, end=1)))
+        [(((0, 10), (5, 5), 0, 1), ((0, 0), (0, 10), 0.5, 1.0), 1)]
+        >>> show_ribbons(solver.make_ribbons_from_side_range(SideRange(hill=hill, side=hill.min_max_side, start=0, end=1)))
+        [(((0, 0), (0, 10), 0, 0.5), ((0, 0), (5, 5), 0.0, 1), 1), (((0, 0), (0, 10), 0.5, 1), ((0, 10), (5, 5), 0, 1.0), 1)]
+        """
+        next_side_ranges = self.get_next_side_ranges(side_range)
+        if len(next_side_ranges) == 2:
+            split_side_ranges = [
+                side_range.replace(end=side_range.hill.new_factor),
+                side_range.replace(start=side_range.hill.new_factor),
+            ]
+        else:
+            split_side_ranges = [side_range]
+        return [
+            Ribbon(start=split_side_range, end=next_side_range, previous=previous)
+            for split_side_range, next_side_range in zip(split_side_ranges, next_side_ranges)
+        ]
+    
+    def get_next_side_ranges(self, side_range: "SideRange") -> List["SideRange"]:
+        """
+        >>> hill = Hill(points=(Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)))
+        >>> solver = MountainSolver2.from_mountain( Mountain(hills=[hill], width=5, height=10))
+        >>> show_side_ranges(solver.get_next_side_ranges(SideRange(hill=hill, side=hill.min_mid_side, start=0, end=1)))
+        [((0, 0), (0, 10), 0.0, 0.5)]
+        >>> show_side_ranges(solver.get_next_side_ranges(SideRange(hill=hill, side=hill.mid_max_side, start=0, end=1)))
+        [((0, 0), (0, 10), 0.5, 1.0)]
+        >>> show_side_ranges(solver.get_next_side_ranges(SideRange(hill=hill, side=hill.min_max_side, start=0, end=1)))
+        [((0, 0), (5, 5), 0.0, 1), ((0, 10), (5, 5), 0, 1.0)]
+        """
+        hill = side_range.hill
+        side = side_range.side
+        start = side_range.start
+        end = side_range.end
+        new_factor = hill.new_factor
+        if side == hill.min_mid_side:
+            return [
+                SideRange(
+                    hill=hill,
+                    side=hill.min_max_side,
+                    start=start * new_factor,
+                    end=end * new_factor,
+                ),
+            ]
+        if side == hill.mid_max_side:
+            return [
+                SideRange(
+                    hill=hill,
+                    side=hill.min_max_side,
+                    start=new_factor + start * (1 - new_factor),
+                    end=new_factor + end * (1 - new_factor),
+                ),
+            ]
+        if side != hill.min_max_side:
+            raise Exception(f"Side {side} was not one of the hill's sides {hill.sides}")
+        if almost_less_equal(end, new_factor):
+            return [
+                SideRange(
+                    hill=hill,
+                    side=hill.min_mid_side,
+                    start=start / new_factor,
+                    end=end / new_factor,
+                ),
+            ]
+        if almost_less_equal(new_factor, start):
+            return [
+                SideRange(
+                    hill=hill,
+                    side=hill.mid_max_side,
+                    start=(start - new_factor) / (1 - new_factor),
+                    end=(end - new_factor) / (1 - new_factor),
+                ),
+            ]
+        return [
+            SideRange(
+                hill=hill,
+                side=hill.min_mid_side,
+                start=start / new_factor,
+                end=1,
+            ),
+            SideRange(
+                hill=hill,
+                side=hill.mid_max_side,
+                start=0,
+                end=(end - new_factor) / (1 - new_factor),
+            ),
+        ]
+    
+    def get_start_side_ranges(self, match_x: float = 0) -> List["SideRange"]:
+        """
+        >>> show_side_ranges(MountainSolver2.from_mountain(Mountain.from_text(VIABLE_EXAMPLE_INPUT_3)).get_start_side_ranges())
+        [((0, 0), (0, 10), 0, 1)]
+        """
+        side_ranges = []
+        for hill in self.mountain.hills:
+            sides = [side for side in hill.sides if side.is_on_x(match_x)]
+            if not sides:
+                continue
+            side, = sides
+            side_ranges.append(SideRange.from_hill_and_side(hill, side))
+        return side_ranges
+
+
+@dataclass(frozen=True)
+class Ribbon:
+    start: "SideRange"
+    end: "SideRange"
+    previous: Optional["Ribbon"]
+
+    @cached_property
+    def length(self) -> int:
+        length = 0
+        node = self
+        while node:
+            length += 1
+            node = node.previous
+        return length
+
+
+
+@dataclass
 class MountainSolver:
     mountain: "Mountain"
     hill_side_map: "HillSideMap"
@@ -227,6 +410,34 @@ class MountainSolver:
     @classmethod
     def from_mountain(cls, mountain: "Mountain") -> "MountainSolver":
         return cls(mountain=mountain, hill_side_map=HillSideMap.from_mountain(mountain))
+    
+    def get_viable_ys(self, viable_side_ranges: Optional[List["SideRange"]] = None) -> List[Tuple[float, float]]:
+        """
+        >>> Mountain.from_text(VIABLE_EXAMPLE_INPUT_1).get_solver().get_viable_ys()
+        [(3.0, 6.0)]
+        >>> Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver().get_viable_ys()
+        [(0.0, 0.8...)]
+        """
+        if viable_side_ranges is None:
+            viable_side_ranges = self.get_all_viable_side_ranges()
+        y_ranges = sorted(
+            side_range.get_y_range()
+            for side_range in viable_side_ranges
+        )
+        merged_y_ranges = []
+        previous_y_range = None
+        for y_range in y_ranges:
+            if previous_y_range is None:
+                previous_y_range = y_range
+                continue
+            if y_range[0] > previous_y_range[1] and not almost_equal(y_range[0], previous_y_range[1]):
+                merged_y_ranges.append(previous_y_range)
+                previous_y_range = y_range
+                continue
+            previous_y_range = previous_y_range[0], y_range[1]
+        if previous_y_range:
+            merged_y_ranges.append(previous_y_range)
+        return merged_y_ranges
 
     def get_all_viable_side_ranges(self):
         first_side_ranges = self.get_first_side_ranges()
@@ -235,13 +446,13 @@ class MountainSolver:
         reverse_side_ranges = self.get_all_side_ranges(end_ranges)
         reverse_end_side_ranges = self.get_all_end_side_ranges(reverse_side_ranges, match_x=0)
         merged_side_ranges = self.merge_side_ranges(reverse_end_side_ranges)
-        print(f"{len(first_side_ranges)} first side ranges")
-        print(f"{len(side_ranges)} side ranges")
-        print(f" * {', '.join(map(str, (self.mountain.hills.index(side_range.hill) for side_range in side_ranges)))}")
-        print(f"{len(end_ranges)} end side ranges")
-        print(f"{len(reverse_side_ranges)} reverse side ranges")
-        print(f"{len(reverse_end_side_ranges)} reverse end side ranges")
-        print(f"{len(merged_side_ranges)} merged side ranges")
+        # print(f"{len(first_side_ranges)} first side ranges")
+        # print(f"{len(side_ranges)} side ranges")
+        # print(f" * {', '.join(map(str, (self.mountain.hills.index(side_range.hill) for side_range in side_ranges)))}")
+        # print(f"{len(end_ranges)} end side ranges")
+        # print(f"{len(reverse_side_ranges)} reverse side ranges")
+        # print(f"{len(reverse_end_side_ranges)} reverse end side ranges")
+        # print(f"{len(merged_side_ranges)} merged side ranges")
         return merged_side_ranges
 
     def merge_side_ranges(self, side_ranges: List["SideRange"]) -> List["SideRange"]:
@@ -260,7 +471,7 @@ class MountainSolver:
                     if previous is None:
                         previous = side_range
                         continue
-                    if side_range.start > previous.end and not almost_equals(side_range.start, previous.end):
+                    if side_range.start > previous.end and not almost_equal(side_range.start, previous.end):
                         merged_side_ranges.append(previous)
                         previous = side_range
                         continue
@@ -271,6 +482,12 @@ class MountainSolver:
         return merged_side_ranges
 
     def get_all_end_side_ranges(self, all_side_ranges: Optional[List["SideRange"]] = None, match_x: int = None) -> List["SideRange"]:
+        """
+        >>> show_side_ranges(Mountain.from_text(VIABLE_EXAMPLE_INPUT_1).get_solver().get_all_end_side_ranges())
+        [((0, 0), (6, 0), 1, 1), ((6, 0), (6, 6), 0, 0.4999...)]
+        >>> show_side_ranges(Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver().get_all_end_side_ranges())
+        [((10, 0), (10, 6), 0..., 0...)]
+        """
         if all_side_ranges is None:
             all_side_ranges = self.get_all_side_ranges()
         if match_x is None:
@@ -283,6 +500,15 @@ class MountainSolver:
         ]
 
     def get_all_side_ranges(self, first_side_ranges: Optional[List["SideRange"]] = None) -> List["SideRange"]:
+        """
+        >>> show_side_ranges(Mountain.from_text(VIABLE_EXAMPLE_INPUT_1).get_solver().get_all_side_ranges())
+        [...((6, 0), (6, 6), 0, 0.4999...)...]
+        >>> show_side_ranges(Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver().get_all_side_ranges())
+        [...((10, 0), (10, 6), 0..., 0...)...]
+        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver()
+        >>> show_side_ranges(solver.get_all_side_ranges(solver.get_all_end_side_ranges()))
+        [...((0, 0), (0, 6), 0..., 1.0)...]
+        """
         if first_side_ranges is None:
             first_side_ranges = self.get_first_side_ranges()
         side_ranges = list(first_side_ranges)
@@ -299,7 +525,22 @@ class MountainSolver:
 
     def get_next_side_ranges_and_seen(self, side_ranges_and_seen: "SideRangesAndSeen") -> Tuple["SideRangesAndSeen", List["SideRange"]]:
         """
-        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT).get_solver()
+        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT_1).get_solver()
+        >>> first_side_ranges = solver.get_first_side_ranges()
+        >>> second_side_ranges_and_seen, second_terminals = solver.get_next_side_ranges_and_seen([
+        ...     (_side_range, {_side_range.hill}) for _side_range in first_side_ranges])
+        >>> show_side_ranges(_side_range for _side_range, _ in second_side_ranges_and_seen)
+        [((0, 0), (6, 6), 0.0, ...)]
+        >>> show_side_ranges(second_terminals)
+        []
+        >>> third_side_ranges_and_seen, third_terminals = solver.get_next_side_ranges_and_seen([
+        ...     (_side_range, {_side_range.hill}) for _side_range, _ in second_side_ranges_and_seen])
+        >>> show_side_ranges(_side_range for _side_range, _ in third_side_ranges_and_seen)
+        []
+        >>> show_side_ranges(third_terminals)
+        [((0, 0), (6, 0), 0.0, 1), ((6, 0), (6, 6), 0, ...)]
+
+        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver()
         >>> first_side_ranges = solver.get_first_side_ranges()
         >>> second_side_ranges_and_seen, second_terminals = solver.get_next_side_ranges_and_seen([
         ...     (_side_range, {_side_range.hill}) for _side_range in first_side_ranges])
@@ -308,11 +549,11 @@ class MountainSolver:
         >>> show_side_ranges(second_terminals)
         []
         >>> third_side_ranges_and_seen, third_terminals = solver.get_next_side_ranges_and_seen([
-        ...     (_side_range, {_side_range.hill}) for _side_range in second_side_ranges])
+        ...     (_side_range, {_side_range.hill}) for _side_range, _ in second_side_ranges_and_seen])
         >>> show_side_ranges(_side_range for _side_range, _ in third_side_ranges_and_seen)
-        [((0, 6), (4, 3), 0.0, ...)]
+        [((2, 6), (4, 3), 0, ...)]
         >>> show_side_ranges(third_terminals)
-        []
+        [((0, 6), (2, 6), 0.0, 1)]
         """
         next_side_ranges_and_seen = [
             (next_side_range, seen)
@@ -337,7 +578,11 @@ class MountainSolver:
     def get_first_side_ranges(self) -> List["SideRange"]:
         """
         >>> show_side_ranges(
-        ...     Mountain.from_text(VIABLE_EXAMPLE_INPUT).get_solver().get_first_side_ranges())
+        ...     Mountain.from_text(VIABLE_EXAMPLE_INPUT_1).get_solver().get_first_side_ranges())
+        [((0, 0), (0, 6), 0, 1)]
+
+        >>> show_side_ranges(
+        ...     Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver().get_first_side_ranges())
         [((0, 0), (0, 6), 0, 1)]
         """
         side_ranges = []
@@ -351,7 +596,15 @@ class MountainSolver:
 
     def translate_side_range_to_next_triangle(self, side_range: "SideRange") -> Optional["SideRange"]:
         """
-        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT).get_solver()
+        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver()
+        >>> first_side_ranges = solver.get_first_side_ranges()
+        >>> second_side_ranges = [
+        ...     solver.translate_side_range_to_next_triangle(next_side_range)
+        ...     for _side_range in first_side_ranges
+        ...     for next_side_range in solver.get_next_side_ranges(_side_range)
+        ... ]
+
+        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver()
         >>> first_side_ranges = solver.get_first_side_ranges()
         >>> second_side_ranges = [
         ...     solver.translate_side_range_to_next_triangle(next_side_range)
@@ -386,7 +639,17 @@ class MountainSolver:
 
     def get_next_side_ranges(self, side_range: "SideRange") -> List["SideRange"]:
         """
-        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT).get_solver()
+        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT_1).get_solver()
+        >>> first_side_ranges = solver.get_first_side_ranges()
+        >>> second_side_ranges = [
+        ...     next_side_range
+        ...     for _side_range in first_side_ranges
+        ...     for next_side_range in solver.get_next_side_ranges(_side_range)
+        ... ]
+        >>> show_side_ranges(second_side_ranges)
+        [((0, 0), (6, 6), 0.0, ...)]
+
+        >>> solver = Mountain.from_text(VIABLE_EXAMPLE_INPUT_2).get_solver()
         >>> first_side_ranges = solver.get_first_side_ranges()
         >>> second_side_ranges = [
         ...     next_side_range
@@ -479,14 +742,14 @@ class SideRange:
         return SideRange(hill=hill, side=side, start=0, end=1)
 
     def contract_if_matches(self, match_x: float) -> Optional["SideRange"]:
-        first_equals = almost_equals(self.side.points[0].x, match_x)
-        if first_equals and almost_equals(self.start, 0):
-            return self.replace(end=0)
-        second_equals = almost_equals(self.side.points[1].x, match_x)
-        if second_equals and almost_equals(self.end, 1):
-            return self.replace(start=1)
+        first_equals = almost_equal(self.side.points[0].x, match_x)
+        second_equals = almost_equal(self.side.points[1].x, match_x)
         if first_equals and second_equals:
             return self
+        if first_equals and almost_equal(self.start, 0):
+            return self.replace(end=0)
+        if second_equals and almost_equal(self.end, 1):
+            return self.replace(start=1)
         return None
 
     def replace(self, start: Optional[float] = None, end: Optional[float] = None) -> "SideRange":
@@ -515,8 +778,24 @@ class SideRange:
 DefaultDelta = 0.00001
 
 
-def almost_equals(left: float, right: float, delta: float = DefaultDelta) -> bool:
+def almost_equal(left: float, right: float, delta: float = DefaultDelta) -> bool:
     return abs(left - right) <= delta
+
+
+def almost_greater(left: float, right: float, delta: float = DefaultDelta) -> bool:
+    return left > right and not almost_equal(left, right, delta=delta)
+
+
+def almost_greater_equal(left: float, right: float, delta: float = DefaultDelta) -> bool:
+    return left >= right or almost_equal(left, right, delta=delta)
+
+
+def almost_less(left: float, right: float, delta: float = DefaultDelta) -> bool:
+    return left < right and not almost_equal(left, right, delta=delta)
+
+
+def almost_less_equal(left: float, right: float, delta: float = DefaultDelta) -> bool:
+    return left <= right or almost_equal(left, right, delta=delta)
 
 
 @dataclass
@@ -541,6 +820,7 @@ class HillSideMap:
                     )
                 other_hill, = other_hills
                 side_map.setdefault(hill, {})[side.key] = other_hill, other_hill.get_side(side)
+        # print({mountain.hills.index(hill): {(key[0][:2], key[1][:2]): mountain.hills.index(other_hill) for key, (other_hill, _) in side_map.items()} for hill, side_map in side_map.items()})
         return cls(side_map=side_map)
 
     def get(self, hill: "Hill", side: "Side") -> Optional[Tuple["Hill", "Side"]]:
@@ -560,6 +840,7 @@ class HillsBySide:
         for hill in mountain.hills:
             for side in hill.sides:
                 by_side_key.setdefault(side.key, set()).add(hill)
+        # print({(key[0][:2], key[1][:2]): {mountain.hills.index(hill) for hill in hills} for key, hills in by_side_key.items()})
         return cls(by_side_key=by_side_key)
 
     def __getitem__(self, item: "Side") -> Set["Hill"]:
@@ -652,6 +933,14 @@ class Hill:
 
     @cached_property
     def four_points_and_factor(self) -> Tuple[Point3D, Point3D, Point3D, Point3D, float]:
+        """
+        >>> hill = Hill(points=(Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)))
+        >>> hill.four_points_and_factor
+        (Point3D(x=0, y=0, z=0), Point3D(x=5, y=5, z=1), Point3D(x=0, y=10, z=2), 0.5)
+        >>> hill = Hill(points=tuple(reversed((Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)))))
+        >>> hill.four_points_and_factor
+        (Point3D(x=0, y=0, z=0), Point3D(x=5, y=5, z=1), Point3D(x=0, y=10, z=2), 0.5)
+        """
         max_point, mid_point, min_point = sorted(self.points, key=lambda point: point.z, reverse=True)
         new_factor = (mid_point.z - min_point.z) / (max_point.z - min_point.z)
         new_point = min_point.offset(max_point.difference(min_point).resize(new_factor))
@@ -691,6 +980,15 @@ class Hill:
 
     @cached_property
     def sides(self) -> List["Side"]:
+        """
+        >>> hill = Hill(points=[Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)])
+        >>> hill.min_mid_side
+        Side(points=(Point3D(x=0, y=0, z=0), Point3D(x=5, y=5, z=1)), ...)
+        >>> hill.mid_max_side
+        Side(points=(Point3D(x=5, y=5, z=1), Point3D(0, 10, 2)), ...)
+        >>> hill.min_max_side
+        Side(points=(Point3D(x=0, y=0, z=0), Point3D(0, 10, 2)), ...)
+        """
         return [
             self.min_mid_side,
             self.mid_max_side,
@@ -756,8 +1054,8 @@ class Side:
         False
         """
         return (
-            almost_equals(self.points[0].x, x)
-            and almost_equals(self.points[1].x, x)
+            almost_equal(self.points[0].x, x)
+            and almost_equal(self.points[1].x, x)
         )
 
     @cached_property
@@ -765,7 +1063,18 @@ class Side:
         return min(self.points[0].y, self.points[1].y)
 
 
-VIABLE_EXAMPLE_INPUT = """
+VIABLE_EXAMPLE_INPUT_1 = """
+6 6 4 2
+0 0 1
+6 0 2
+6 6 4
+0 6 3
+1 2 3
+1 3 4
+"""
+
+
+VIABLE_EXAMPLE_INPUT_2 = """
 10 6 7 7
 6 1 8
 10 0 10
@@ -783,6 +1092,32 @@ VIABLE_EXAMPLE_INPUT = """
 7 1 6
 """
 
+VIABLE_EXAMPLE_INPUT_3 = """
+6 10 10 12
+0 0 0
+1 5 7
+0 10 10
+2 5 5
+3 0 1
+3 10 11
+4 5 6
+6 0 2
+5 2 4
+6 10 12
+1 2 3
+1 4 2
+2 4 3
+3 4 6
+4 7 6
+6 7 10
+7 9 10
+10 9 8
+5 8 9
+9 7 5
+4 5 7
+5 4 1
+"""
+
 
 def show_side_ranges(side_ranges: List[Optional["SideRange"]]) -> List[Optional[Tuple]]:
     return list(map(show_side_range, side_ranges))
@@ -796,6 +1131,16 @@ def show_side_range(side_range: Optional["SideRange"]) -> Optional[Tuple]:
         side_range.side.key[1][:2],
         side_range.start, side_range.end,
     )
+
+
+def show_ribbons(ribbons: List[Optional["Ribbon"]]) -> List[Optional[Tuple]]:
+    return list(map(show_ribbon, ribbons))
+
+
+def show_ribbon(ribbon: Optional["Ribbon"]) -> Optional[Tuple]:
+    if not ribbon:
+        return None
+    return (show_side_range(ribbon.start), show_side_range(ribbon.end), ribbon.length)
 
 
 Challenge.main()
