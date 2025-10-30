@@ -310,22 +310,26 @@ class IcpcController:
             if not matches and not failed and "\n" in output:
                 solution_lines = solution.splitlines()
                 output_lines = output.splitlines()
+                line_checks = [
+                    challenge_instance.does_solution_match_output(solution_line, output_line)
+                    for solution_line, output_line in zip_longest(solution_lines, output_lines, fillvalue="")
+                ]
                 click.echo("Mismatch: \n{}\n (in {})".format(
                     "\n".join(
                         (
                             e_success(solution_line)
-                            if solution_line == output_line else 
+                            if line_check else
                             f"{e_error(solution_line)}{e_value(output_line)}"
                         )
-                        for solution_line, output_line in zip_longest(solution_lines, output_lines, fillvalue="")
+                        for solution_line, output_line, line_check in zip_longest(solution_lines, output_lines, line_checks, fillvalue="")
                     ),
                     pretty_duration(duration, 2),
                 ))
                 click.echo("Failed cases: {}".format(
                     ", ".join(
                         e_error(str(index))
-                        for index, (solution_line, output_line) in enumerate(zip_longest(solution_lines, output_lines, fillvalue=""), start=1)
-                        if solution_line != output_line
+                        for index, (solution_line, output_line, line_check) in enumerate(zip_longest(solution_lines, output_lines, line_checks, fillvalue=""), start=1)
+                        if not line_check
                     )
                 ))
             else:
