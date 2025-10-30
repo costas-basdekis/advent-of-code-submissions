@@ -22,8 +22,8 @@ text {
     filter: url(#solid);
 }
 .ribbon {
-    stroke: green;
-    fill: green;
+    stroke: blue;
+    fill: blue;
     mask: url(#mask-stripe);
 }
 .ribbon.invalid {
@@ -31,10 +31,24 @@ text {
     fill: red;
 }
 .ribbon.final {
-    stroke: blue;
-    fill: blue;
+    stroke: green;
+    fill: green;
 }
 .ribbon.final.invalid {
     stroke: purple;
     fill: purple;
+}
+
+div:has(input[name="show-js-ribbons"]:not(:checked)) ~ svg .ribbon.js {
+    display: none;
+}
+
+div:has(input[name="show-py-ribbons"]:not(:checked)) ~ svg .ribbon.py,
+label:has(input[name="show-py-ribbons"]:not(:checked)) ~ .show-py-ribbons-radio {
+    display: none;
+}
+
+div:has(input[name="show-min-max-triangles"]:not(:checked)) ~ svg .triangle.min,
+div:has(input[name="show-min-max-triangles"]:not(:checked)) ~ svg .triangle.max {
+    display: none;
 }

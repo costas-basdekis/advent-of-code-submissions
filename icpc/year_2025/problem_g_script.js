@@ -3,8 +3,6 @@ const DefaultDelta = 0.00001;
 function main() {
     const [$svg] = document.getElementsByTagName("svg");
     const [$yValues] = document.getElementsByClassName("y-values");
-    window.svgWidth = parseInt($svg.attributes.width.value, 10);
-    window.svgHeight = parseInt($svg.attributes.height.value, 10);
     normalisePoints();
     window.trianglesBySide = TrianglesBySide.fromTriangles(data);
     window.triangleSideMap = TriangleSideMap.fromTrianglesBySide(data, trianglesBySide);
@@ -39,7 +37,8 @@ function main() {
     }
     $svg.addEventListener("mousemove", e => {
         if (e.x >= 0 && e.x <= svgWidth && e.y >= 0 && e.y <= svgHeight) {
-            const mouse = {x: e.x, y: e.y};
+            const rect = e.currentTarget.getBoundingClientRect();
+            const mouse = {x: e.clientX - rect.left, y: e.clientY - rect.top};
             setMousePolyline(mouse);
             // console.log(mouse, triangles.map(triangle => data.indexOf(triangle)), segment);
         }
@@ -520,9 +519,10 @@ function getAllSideRangesAndRibbons(firstSideRanges = getFirstSideRanges()) {
 function showRibbons(ribbons, final = false) {
     return ribbons.map(ribbon => {
         const [$ribbonsContainer] = document.getElementsByClassName("ribbons");
-        const $ribbon = document.createElementNS(document.documentElement.namespaceURI, "polygon");
+        const $ribbon = document.createElementNS($ribbonsContainer.ownerSVGElement.namespaceURI, "polygon");
         $ribbon.setAttribute("points", ribbon.points.map(getPointKey).join(" "));
         $ribbon.classList.add("ribbon");
+        $ribbon.classList.add("js");
         if (final) {
             $ribbon.classList.add("final");
         } else if (!ribbon.isValid) {

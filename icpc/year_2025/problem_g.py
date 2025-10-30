@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 import re
 from enum import Enum
 from functools import cached_property
-from itertools import groupby
+from itertools import groupby, zip_longest
 from pathlib import Path
 from typing import (
     Any, cast, Callable, ClassVar, Dict, Generic, Iterable, List, Optional, Set,
@@ -29,6 +29,23 @@ class Challenge(BaseIcpcChallenge):
         >>> Challenge().default_solve()
         42
         """
+        return "\n".join(map(str, (
+            min_length
+            if min_length is not None else
+            "impossible"
+            for case in Mountain.split_cases(_input)
+            for min_length in [MountainSolver2.from_mountain(Mountain.from_text(case)).get_min_length()]
+        )))
+
+    def does_solution_match_output(self, result: str, output: str) -> bool:
+        return all(
+            almost_equal(result_value, output_value, delta=0.000001)
+            if result_value is not None and output_value is not None else
+            result_value == output_value
+            for result_line, output_line in zip_longest(result.splitlines(), output.splitlines(), fillvalue="")
+            for result_value in [None if result_line == "impossible" else float(result_line)]
+            for output_value in [None if output_line == "impossible" else float(output_line)]
+        )
 
     def play(self, *extra):
         if extra:
@@ -58,7 +75,7 @@ class Challenge(BaseIcpcChallenge):
             print(f"Choose a case index between 0 and {len(cases) - 1}")
             return
         mountain = Mountain.from_text(cases[case_index])
-        y_ranges = MountainSolver.from_mountain(mountain)\
+        y_ranges = MountainSolver2.from_mountain(mountain)\
             .get_viable_ys()
         if y_ranges:
             ranges_str = "\n".join(
@@ -70,11 +87,17 @@ class Challenge(BaseIcpcChallenge):
             print(f"Got {e_success('viable Ys')}:\n{ranges_str}")
         else:
             print(f"{e_error('No Y viable')} ranges")
-        output_file = Path(__file__).parent / "problem_g_output.svg"
-        output_file.write_text(self.to_svg_text(mountain))
+        length_range = MountainSolver2.from_mountain(mountain)\
+            .get_total_length_range()
+        if length_range:
+            print(f"Got {e_success('viable lengths')}: {length_range[0]}-{length_range[1]}")
+        else:
+            print(f"{e_error('No viable lengths')}")
+        output_file = Path(__file__).parent / "problem_g_output.html"
+        output_file.write_text(self.to_html_text(mountain, input_name=input_file.name, input_number=input_number, case_index=case_index))
         print(f"Open file://{output_file.absolute()}\nPress any key")
 
-    def to_svg_text(self, mountain, max_width: int = 2000, max_height: int = 1000) -> str:
+    def to_html_text(self, mountain: "Mountain", input_name: str, input_number: int, case_index: int, max_width: int = 2000, max_height: int = 1000) -> str:
         svg_width = max_width
         svg_height = max_height
         # if mountain.width / max_width >= mountain.height / max_height:
@@ -90,43 +113,102 @@ class Challenge(BaseIcpcChallenge):
             (hill, hill.get_possible_hills())
             for hill in mountain.hills
         ]
+        solver = MountainSolver2.from_mountain(mountain)
+        ribbons = solver.get_restricted_ribbons()
+        if len(ribbons) > 100:
+            print(f"Too many ribbons ({e_error(str(len(ribbons)))}), limiting to 100")
+            ribbons = ribbons[:100]
+        ribbon_histories = [
+            {
+                "history": [
+                    {
+                        "points": [
+                            {
+                                "x": point.x * svg_width_factor,
+                                "y": point.y * svg_height_factor,
+                            }
+                            for point in ribbon_points
+                        ],
+                    }
+                    for ribbon_points in ribbon.get_points_history()
+                ],
+                "final": solver.check_is_end_ribbon(ribbon),
+            }
+            for ribbon in ribbons
+        ]
 
         return """
-            <svg viewBox='0 0 {width} {height}' width='{width}' height='{height}' style='background-color: white;' xmlns='http://www.w3.org/2000/svg'>
-                <defs>
-                    <filter x="0" y="0" width="1" height="1" id="solid">
-                        <feFlood flood-color="yellow" result="bg" />
-                        <feMerge>
-                            <feMergeNode in="bg"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                    <pattern id="pattern-stripe" 
-                        width="10" height="10" 
-                        patternUnits="userSpaceOnUse"
-                        patternTransform="rotate(45)">
-                        <rect width="5" height="10" transform="translate(0,0)" fill="white"></rect>
-                    </pattern>
-                    <mask id="mask-stripe">
-                        <rect x="0" y="0" width="100%" height="100%" fill="url(#pattern-stripe)" />
-                    </mask>     
-                    <style type="text/css"><![CDATA[
-                        {style}
-                    ]]></style>
-                </defs>
-                {triangles}
-                <g class='ribbons' />
-                <polyline class='mouse-polyline' />
-                <text class='path-length' x='10' y='25' />
-                <text class='y-values' x='10' y='50' />
-                <script type='text/javascript'><![CDATA[
-                    {data}
-                    {script}
-                ]]></script>
-            </svg>
+            <html>
+                <head>
+                    <title>{title}</title>
+                    <link rel="stylesheet" type="text/css" href="problem_g_style.css">
+                </head>
+                <body>
+                    <div>
+                        <label><input type="checkbox" name="show-js-ribbons">Show JS ribbons</label>
+                        <br>
+                        <label><input type="checkbox" name="show-py-ribbons" checked>Show Python ribbons</label>
+                        <label class='show-py-ribbons-radio'><input type='radio' name='show-py-ribbons-i' class='i-all' checked>All</label>
+                        {py_ribbons_radios}
+                        <br>
+                        <label><input type="checkbox" name="show-min-max-triangles" checked>Show Min/Max triangles</label>
+                    </div>
+                    <style type="text/css">
+                        {py_ribbons_style}
+                    </style>
+                    <svg viewBox='0 0 {width} {height}' width='{width}' height='{height}' style='background-color: white;' xmlns='http://www.w3.org/2000/svg'>
+                        <defs>
+                            <filter x="0" y="0" width="1" height="1" id="solid">
+                                <feFlood flood-color="yellow" result="bg" />
+                                <feMerge>
+                                    <feMergeNode in="bg"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                            <pattern id="pattern-stripe" 
+                                width="10" height="10" 
+                                patternUnits="userSpaceOnUse"
+                                patternTransform="rotate(45)">
+                                <rect width="5" height="10" transform="translate(0,0)" fill="white"></rect>
+                            </pattern>
+                            <mask id="mask-stripe">
+                                <rect x="0" y="0" width="100%" height="100%" fill="url(#pattern-stripe)" />
+                            </mask>
+                        </defs>
+                        {triangles}
+                        <g class='ribbons' />
+                        <g class='py-ribbons'>
+                            {py_ribbons}
+                        </g>
+                        <polyline class='mouse-polyline' />
+                        <text class='path-length' x='10' y='25' />
+                        <text class='y-values' x='10' y='50' />
+                    </svg>
+                    <script type="text/javascript">
+                        const svgWidth = {svg_width};
+                        const svgHeight = {svg_height};
+                        const svgWidthFactor = {svg_width_factor};
+                        const svgHeightFactor = {svg_height_factor};
+                        const data = {hill_data};
+                        const ribbonHistories = {ribbon_data};
+                    </script>
+                    <script type="text/javascript" src="problem_g_script.js"></script>
+                </body>
+            </html>
         """.format(
+            title=f"Mountain Visualization: {input_name} {input_number}-{case_index}",
+            py_ribbons_radios="\n".join(
+                f"<label class='show-py-ribbons-radio'><input type='radio' name='show-py-ribbons-i' class='i-{ribbon_index}'>#{ribbon_index + 1} ({len(ribbon_history['history'])})</label>"
+                for ribbon_index, ribbon_history in enumerate(ribbon_histories)
+            ),
+            py_ribbons_style="\n".join(
+                f'div:has(input[name="show-py-ribbons-i"].i-{ribbon_index}:not(:checked)):has(input[name="show-py-ribbons-i"].i-all:not(:checked)) ~ svg .ribbon.py.i-{ribbon_index} {{ display: none; }}'
+                for ribbon_index in range(len(ribbon_histories))
+            ),
             width=svg_width,
             height=svg_height,
+            svg_width_factor=svg_width_factor,
+            svg_height_factor=svg_height_factor,
             style=(Path(__file__).parent  / "problem_g_style.css").read_text(),
             triangles="<g class='triangles'>{}</g>".format("\n".join([
                 polygon
@@ -155,67 +237,76 @@ class Challenge(BaseIcpcChallenge):
                     ),
                 ]
             ])),
-            data="const data = {data};".format(
-                data=json.dumps([
-                    {
-                        "points": [
-                            {
-                                "x": point.x * svg_width_factor,
-                                "y": point.y * svg_height_factor,
-                                "z": point.z
-                            }
-                            for point in hill.points
-                        ],
-                        "min": [
-                            {
-                                "x": point.x * svg_width_factor,
-                                "y": point.y * svg_height_factor,
-                                "z": point.z
-                            }
-                            for point in min_possible_hill.points
-                        ],
-                        "max": [
-                            {
-                                "x": point.x * svg_width_factor,
-                                "y": point.y * svg_height_factor,
-                                "z": point.z
-                            }
-                            for point in max_possible_hill.points
-                        ],
-                        "direction": {
-                            "x": direction.x * svg_width_factor,
-                            "y": direction.y * svg_height_factor,
+            py_ribbons="\n".join([
+                "<polygon class='ribbon py i-{index} {final_class}' points='{points}' />".format(
+                    index=ribbon_index,
+                    final_class='final' if ribbon_history["final"] else '',
+                    points=' '.join(f'{point["x"]},{point["y"]}' for point in ribbon["points"]),
+                )
+                for ribbon_index, ribbon_history in enumerate(ribbon_histories)
+                for ribbon in ribbon_history["history"]
+            ]),
+            svg_width=svg_width,
+            svg_height=svg_height,
+            hill_data=json.dumps([
+                {
+                    "points": [
+                        {
+                            "x": point.x * svg_width_factor,
+                            "y": point.y * svg_height_factor,
+                            "z": point.z
+                        }
+                        for point in hill.points
+                    ],
+                    "min": [
+                        {
+                            "x": point.x * svg_width_factor,
+                            "y": point.y * svg_height_factor,
+                            "z": point.z
+                        }
+                        for point in min_possible_hill.points
+                    ],
+                    "max": [
+                        {
+                            "x": point.x * svg_width_factor,
+                            "y": point.y * svg_height_factor,
+                            "z": point.z
+                        }
+                        for point in max_possible_hill.points
+                    ],
+                    "direction": {
+                        "x": direction.x * svg_width_factor,
+                        "y": direction.y * svg_height_factor,
+                    },
+                    "named": {
+                        "min": {
+                            "x": min_point.x * svg_width_factor,
+                            "y": min_point.y * svg_height_factor,
+                            "z": min_point.z
                         },
-                        "named": {
-                            "min": {
-                                "x": min_point.x * svg_width_factor,
-                                "y": min_point.y * svg_height_factor,
-                                "z": min_point.z
-                            },
-                            "mid": {
-                                "x": mid_point.x * svg_width_factor,
-                                "y": mid_point.y * svg_height_factor,
-                                "z": mid_point.z
-                            },
-                            "max": {
-                                "x": max_point.x * svg_width_factor,
-                                "y": max_point.y * svg_height_factor,
-                                "z": max_point.z
-                            },
-                            "new": {
-                                "x": new_point.x * svg_width_factor,
-                                "y": new_point.y * svg_height_factor,
-                                "z": new_point.z
-                            },
-                            "new_factor": new_factor,
+                        "mid": {
+                            "x": mid_point.x * svg_width_factor,
+                            "y": mid_point.y * svg_height_factor,
+                            "z": mid_point.z
                         },
-                    }
-                    for hill, (min_possible_hill, max_possible_hill) in hills_and_possible_hills
-                    for direction in [hill.get_direction()]
-                    for [min_point, mid_point, max_point, new_point, new_factor] in [hill.four_points_and_factor]
-                ], indent=2),
-            ),
-            script=(Path(__file__).parent  / "problem_g_script.js").read_text(),
+                        "max": {
+                            "x": max_point.x * svg_width_factor,
+                            "y": max_point.y * svg_height_factor,
+                            "z": max_point.z
+                        },
+                        "new": {
+                            "x": new_point.x * svg_width_factor,
+                            "y": new_point.y * svg_height_factor,
+                            "z": new_point.z
+                        },
+                        "new_factor": new_factor,
+                    },
+                }
+                for hill, (min_possible_hill, max_possible_hill) in hills_and_possible_hills
+                for direction in [hill.get_direction()]
+                for [min_point, mid_point, max_point, new_point, new_factor] in [hill.four_points_and_factor]
+            ], indent=2),
+            ribbon_data=json.dumps(ribbon_histories, indent=2),
         )
 
 
@@ -223,40 +314,275 @@ class Challenge(BaseIcpcChallenge):
 class MountainSolver2:
     mountain: "Mountain"
     hill_side_map: "HillSideMap"
+    mid_point_hill_map: "MidPointHillMap"
 
     @classmethod
     def from_mountain(cls, mountain: "Mountain") -> "MountainSolver":
-        return cls(mountain=mountain, hill_side_map=HillSideMap.from_mountain(mountain))
+        return cls(
+            mountain=mountain,
+            hill_side_map=HillSideMap.from_mountain(mountain),
+            mid_point_hill_map=MidPointHillMap.from_mountain(mountain),
+        )
+
+    def get_min_length(self) -> Optional[float]:
+        length_range = self.get_total_length_range()
+        if length_range is None:
+            return None
+        min_lenght, _ = length_range
+        return min_lenght
     
+    def get_total_length_range(self) -> Optional[Tuple[float, float]]:
+        restricted_end_ribbons = self.get_restricted_end_ribbons()
+        if not restricted_end_ribbons:
+            return None
+        min_length, max_length = restricted_end_ribbons[0].total_history_length_range()
+        for ribbon in restricted_end_ribbons[1:]:
+            ribbon_min_length, ribbon_max_length = ribbon.total_history_length_range()
+            min_length = min(min_length, ribbon_min_length)
+            max_length = max(max_length, ribbon_max_length)
+        return min_length, max_length
+    
+    def get_viable_ys(self) -> List[Tuple[float, float]]:
+        restricted_end_ribbons = self.get_restricted_end_ribbons()
+        y_ranges = sorted(
+            ribbon.end.get_y_range()
+            for ribbon in restricted_end_ribbons
+        )
+        merged_y_ranges = []
+        previous_y_range = None
+        for y_range in y_ranges:
+            if previous_y_range is None:
+                previous_y_range = y_range
+                continue
+            if almost_greater(y_range[0], previous_y_range[1]):
+                merged_y_ranges.append(previous_y_range)
+                previous_y_range = y_range
+                continue
+            previous_y_range = previous_y_range[0], y_range[1]
+        if previous_y_range:
+            merged_y_ranges.append(previous_y_range)
+        return merged_y_ranges
+    
+    def get_restricted_end_ribbons(self) -> List["Ribbon"]:
+        end_ribbons = self.get_end_ribbons()
+        return sorted((
+            self.restrict_ribbon(ribbon)
+            for ribbon in end_ribbons
+        ), key=lambda ribbon: (ribbon.end.side.key, ribbon.end.start, ribbon.end.end))
+    
+    def get_restricted_ribbons(self) -> List["Ribbon"]:
+        end_ribbons = self.get_ribbons()
+        return sorted((
+            self.restrict_ribbon(ribbon)
+            for ribbon in end_ribbons
+        ), key=lambda ribbon: (ribbon.end.side.key, ribbon.end.start, ribbon.end.end))
+    
+    def restrict_ribbon(self, ribbon) -> "Ribbon":
+        history = list(ribbon.iterate_history())
+        for index, node in enumerate(history[1:], start=1):
+            if node.is_mid_point:
+                continue
+            next_node = history[index - 1]
+            if next_node.is_mid_point:
+                if not almost_equal(next_node.start.start, next_node.start.end):
+                    raise Exception(f"Next ribbon is mid point, but it is not a single line:\n{next_node}")
+                if almost_equal(next_node.start.start, 0):
+                    next_mid_point = next_node.start.side.points[0]
+                elif almost_equal(next_node.start.start, 1):
+                    next_mid_point = next_node.start.side.points[1]
+                else:
+                    raise Exception(f"Next ribbon is mid point, but it does not start from the first or second point:\n{next_node}")
+                if node.end.side.points[0] == next_mid_point:
+                    end_side_range = SideRange(
+                        hill=node.end.hill,
+                        side=node.end.side,
+                        start=0,
+                        end=0,
+                    )
+                elif node.end.side.points[1] == next_mid_point:
+                    end_side_range = SideRange(
+                        hill=node.end.hill,
+                        side=node.end.side,
+                        start=1,
+                        end=1,
+                    )
+                else:
+                    raise Exception(f"Next ribbon is mid point, but this ribbon does not include the next mid point {next_mid_point}:\n{next_node}")
+            else:
+                end_side_range = self.translate_side_range(next_node.start)
+            if end_side_range.hill != node.end.hill or end_side_range.side != node.end.side:
+                raise Exception(f"Cannot restrict ribbon history, got different end side range from {next_node}: {end_side_range} vs {node.start}")
+            if almost_less(end_side_range.start, node.end.start) or almost_greater(end_side_range.end, node.end.end):
+                raise Exception(f"Cannot restrict ribbon history, got bigger end side range: start went from {node.start.start}-{node.start.end} to {start_side_range.start}-{start_side_range.end}")
+            start_side_ranges = self.get_next_side_ranges(end_side_range)
+            if len(start_side_ranges) != 1:
+                raise Exception(f"Cannot restrict ribbon history, got multiple next side ranges from {end_side_range}: {start_side_ranges}")
+            start_side_range, = start_side_ranges
+            if start_side_range.hill != node.start.hill or start_side_range.side != node.start.side:
+                raise Exception(f"Cannot restrict node history, got different start side range: hill went from {self.mountain.hills.index(node.start.hill)} to {self.mountain.hills.index(start_side_range.hill)}, and side from {node.start.side} to {start_side_range.side}")
+            if almost_less(start_side_range.start, node.start.start) or almost_greater(start_side_range.end, node.start.end):
+                raise Exception(f"Cannot restrict node history, got bigger start side range: start went from {node.start.start}-{node.start.end} to {start_side_range.start}-{start_side_range.end}, and end from {node.end.start}-{node.end.end} to {end_side_range.start}-{end_side_range.end}")
+            history[index] = Ribbon(
+                start=start_side_range,
+                end=end_side_range, 
+                is_mid_point=node.is_mid_point,
+                previous=None,
+            )
+
+        for index, node in reversed(list(enumerate(history[:-1]))):
+            previous_node = history[index + 1]
+            history[index] = Ribbon(start=node.start, end=node.end, is_mid_point=node.is_mid_point, previous=previous_node)
+        return history[0]
+
     def get_end_ribbons(self) -> List["Ribbon"]:
+        """
+        >>> solver = MountainSolver2.from_mountain(Mountain.from_text(VIABLE_EXAMPLE_INPUT_3))
+        >>> show_ribbons(solver.get_end_ribbons())
+        [(((5, 2), (6, 0), 0, 1.0), ((6, 0), (6, 10), 0.0, 0.2), 7),
+            (((5, 2), (6, 10), 0.0, 0.12500000000000003),((6, 0), (6, 10), 0.2, 0.30000000000000004), 7),
+            (((5, 2), (6, 10), 0.12500000000000003, 0.25),((6, 0), (6, 10), 0.30000000000000004, 0.4), 9),
+            (((5, 2), (6, 10), 0.25, 0.375),((6, 0), (6, 10), 0.4, 0.5), 8),
+            (((5, 2), (6, 10), 0.375, 0.75),((6, 0), (6, 10), 0.5, 0.8), 7)]
+        """
         end_ribbons = []
         ribbons = self.get_start_ribbons()
         while ribbons:
-            pass
+            new_end_ribbons, new_other_ribbons = self.separate_end_ribbons(ribbons)
+            end_ribbons.extend(new_end_ribbons)
+            ribbons = [
+                next_ribbon
+                for ribbon in new_other_ribbons
+                for next_ribbon in self.get_next_ribbons(ribbon)
+            ]
+        return sorted(end_ribbons, key=lambda ribbon: (ribbon.end.start, ribbon.end.end))
+
+    def get_ribbons(self) -> List["Ribbon"]:
+        all_ribbons = []
+        ribbons = self.get_start_ribbons()
+        while ribbons:
+            _, new_other_ribbons = self.separate_end_ribbons(ribbons)
+            all_ribbons.extend(ribbons)
+            ribbons = [
+                next_ribbon
+                for ribbon in new_other_ribbons
+                for next_ribbon in self.get_next_ribbons(ribbon)
+            ]
+        return sorted(all_ribbons, key=lambda ribbon: (ribbon.end.start, ribbon.end.end))
+    
+    def separate_end_ribbons(self, ribbons: List["Ribbon"]) -> Tuple[List["Ribbon"], List["Ribbon"]]:
+        end_ribbons, other_ribbons = [], []
+        for ribbon in ribbons:
+            if self.check_is_end_ribbon(ribbon):
+                end_ribbons.append(ribbon)
+            else:
+                other_ribbons.append(ribbon)
+        return end_ribbons, other_ribbons
 
     def filter_end_ribbons(self, ribbons: List["Ribbon"]) -> List["Ribbon"]:
-        return [
-            ribbon
-            for ribbon in ribbons
-            if ribbon.end.has_x(self.mountain.width)
-        ]
+        return list(filter(self.check_is_end_ribbon, ribbons))
+    
+    def check_is_end_ribbon(self, ribbon: "Ribbon") -> bool:
+        return ribbon.ends_on_x(self.mountain.width)
     
     def get_next_ribbons(self, ribbon: "Ribbon") -> List["Ribbon"]:
         next_side_range = self.get_next_side_range_from_ribbon(ribbon)
         if not next_side_range:
-            return []
-        return [
-            next_ribbon
-            for next_ribbons in [self.make_ribbons_from_side_range(next_side_range, previous=ribbon)]
-            for next_ribbon in next_ribbons
-        ]
-    
+            next_ribbons = []
+        else:
+            next_ribbons = [
+                next_ribbon
+                for side_range_ribbons in [self.make_ribbons_from_side_range(next_side_range, previous=ribbon)]
+                for next_ribbon in side_range_ribbons
+            ]
+        end_side_is_on_mid_point_at_start = (
+           ribbon.end.side == ribbon.end.hill.mid_max_side and almost_equal(ribbon.end.start, 0)
+        )
+        end_side_is_on_mid_point_at_end = (
+           ribbon.end.side == ribbon.end.hill.min_mid_side and almost_equal(ribbon.end.end, 1)
+        )
+        if end_side_is_on_mid_point_at_start or end_side_is_on_mid_point_at_end:
+            next_ribbons.extend(
+                Ribbon(
+                    start=SideRange(
+                        hill=hill,
+                        side=hill.min_mid_side,
+                        start=1,
+                        end=1,
+                    ),
+                    end=SideRange(
+                        hill=hill,
+                        side=hill.min_max_side,
+                        start=hill.new_factor,
+                        end=hill.new_factor,
+                    ),
+                    is_mid_point=True,
+                    previous=ribbon,
+                )
+                for hill in self.mid_point_hill_map[ribbon.end.hill.mid_point] - {ribbon.end.hill}
+            )
+            # if end_side_is_on_mid_point_at_start and almost_equal(ribbon.end.side.points[0].x, self.mountain.width):
+            #     next_ribbons.append(Ribbon(
+            #         start=SideRange(
+            #             hill=ribbon.start.hill,
+            #             side=ribbon.start.side,
+            #             start=ribbon.start.hill.new_factor,
+            #             end=ribbon.start.hill.new_factor,
+            #         ),
+            #         end=SideRange(
+            #             hill=ribbon.end.hill,
+            #             side=ribbon.end.hill.mid_max_side,
+            #             start=0,
+            #             end=0,
+            #         ),
+            #         is_mid_point=True,
+            #         previous=ribbon.previous,
+            #     ))
+            # elif end_side_is_on_mid_point_at_end and almost_equal(ribbon.end.side.points[1].x, self.mountain.width):
+            #     next_ribbons.append(Ribbon(
+            #         start=SideRange(
+            #             hill=ribbon.start.hill,
+            #             side=ribbon.start.side,
+            #             start=ribbon.start.hill.new_factor,
+            #             end=ribbon.start.hill.new_factor,
+            #         ),
+            #         end=SideRange(
+            #             hill=ribbon.end.hill,
+            #             side=ribbon.end.hill.min_mid_side,
+            #             start=1,
+            #             end=1,
+            #         ),
+            #         is_mid_point=True,
+            #         previous=ribbon.previous,
+            #     ))
+        if not ribbon.is_mid_point and not almost_equal(ribbon.end.start, ribbon.end.end):
+            if almost_equal(ribbon.end.start, 0) and almost_equal(ribbon.end.side.points[0].x, self.mountain.width):
+                next_ribbons.append(Ribbon(
+                    start=ribbon.start.replace(end=ribbon.start.start),
+                    end=ribbon.end.replace(end=ribbon.end.start),
+                    is_mid_point=ribbon.is_mid_point,
+                    previous=ribbon.previous,
+                ))
+            elif almost_equal(ribbon.end.end, 1) and almost_equal(ribbon.end.side.points[1].x, self.mountain.width):
+                next_ribbons.append(Ribbon(
+                    start=ribbon.start.replace(start=ribbon.start.end),
+                    end=ribbon.end.replace(start=ribbon.end.end),
+                    is_mid_point=ribbon.is_mid_point,
+                    previous=ribbon.previous,
+                ))
+        return next_ribbons
+
     def get_next_side_range_from_ribbon(self, ribbon: "Ribbon") -> Optional["SideRange"]:
-        next_hill_and_side = self.hill_side_map.get_from_side_range(ribbon.end)
+        return self.translate_side_range(ribbon.end)
+
+    def translate_side_range(self, side_range: "SideRange") -> Optional["SideRange"]:
+        next_hill_and_side = self.hill_side_map.get_from_side_range(side_range)
         if not next_hill_and_side:
             return None
         next_hill, next_side = next_hill_and_side
-        return SideRange.from_hill_and_side(next_hill, next_side)
+        start, end = side_range.start, side_range.end
+        if side_range.side.points != next_side.points:
+            start, end = 1 - end, 1 - start
+        return SideRange(hill=next_hill, side=next_side, start=start, end=end)
     
     def get_start_ribbons(self, match_x: float = 0) -> List["Ribbon"]:
         """
@@ -297,8 +623,9 @@ class MountainSolver2:
         else:
             split_side_ranges = [side_range]
         return [
-            Ribbon(start=split_side_range, end=next_side_range, previous=previous)
+            Ribbon(start=split_side_range, end=next_side_range, is_mid_point=False, previous=previous)
             for split_side_range, next_side_range in zip(split_side_ranges, next_side_ranges)
+            if not previous or (split_side_range.hill not in previous.seen_hills)
         ]
     
     def get_next_side_ranges(self, side_range: "SideRange") -> List["SideRange"]:
@@ -389,6 +716,7 @@ class MountainSolver2:
 class Ribbon:
     start: "SideRange"
     end: "SideRange"
+    is_mid_point: bool
     previous: Optional["Ribbon"]
 
     @cached_property
@@ -399,7 +727,88 @@ class Ribbon:
             length += 1
             node = node.previous
         return length
+    
+    def __str__(self) -> str:
+        result = f" * Ribbon{'(midpoint)' if self.is_mid_point else ''}:\n"
+        if self.start.hill == self.end.hill:
+            start_hill_point_names = end_hill_point_names = {
+                self.start.hill.min_point: 'min',
+                self.start.hill.mid_point: 'mid',
+                self.start.hill.max_point: 'max',
+            }
+            result += f"   * Hill: {', '.join(f'{name}: ({p.x},{p.y},{p.z})' for p, name in start_hill_point_names.items())}, new factor: {self.start.hill.new_factor}\n"
+        else:
+            result += f"   * !Hills differ!"
+            start_hill_point_names = {
+                self.start.hill.min_point: 'min',
+                self.start.hill.mid_point: 'mid',
+                self.start.hill.max_point: 'max',
+            }
+            end_hill_point_names = {
+                self.end.hill.min_point: 'min',
+                self.end.hill.mid_point: 'mid',
+                self.end.hill.max_point: 'max',
+            }
+        result += f"   * Start:\n"
+        if self.start.hill != self.end.hill:
+            result += f"     * Hill: {', '.join(f'{name}: ({p.x},{p.y},{p.z})' for p, name in start_hill_point_names.items())}, new factor: {self.start.hill.new_factor}\n"
+        result += (
+            f"     * Side: {self.start.start}-{self.start.end} {', '.join(f'({p.x},{p.y},{p.z}) ' + start_hill_point_names.get(p, 'N/A') for p in self.start.side.points)}\n"
+            f"   * End:\n"
+        )
+        if self.start.hill != self.end.hill:
+            result += f"     * Hill: {', '.join(f'{name}: ({p.x},{p.y},{p.z})' for p, name in end_hill_point_names.items())}, new factor: {self.end.hill.new_factor}\n"
+        result += f"     * Side: {self.end.start}-{self.end.end} {', '.join(f'({p.x},{p.y},{p.z}) ' + end_hill_point_names.get(p, 'N/A') for p in self.end.side.points)}\n"
+        return result + (str(self.previous) if self.previous else '')
 
+    @cached_property
+    def seen_hills(self) -> Set["Hill"]:
+        seen_hills = {self.start.hill}
+        if self.previous:
+            seen_hills |= self.previous.seen_hills
+        return seen_hills
+
+    def ends_on_x(self, x: float) -> bool:
+        # if self.is_mid_point:
+        #     print(f"{self.end.start}-{self.end.end}, {self.end.side.points[0].x}-{self.end.side.points[1].x} ?= {x}", self)
+        if almost_equal(self.end.start, self.end.end) and ((almost_equal(self.end.start, 0) and almost_equal(self.end.side.points[0].x, x)) or (almost_equal(self.end.end, 1) and almost_equal(self.end.side.points[1].x, x))):
+            return True
+        return self.end.is_on_x(x)
+
+    def get_points(self) -> List[Point3D]:
+        return [
+            *self.start.get_points(),
+            *self.end.get_points()[::-1],
+        ]
+
+    def get_points_history(self) -> List[List[Point3D]]:
+        points_history = []
+        for node in self.iterate_history():
+            points_history.append(node.get_points())
+        return points_history[::-1]
+
+    def iterate_history(self) -> Iterable["Ribbon"]:
+        node = self
+        while node:
+            yield node
+            node = node.previous
+
+    def total_history_length_range(self) -> Tuple[float, float]:
+        start_length = 0.0
+        end_length = 0.0
+        for node in self.iterate_history():
+            node_start_length, node_end_length = node.get_length_range()
+            start_length += node_start_length
+            end_length += node_end_length
+        min_length, max_length = sorted([start_length, end_length])
+        return min_length, max_length
+
+    def get_length_range(self) -> Tuple[float, float]:
+        start_start, start_end = self.start.get_points()
+        end_start, end_end = self.end.get_points()
+        start_length = start_start.distance(end_start)
+        end_length = start_end.distance(end_end)
+        return start_length, end_length
 
 
 @dataclass
@@ -773,9 +1182,24 @@ class SideRange:
         if first > second:
             y_range = y_range[::-1]
         return y_range
+    
+    def is_on_x(self, x: float) -> bool:
+        return self.side.is_on_x(x)
+    
+    def get_points(self) -> List[Point3D]:
+        first = self.side.points[0]
+        second = self.side.points[1]
+        return [
+            Point3D(
+                first.x + (second.x - first.x) * factor,
+                first.y + (second.y - first.y) * factor,
+                first.z + (second.z - first.z) * factor,
+            )
+            for factor in [self.start, self.end]
+        ]
 
 
-DefaultDelta = 0.00001
+DefaultDelta = 0.000001
 
 
 def almost_equal(left: float, right: float, delta: float = DefaultDelta) -> bool:
@@ -845,6 +1269,21 @@ class HillsBySide:
 
     def __getitem__(self, item: "Side") -> Set["Hill"]:
         return self.by_side_key[item.key]
+
+
+@dataclass
+class MidPointHillMap:
+    by_point: Dict[Point3D, Set["Hill"]]
+
+    @classmethod
+    def from_mountain(cls, mountain: "Mountain") -> "MidPointHillMap":
+        by_point = {}
+        for hill in mountain.hills:
+            by_point.setdefault(hill.mid_point, set()).add(hill)
+        return cls(by_point=by_point)
+    
+    def __getitem__(self, item: "Point3D") -> Set["Hill"]:
+        return self.by_point.get(item, set())
 
 
 @dataclass
