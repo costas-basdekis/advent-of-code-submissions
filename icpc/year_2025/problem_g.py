@@ -144,6 +144,7 @@ class Challenge(BaseIcpcChallenge):
                     <link rel="stylesheet" type="text/css" href="problem_g_style.css">
                 </head>
                 <body>
+                    <h2>{title}</h2>
                     <div>
                         <label><input type="checkbox" name="show-js-ribbons">Show JS ribbons</label>
                         <br>
@@ -393,33 +394,33 @@ class MountainSolver2:
                 else:
                     raise Exception(f"Next ribbon is mid point, but it does not start from the first or second point:\n{next_node}")
                 if node.end.side.points[0] == next_mid_point:
-                    end_side_range = SideRange(
-                        hill=node.end.hill,
-                        side=node.end.side,
-                        start=0,
-                        end=0,
-                    )
+                    if not almost_equal(node.end.start, 0):
+                        raise Exception(f"Next ribbon is mid point, and this ribbon end should include it, but it starts from {node.end.start}")
+                    end_side_range = node.end.replace(end=node.end.start)
                 elif node.end.side.points[1] == next_mid_point:
-                    end_side_range = SideRange(
-                        hill=node.end.hill,
-                        side=node.end.side,
-                        start=1,
-                        end=1,
-                    )
+                    if not almost_equal(node.end.end, 1):
+                        raise Exception(f"Next ribbon is mid point, and this ribbon end should include it, but it ends at {node.end.end}")
+                    end_side_range = node.end.replace(start=node.end.end)
                 else:
                     raise Exception(f"Next ribbon is mid point, but this ribbon does not include the next mid point {next_mid_point}:\n{next_node}")
             else:
                 end_side_range = self.translate_side_range(next_node.start)
-            if end_side_range.hill != node.end.hill or end_side_range.side != node.end.side:
-                raise Exception(f"Cannot restrict ribbon history, got different end side range from {next_node}: {end_side_range} vs {node.start}")
-            if almost_less(end_side_range.start, node.end.start) or almost_greater(end_side_range.end, node.end.end):
-                raise Exception(f"Cannot restrict ribbon history, got bigger end side range: start went from {node.start.start}-{node.start.end} to {start_side_range.start}-{start_side_range.end}")
-            start_side_ranges = self.get_next_side_ranges(end_side_range)
+                if end_side_range.hill != node.end.hill or end_side_range.side != node.end.side:
+                    raise Exception(f"Cannot restrict ribbon history, got different end side range from {next_node}: {end_side_range} vs {node.start}")
+                if almost_less(end_side_range.start, node.end.start) or almost_greater(end_side_range.end, node.end.end):
+                    raise Exception(f"Cannot restrict ribbon history, got bigger end side range: start went from {node.start.start}-{node.start.end} to {start_side_range.start}-{start_side_range.end}")
+            start_side_ranges = self.get_next_side_ranges(
+                end_side_range, 
+                # Prefer to keep the same side to make checks simpler
+                prefer_min_mid_for_new_factor=node.start.side == node.start.hill.min_mid_side,
+            )
             if len(start_side_ranges) != 1:
                 raise Exception(f"Cannot restrict ribbon history, got multiple next side ranges from {end_side_range}: {start_side_ranges}")
             start_side_range, = start_side_ranges
-            if start_side_range.hill != node.start.hill or start_side_range.side != node.start.side:
-                raise Exception(f"Cannot restrict node history, got different start side range: hill went from {self.mountain.hills.index(node.start.hill)} to {self.mountain.hills.index(start_side_range.hill)}, and side from {node.start.side} to {start_side_range.side}")
+            if start_side_range.hill != node.start.hill:
+                raise Exception(f"Cannot restrict node history, got different start side range: hill went from {self.mountain.hills.index(node.start.hill)} to {self.mountain.hills.index(start_side_range.hill)}")
+            if start_side_range.side != node.start.side:
+                raise Exception(f"Cannot restrict node history, got different start side range: from {node.start.side} to {start_side_range.side}, and range from {node.start.start}-{node.start.end} to {start_side_range.start}-{start_side_range.end}. End side range went from {node.end.side} to {end_side_range.side}, and range from {node.end.start}-{node.end.end} to {end_side_range.start}-{end_side_range.end}")
             if almost_less(start_side_range.start, node.start.start) or almost_greater(start_side_range.end, node.start.end):
                 raise Exception(f"Cannot restrict node history, got bigger start side range: start went from {node.start.start}-{node.start.end} to {start_side_range.start}-{start_side_range.end}, and end from {node.end.start}-{node.end.end} to {end_side_range.start}-{end_side_range.end}")
             history[index] = Ribbon(
@@ -494,6 +495,23 @@ class MountainSolver2:
                 for side_range_ribbons in [self.make_ribbons_from_side_range(next_side_range, previous=ribbon)]
                 for next_ribbon in side_range_ribbons
             ]
+            for next_ribbon in list(next_ribbons):
+                if next_ribbon.is_mid_point or almost_equal(next_ribbon.end.start, next_ribbon.end.end):
+                    continue
+                if almost_equal(next_ribbon.end.start, 0) and almost_equal(next_ribbon.end.side.points[0].x, self.mountain.width):
+                    next_ribbons.append(Ribbon(
+                        start=next_ribbon.start.replace(end=next_ribbon.start.start),
+                        end=next_ribbon.end.replace(end=next_ribbon.end.start),
+                        is_mid_point=next_ribbon.is_mid_point,
+                        previous=next_ribbon.previous,
+                    ))
+                elif almost_equal(next_ribbon.end.end, 1) and almost_equal(next_ribbon.end.side.points[1].x, self.mountain.width):
+                    next_ribbons.append(Ribbon(
+                        start=next_ribbon.start.replace(start=next_ribbon.start.end),
+                        end=next_ribbon.end.replace(start=next_ribbon.end.end),
+                        is_mid_point=next_ribbon.is_mid_point,
+                        previous=next_ribbon.previous,
+                    ))
         end_side_is_on_mid_point_at_start = (
            ribbon.end.side == ribbon.end.hill.mid_max_side and almost_equal(ribbon.end.start, 0)
         )
@@ -520,55 +538,6 @@ class MountainSolver2:
                 )
                 for hill in self.mid_point_hill_map[ribbon.end.hill.mid_point] - {ribbon.end.hill}
             )
-            # if end_side_is_on_mid_point_at_start and almost_equal(ribbon.end.side.points[0].x, self.mountain.width):
-            #     next_ribbons.append(Ribbon(
-            #         start=SideRange(
-            #             hill=ribbon.start.hill,
-            #             side=ribbon.start.side,
-            #             start=ribbon.start.hill.new_factor,
-            #             end=ribbon.start.hill.new_factor,
-            #         ),
-            #         end=SideRange(
-            #             hill=ribbon.end.hill,
-            #             side=ribbon.end.hill.mid_max_side,
-            #             start=0,
-            #             end=0,
-            #         ),
-            #         is_mid_point=True,
-            #         previous=ribbon.previous,
-            #     ))
-            # elif end_side_is_on_mid_point_at_end and almost_equal(ribbon.end.side.points[1].x, self.mountain.width):
-            #     next_ribbons.append(Ribbon(
-            #         start=SideRange(
-            #             hill=ribbon.start.hill,
-            #             side=ribbon.start.side,
-            #             start=ribbon.start.hill.new_factor,
-            #             end=ribbon.start.hill.new_factor,
-            #         ),
-            #         end=SideRange(
-            #             hill=ribbon.end.hill,
-            #             side=ribbon.end.hill.min_mid_side,
-            #             start=1,
-            #             end=1,
-            #         ),
-            #         is_mid_point=True,
-            #         previous=ribbon.previous,
-            #     ))
-        if not ribbon.is_mid_point and not almost_equal(ribbon.end.start, ribbon.end.end):
-            if almost_equal(ribbon.end.start, 0) and almost_equal(ribbon.end.side.points[0].x, self.mountain.width):
-                next_ribbons.append(Ribbon(
-                    start=ribbon.start.replace(end=ribbon.start.start),
-                    end=ribbon.end.replace(end=ribbon.end.start),
-                    is_mid_point=ribbon.is_mid_point,
-                    previous=ribbon.previous,
-                ))
-            elif almost_equal(ribbon.end.end, 1) and almost_equal(ribbon.end.side.points[1].x, self.mountain.width):
-                next_ribbons.append(Ribbon(
-                    start=ribbon.start.replace(start=ribbon.start.end),
-                    end=ribbon.end.replace(start=ribbon.end.end),
-                    is_mid_point=ribbon.is_mid_point,
-                    previous=ribbon.previous,
-                ))
         return next_ribbons
 
     def get_next_side_range_from_ribbon(self, ribbon: "Ribbon") -> Optional["SideRange"]:
@@ -584,7 +553,7 @@ class MountainSolver2:
             start, end = 1 - end, 1 - start
         return SideRange(hill=next_hill, side=next_side, start=start, end=end)
     
-    def get_start_ribbons(self, match_x: float = 0) -> List["Ribbon"]:
+    def get_start_ribbons(self) -> List["Ribbon"]:
         """
         >>> hill = Hill(points=(Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)))
         >>> solver = MountainSolver2.from_mountain( Mountain(hills=[hill], width=5, height=10))
@@ -596,12 +565,35 @@ class MountainSolver2:
         [(((0, 0), (0, 10), 0, 0.7), ((0, 0), (1, 5), 0.0, 1), 1),
             (((0, 0), (0, 10), 0.7, 1), ((0, 10), (1, 5), 0, 1.0), 1)]
         """
-        starting_side_ranges = self.get_start_side_ranges(match_x=match_x)
-        return [
+        start_side_ranges = self.get_start_side_ranges()
+        ribbons = [
             ribbon
-            for side_range in starting_side_ranges
+            for side_range in start_side_ranges
             for ribbon in self.make_ribbons_from_side_range(side_range)
         ]
+        ribbons += self.get_edge_to_edge_ribbons(start_side_ranges, self.mountain.width, reverse_sides=False)
+        ribbons += self.get_edge_to_edge_ribbons(self.get_side_ranges_on(self.mountain.width), 0, reverse_sides=True)
+        return ribbons
+
+    def get_edge_to_edge_ribbons(self, side_ranges: List["SideRange"], end_x: float, reverse_sides: bool = False) -> List["Ribbon"]:
+        ribbons = []
+        for side_range in side_ranges:
+            hill = side_range.hill
+            if side_range.side != hill.min_max_side:
+                continue
+            if not almost_equal(hill.mid_point.x, end_x):
+                continue
+            start = side_range.replace(start=hill.new_factor, end=hill.new_factor)
+            end = SideRange(hill=hill, side=hill.min_mid_side, start=1, end=1)
+            if reverse_sides:
+                start, end = end, start
+            ribbons.append(Ribbon(
+                start=start,
+                end=end,
+                is_mid_point=False,
+                previous=None,
+            ))
+        return ribbons
     
     def make_ribbons_from_side_range(self, side_range: "SideRange", previous: Optional["Ribbon"] = None) -> List["Ribbon"]:
         """
@@ -628,7 +620,7 @@ class MountainSolver2:
             if not previous or (split_side_range.hill not in previous.seen_hills)
         ]
     
-    def get_next_side_ranges(self, side_range: "SideRange") -> List["SideRange"]:
+    def get_next_side_ranges(self, side_range: "SideRange", prefer_min_mid_for_new_factor: bool = True) -> List["SideRange"]:
         """
         >>> hill = Hill(points=(Point3D(0, 0, 0), Point3D(5, 5, 1), Point3D(0, 10, 2)))
         >>> solver = MountainSolver2.from_mountain( Mountain(hills=[hill], width=5, height=10))
@@ -665,14 +657,16 @@ class MountainSolver2:
         if side != hill.min_max_side:
             raise Exception(f"Side {side} was not one of the hill's sides {hill.sides}")
         if almost_less_equal(end, new_factor):
-            return [
-                SideRange(
-                    hill=hill,
-                    side=hill.min_mid_side,
-                    start=start / new_factor,
-                    end=end / new_factor,
-                ),
-            ]
+            # Give the option to the caller to keep the same side when restricting to make checks simpler
+            if prefer_min_mid_for_new_factor or not almost_equal(start, end):
+                return [
+                    SideRange(
+                        hill=hill,
+                        side=hill.min_mid_side,
+                        start=start / new_factor,
+                        end=end / new_factor,
+                    ),
+                ]
         if almost_less_equal(new_factor, start):
             return [
                 SideRange(
@@ -697,14 +691,17 @@ class MountainSolver2:
             ),
         ]
     
-    def get_start_side_ranges(self, match_x: float = 0) -> List["SideRange"]:
+    def get_start_side_ranges(self) -> List["SideRange"]:
         """
         >>> show_side_ranges(MountainSolver2.from_mountain(Mountain.from_text(VIABLE_EXAMPLE_INPUT_3)).get_start_side_ranges())
         [((0, 0), (0, 10), 0, 1)]
         """
+        return self.get_side_ranges_on(0)
+
+    def get_side_ranges_on(self, x: float) -> List["SideRange"]:
         side_ranges = []
         for hill in self.mountain.hills:
-            sides = [side for side in hill.sides if side.is_on_x(match_x)]
+            sides = [side for side in hill.sides if side.is_on_x(x)]
             if not sides:
                 continue
             side, = sides
