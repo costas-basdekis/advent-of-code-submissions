@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 import json
-import os
-import sys
-import tempfile
 from dataclasses import dataclass, field
 import re
 from enum import Enum
@@ -10,9 +7,10 @@ from functools import cached_property
 from itertools import groupby, zip_longest
 from pathlib import Path
 from typing import (
-    Any, cast, Callable, ClassVar, Dict, Generic, Iterable, List, Optional, Set,
+    Any, NoReturn, cast, Callable, ClassVar, Dict, Generic, Iterable, List, Optional, Set,
     Tuple, Type, Union, TypeVar,
 )
+from urllib.parse import parse_qs, urlparse
 
 import click
 
@@ -46,6 +44,9 @@ class Challenge(BaseIcpcChallenge):
             for result_value in [None if result_line == "impossible" else float(result_line)]
             for output_value in [None if output_line == "impossible" else float(output_line)]
         )
+    
+    input_number: int
+    case_index: int
 
     def play(self, *extra):
         if extra:
@@ -55,6 +56,9 @@ class Challenge(BaseIcpcChallenge):
         else:
             input_number, case_index = 1, 0
         print(f"{input_number},{case_index}")
+        self.input_number = input_number
+        self.case_index = case_index
+        self.serve(Path(__file__).parent / "problem_g")
         while True:
             self.output_mountain_from_file(input_number, case_index)
             user_input = click.prompt("Enter an input number and a case index")
@@ -62,6 +66,27 @@ class Challenge(BaseIcpcChallenge):
                 print(f"Restarting...")
                 return restart_process(edit_args=lambda args: args[:args.index("play") + 1] + ["--", str(input_number), str(case_index)])
             input_number, case_index = [int(part.strip()) for part in user_input.strip().split(",")]
+
+    def serve_translate_path(self, original_path: str, path: str, query: Dict[str, List[str]], fragment: str) -> str:
+        if path == "/index.html":
+            new_input_number = self.input_number
+            new_case_index = self.case_index
+            if query.get('filename'):
+                filename = query['filename'][0]
+                if match := re.match(r"^secret-(\d+)-.*\.in$", filename):
+                    new_input_number, = map(int, match.groups())
+                elif match := re.match(r"^sample-(\d+)\.in$"):
+                    new_input_number, = map(int, match.groups())
+                    new_input_number *= -1
+                if new_input_number != self.input_number:
+                    new_case_index = 0
+                elif query.get('case_index'):
+                    new_case_index = int(query['case_index'][0])
+            if (new_input_number, new_case_index) != (self.input_number, self.case_index):
+                self.input_number = new_input_number
+                self.case_index = new_case_index
+                self.output_mountain_from_file(self.input_number, self.case_index)
+        return path
 
     def output_mountain_from_file(self, input_number: int, case_index: int) -> None:
         if input_number < 0:
@@ -93,11 +118,11 @@ class Challenge(BaseIcpcChallenge):
             print(f"Got {e_success('viable lengths')}: {length_range[0]}-{length_range[1]}")
         else:
             print(f"{e_error('No viable lengths')}")
-        output_file = Path(__file__).parent / "problem_g_output.html"
-        output_file.write_text(self.to_html_text(mountain, input_name=input_file.name, input_number=input_number, case_index=case_index))
-        print(f"Open file://{output_file.absolute()}\nPress any key")
+        output_file = Path(__file__).parent / "problem_g" / "index.html"
+        output_file.write_text(self.to_html_text(mountain, input_name=input_file.name, input_number=input_number, case_index=case_index, case_count=len(cases)))
+        # print(f"Open file://{output_file.absolute()}\nPress any key")
 
-    def to_html_text(self, mountain: "Mountain", input_name: str, input_number: int, case_index: int, max_width: int = 2000, max_height: int = 1000) -> str:
+    def to_html_text(self, mountain: "Mountain", input_name: str, input_number: int, case_index: int, case_count: int, max_width: int = 2000, max_height: int = 1000) -> str:
         svg_width = max_width
         svg_height = max_height
         # if mountain.width / max_width >= mountain.height / max_height:
@@ -136,16 +161,32 @@ class Challenge(BaseIcpcChallenge):
             }
             for ribbon in ribbons
         ]
+        filenames = sorted((Path(__file__).parent / "data" / "G-lavamoat").glob("*.in"))
 
         return """
             <html>
                 <head>
                     <title>{title}</title>
-                    <link rel="stylesheet" type="text/css" href="problem_g_style.css">
+                    <link rel="stylesheet" type="text/css" href="style.css">
+                    <script type="importmap">
+                        {{
+                            "imports": {{
+                                "three": "https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js",
+                                "three/addons": "https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/Addons.js"
+                            }}
+                        }}
+                    </script>
                 </head>
                 <body>
                     <h2>{title}</h2>
                     <div>
+                        <label>
+                            File: 
+                            <select name="filename" id="filename-selector">{filenames_options}</select>
+                            Case:
+                            <select name="case" id="case-selector">{cases_options}</select>
+                        </label>
+                        <br>
                         <label><input type="checkbox" name="show-js-ribbons">Show JS ribbons</label>
                         <br>
                         <label><input type="checkbox" name="show-py-ribbons" checked>Show Python ribbons</label>
@@ -185,6 +226,9 @@ class Challenge(BaseIcpcChallenge):
                         <text class='path-length' x='10' y='25' />
                         <text class='y-values' x='10' y='50' />
                     </svg>
+                    <div id="3d-parent">
+                        <canvas id="3d-target"></canvas>
+                    </div>
                     <script type="text/javascript">
                         const svgWidth = {svg_width};
                         const svgHeight = {svg_height};
@@ -193,11 +237,20 @@ class Challenge(BaseIcpcChallenge):
                         const data = {hill_data};
                         const ribbonHistories = {ribbon_data};
                     </script>
-                    <script type="text/javascript" src="problem_g_script.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.21"></script>
+                    <script type="module" src="script.js"></script>
                 </body>
             </html>
         """.format(
             title=f"Mountain Visualization: {input_name} {input_number}-{case_index}",
+            filenames_options="\n".join(
+                f"<option value='{filename.name}' {'selected' if filename.name == input_name else ''}>{filename.name}</value>"
+                for filename in filenames
+            ),
+            cases_options="\n".join(
+                f"<option value='{possible_case_index}' {'selected' if possible_case_index == case_index else ''}>#{possible_case_index}</option>"
+                for possible_case_index in range(case_count)
+            ),
             py_ribbons_radios="\n".join(
                 f"<label class='show-py-ribbons-radio'><input type='radio' name='show-py-ribbons-i' class='i-{ribbon_index}'>#{ribbon_index + 1} ({len(ribbon_history['history'])})</label>"
                 for ribbon_index, ribbon_history in enumerate(ribbon_histories)
@@ -210,7 +263,6 @@ class Challenge(BaseIcpcChallenge):
             height=svg_height,
             svg_width_factor=svg_width_factor,
             svg_height_factor=svg_height_factor,
-            style=(Path(__file__).parent  / "problem_g_style.css").read_text(),
             triangles="<g class='triangles'>{}</g>".format("\n".join([
                 polygon
                 for hill, (min_possible_hill, max_possible_hill) in hills_and_possible_hills

@@ -1,3 +1,5 @@
+import {initialise3D} from "./3d_visualisation.js"
+
 const DefaultDelta = 0.00001;
 
 function main() {
@@ -43,6 +45,15 @@ function main() {
             // console.log(mouse, triangles.map(triangle => data.indexOf(triangle)), segment);
         }
     });
+    const $filename = document.getElementById("filename-selector");
+    $filename.addEventListener("change", () => {
+        window.location.href = `/?filename=${$filename.value}&case_index=${$caseIndex.value}`
+    });
+    const $caseIndex = document.getElementById("case-selector");
+    $caseIndex.addEventListener("change", () => {
+        window.location.href = `/?filename=${$filename.value}&case_index=${$caseIndex.value}`
+    });
+    initialise3D();
 }
 
 function normalisePoints() {
@@ -257,7 +268,7 @@ class TriangleSideMap {
     }
 }
 
-function expandSegmentToAllTriangles(startTriangle, startSegment) {
+function expandSegmentToAllTriangles(startTriangle, startSegment, width) {
     const points = Array.from(startSegment);
     const seen = new Set([startTriangle]);
     let [left, right] = startSegment;
@@ -265,13 +276,16 @@ function expandSegmentToAllTriangles(startTriangle, startSegment) {
         return points;
     }
     // console.log("Expanding sides...");
-    expandSides(left, startTriangle, seen, points, true);
-    expandSides(right, startTriangle, seen, points, false);
+    expandSides(left, startTriangle, seen, points, 0, true);
+    expandSides(right, startTriangle, seen, points, width, false);
     return points;
 }
 
-function expandSides(point, triangle, seen, points, addAtStart) {
+function expandSides(point, triangle, seen, points, terminalX, addAtStart) {
     while (true) {
+        if (almostEqual(point.x, terminalX)) {
+            break;
+        }
         let side = getTriangleSide(point, triangle);
         if (!side) {
             break;
@@ -329,7 +343,7 @@ function setMousePolyline(mouse) {
         $pathLength.textContent = "";
         return;
     }
-    const points = expandSegmentToAllTriangles(triangles[0], segment);
+    const points = expandSegmentToAllTriangles(triangles[0], segment, width);
     $mousePolyline.setAttribute("points", points.map(point => `${point.x},${point.y}`).join(" "));
     const xs = points.map(({x}) => x);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
