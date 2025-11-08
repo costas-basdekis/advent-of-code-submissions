@@ -13,6 +13,7 @@ from .method_utils import *
 from .parse_map_utils import *
 from .point import *
 from .polymorphic import *
+from .serve_handler import *
 from .show_utils import *
 from .string_utils import *
 from .system_utils import *
@@ -34,6 +35,7 @@ test_modules = sum((
         importlib.import_module('utils.parse_map_utils'),
         importlib.import_module('utils.point'),
         importlib.import_module('utils.polymorphic'),
+        importlib.import_module('utils.serve_handler'),
         importlib.import_module('utils.show_utils'),
         importlib.import_module('utils.string_utils'),
         importlib.import_module('utils.system_utils'),
