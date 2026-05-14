@@ -551,19 +551,9 @@ class MountainSolver2:
                 if next_ribbon.is_mid_point or almost_equal(next_ribbon.end.start, next_ribbon.end.end):
                     continue
                 if almost_equal(next_ribbon.end.start, 0) and almost_equal(next_ribbon.end.side.points[0].x, self.mountain.width):
-                    next_ribbons.append(Ribbon(
-                        start=next_ribbon.start.replace(end=next_ribbon.start.start),
-                        end=next_ribbon.end.replace(end=next_ribbon.end.start),
-                        is_mid_point=next_ribbon.is_mid_point,
-                        previous=next_ribbon.previous,
-                    ))
+                    next_ribbons.append(next_ribbon.replace(start_end=next_ribbon.start.start, end_end=next_ribbon.end.start))
                 elif almost_equal(next_ribbon.end.end, 1) and almost_equal(next_ribbon.end.side.points[1].x, self.mountain.width):
-                    next_ribbons.append(Ribbon(
-                        start=next_ribbon.start.replace(start=next_ribbon.start.end),
-                        end=next_ribbon.end.replace(start=next_ribbon.end.end),
-                        is_mid_point=next_ribbon.is_mid_point,
-                        previous=next_ribbon.previous,
-                    ))
+                    next_ribbons.append(next_ribbon.replace(start_start=next_ribbon.start.end, end_start=next_ribbon.end.end))
         end_side_is_on_mid_point_at_start = (
            ribbon.end.side == ribbon.end.hill.mid_max_side and almost_equal(ribbon.end.start, 0)
         )
@@ -858,6 +848,16 @@ class Ribbon:
         start_length = start_start.distance(end_start)
         end_length = start_end.distance(end_end)
         return start_length, end_length
+    
+    def replace(self, start_start: Optional[float] = None, start_end: Optional[float] = None, end_start: Optional[float] = None, end_end: Optional[float] = None):
+        if {start_start, start_end, end_start, end_end} == {None}:
+            return self
+        return Ribbon(
+            start=self.start.replace(start=start_start, end=start_end),
+            end=self.end.replace(start=end_start, end=end_end),
+            is_mid_point=self.is_mid_point,
+            previous=self.previous,
+        )
 
 
 @dataclass
@@ -1211,6 +1211,8 @@ class SideRange:
         return None
 
     def replace(self, start: Optional[float] = None, end: Optional[float] = None) -> "SideRange":
+        if not {start, end} == {None}:
+            return self
         if start is None:
             start = self.start
         if end is None:
